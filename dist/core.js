@@ -67,7 +67,7 @@ export const SKILLS = [
 
 export const MAPS = {
  town:{id:'town',name:'역삼역 1번 출구',subtitle:'마을 · 안전 구역',en:'YEOKSAM STATION',description:'모험이 시작되는 역삼역. 안내를 듣고 물약을 챙겨요.',width:2600,danger:0,minLevel:1,maxLevel:1,position:[12,20],color:'#8bdbc2',portals:[]},
- olympic:{id:'olympic',name:'올림픽공원',subtitle:'시위대 전직 · Lv. 10',en:'OLYMPIC PARK',description:'역삼역 1번 출구와 연결된 공원. 빨간 두건을 두른 선동꾼에게 Lv. 10 고양이가 시위대 전직을 배울 수 있어요.',width:2200,danger:0,minLevel:1,maxLevel:1,color:'#f6b09d',background:'olympic-park',portals:[]},
+ olympic:{id:'olympic',name:'올림픽공원',subtitle:'시위대 전직 · Lv. 10',en:'OLYMPIC PARK',description:'역삼역 1번 출구와 연결된 공원. 빨간 두건을 두르고 화염병을 든 여우 레드폭스에게 Lv. 10 고양이가 시위대 전직을 배울 수 있어요.',width:2200,danger:0,minLevel:1,maxLevel:1,color:'#f6b09d',background:'olympic-park',portals:[]},
  crossroads:{id:'crossroads',name:'역삼역사거리',subtitle:'사냥터 · Lv. 1–3',en:'YEOKSAM CROSSROADS',description:'역삼역 1번 출구와 6번 출구를 잇는 사거리. 신호 로봇을 조심하세요.',width:2400,danger:1,minLevel:1,maxLevel:3,position:[38,20],color:'#f1c477',background:'crossroads',monster:'신호 로봇',robotTint:'hue-rotate(25deg)',portals:[]},
  station6:{id:'station6',name:'역삼역 6번 출구',subtitle:'출구 광장 · 안전 구역',en:'YEOKSAM STATION · EXIT 6',description:'사거리를 건너 도착한 조용한 출구 광장. 오른쪽 포탈은 강남성균검도관으로 이어집니다.',width:1800,danger:0,minLevel:1,maxLevel:1,position:[64,20],color:'#9edbc8',background:'station-six',portals:[]},
  alley:{id:'alley',name:'테헤란 뒷골목',subtitle:'던전 · Lv. 1–3',en:'TEHERAN BACKSTREET',description:'작은 로봇들이 돌아다니는 첫 번째 사냥터.',width:2600,danger:1,minLevel:1,maxLevel:3,position:[12,51],color:'#93d8db',tint:'#113b5270',monster:'꼬마 로봇',portals:[]},
