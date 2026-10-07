@@ -18,6 +18,18 @@ test('new character starts with 500 won, HP/MP, supplies and town location',()=>
  const p=createCharacter('역삼산책');assert.equal(p.money,500);assert.equal(p.map,'town');assert.equal(p.hp,100);assert.equal(p.mp,60);assert.equal(p.potions,3);
  assert.throws(()=>createCharacter('<script>'));assert.throws(()=>createCharacter(' '));assert.throws(()=>createCharacter('test','unknown'));
 });
+test('cat saves independently and can advance only with the Olympic Park organizer',()=>{
+ const cat=createCharacter('나비','cat');assert.equal(cat.classId,'cat');assert.equal(cat.hp,90);assert.equal(cat.mp,70);
+ assert.equal(effectiveSkill(cat,'q').name,'앞발 할퀴기');assert.equal(effectiveSkill(cat,'w').name,'뒤로 뛰기');
+ cat.level=10;cat.hp=maxHp(cat);cat.mp=maxMp(cat);
+ assert.equal(advanceJob(cat,'bodybuilder').ok,false);assert.equal(advanceJob(cat,'protester').ok,false);
+ cat.map='olympic';assert.equal(advanceJob(cat,'protester').ok,true);assert.equal(effectiveSkill(cat,'e').charge,1);
+ assert.equal(canUseSkill(cat,'e').ok,true);assert.equal(canUseSkill(cat,'r').ok,false);
+ cat.level=15;assert.equal(canUseSkill(cat,'r').ok,true);
+ assert.equal(normalizeCharacter(JSON.parse(JSON.stringify(cat))).job,'protester');
+ assert.equal(normalizeCharacter({...cat,classId:'wanderer'}).job,null);
+ assert.deepEqual(findMapRoute('town','olympic'),['town','olympic']);
+});
 test('purchase and use cannot duplicate money or consume a potion at full HP',()=>{
  const p=createCharacter('보리');assert.equal(usePotion(p).ok,false);assert.equal(p.potions,3);
  for(let i=0;i<10;i++)assert.equal(buyPotion(p).ok,true);
@@ -84,9 +96,9 @@ test('legacy saves become normal penguins without losing progress; corrupted coo
  const p=normalizeCharacter(raw);for(const key of Object.keys(raw))assert.equal(p[key],raw[key]);assert.equal(p.powerTime,0);assert.deepEqual(p.visited,['town','depths']);assert.deepEqual(p.cooldowns,{q:0,w:0,e:0,r:0});
  const bad=normalizeCharacter({...raw,powerTime:9999,cooldowns:{r:999,q:-10,e:'bad'},visited:['bad','town','town']});assert.equal(bad.powerTime,0);assert.equal(bad.cooldowns.r,30);assert.equal(bad.cooldowns.q,0);assert.equal(bad.cooldowns.e,0);assert.deepEqual(bad.visited,['town','depths']);
 });
-test('all sixteen regions have return routes, progressive enemies, and safe portal arrivals',()=>{
- assert.equal(Object.keys(MAPS).length,16);const visited=new Set(),queue=['town'];while(queue.length){const id=queue.shift();if(visited.has(id))continue;visited.add(id);for(const p of MAPS[id].portals){const back=MAPS[p.to].portals.find(b=>b.to===id);assert.ok(back,`${id} -> ${p.to} return`);assert.ok(Math.abs(back.x-p.spawnX)>145);assert.ok(p.spawnX>45&&p.spawnX<MAPS[p.to].width-45);queue.push(p.to);}}
- assert.equal(visited.size,16);
+test('all seventeen regions have return routes, progressive enemies, and safe portal arrivals',()=>{
+ assert.equal(Object.keys(MAPS).length,17);const visited=new Set(),queue=['town'];while(queue.length){const id=queue.shift();if(visited.has(id))continue;visited.add(id);for(const p of MAPS[id].portals){const back=MAPS[p.to].portals.find(b=>b.to===id);assert.ok(back,`${id} -> ${p.to} return`);assert.ok(Math.abs(back.x-p.spawnX)>145);assert.ok(p.spawnX>45&&p.spawnX<MAPS[p.to].width-45);queue.push(p.to);}}
+ assert.equal(visited.size,17);
  for(const map of Object.values(MAPS)){if(!map.danger)continue;assert.equal(makeMonster(map.id,0).level,map.minLevel);assert.equal(makeMonster(map.id,monsterCount(map.id)-1).level,map.maxLevel);}
 });
 
@@ -173,7 +185,7 @@ test('hunting recommendations advance at each difficulty boundary without recomm
 test('overview contains every region once and exactly the bidirectional portal graph',()=>{
  assert.deepEqual(Object.keys(WORLD_MAP_LAYOUT).sort(),Object.keys(MAPS).sort());
  const actual=worldMapConnections(),expected=new Set(Object.values(MAPS).flatMap(m=>m.portals.map(p=>[m.id,p.to].sort().join(':'))));
- assert.equal(actual.length,16);assert.equal(actual.length,expected.size);assert.deepEqual(new Set(actual.map(e=>e.key)),expected);
+ assert.equal(actual.length,17);assert.equal(actual.length,expected.size);assert.deepEqual(new Set(actual.map(e=>e.key)),expected);
  for(const edge of actual){assert.ok(MAPS[edge.from].portals.some(p=>p.to===edge.to));assert.ok(MAPS[edge.to].portals.some(p=>p.to===edge.from));}
  assert.equal(actual.some(e=>e.key==='dojo:gym'),false);
  for(const {x,y} of Object.values(WORLD_MAP_LAYOUT)){assert.ok(x>80&&x<1040);assert.ok(y>40&&y<510);}

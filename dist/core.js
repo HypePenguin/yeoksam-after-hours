@@ -1,12 +1,16 @@
 /** Stable character IDs keep existing saves compatible as artwork and rules evolve. */
 export const SAVE_KEY = 'yeoksam-after-hours.v1';
-export const CLASSES = [{id:'wanderer',name:'펭귄 모험가',description:'평소에는 동글동글, 결정적인 순간에는 누구보다 든든하게.',hp:100,mp:60,attack:18}];
+export const CLASSES = [
+ {id:'wanderer',name:'펭귄 모험가',description:'평소에는 동글동글, 결정적인 순간에는 누구보다 든든하게.',hp:100,mp:60,attack:18},
+ {id:'cat',name:'고양이 모험가',description:'민첩한 발과 날카로운 발톱. 올림픽공원에서 새로운 길을 찾아요.',hp:90,mp:70,attack:17}
+];
 export const POWER_DURATION = 12;
 export const JOBS = {
  bodybuilder:{id:'bodybuilder',name:'바디빌더',map:'gym',e:'회복',r:'근육 각성',passive:'받는 피해 10% 감소'},
- swordsman:{id:'swordsman',name:'검사',map:'dojo',e:'막기',r:'섬광 연참',passive:'기본 이동속도 +10%'}
+ swordsman:{id:'swordsman',name:'검사',map:'dojo',e:'막기',r:'섬광 연참',passive:'기본 이동속도 +10%'},
+ protester:{id:'protester',name:'시위대',map:'olympic',classId:'cat',e:'화염병',r:'부정선거',passive:'민첩한 회피'}
 };
-export const jobName=p=>JOBS[p?.job]?.name||'펭귄 모험가';
+export const jobName=p=>JOBS[p?.job]?.name||(p?.classId==='cat'?'고양이 모험가':'펭귄 모험가');
 export const ITEMS = {
  mpPotions:{name:'MP 포션',icon:'💧',description:'MP를 50 회복합니다. MP가 가득 차면 소모하지 않아요. 보스방에서는 체력 물약과 별도로 재사용 대기 10초가 적용됩니다.',usable:true,price:300},
  potions:{name:'체력 물약',icon:'♥',description:'HP를 60 회복합니다. 체력이 가득 차면 소모하지 않아요. 보스전에서는 재사용 대기 10초가 적용됩니다.',usable:true,price:50},
@@ -63,6 +67,7 @@ export const SKILLS = [
 
 export const MAPS = {
  town:{id:'town',name:'역삼역 1번 출구',subtitle:'마을 · 안전 구역',en:'YEOKSAM STATION',description:'모험이 시작되는 역삼역. 안내를 듣고 물약을 챙겨요.',width:2600,danger:0,minLevel:1,maxLevel:1,position:[12,20],color:'#8bdbc2',portals:[]},
+ olympic:{id:'olympic',name:'올림픽공원',subtitle:'시위대 전직 · Lv. 10',en:'OLYMPIC PARK',description:'역삼역 1번 출구와 연결된 공원. 빨간 두건을 두른 선동꾼에게 Lv. 10 고양이가 시위대 전직을 배울 수 있어요.',width:2200,danger:0,minLevel:1,maxLevel:1,color:'#f6b09d',background:'olympic-park',portals:[]},
  crossroads:{id:'crossroads',name:'역삼역사거리',subtitle:'사냥터 · Lv. 1–3',en:'YEOKSAM CROSSROADS',description:'역삼역 1번 출구와 6번 출구를 잇는 사거리. 신호 로봇을 조심하세요.',width:2400,danger:1,minLevel:1,maxLevel:3,position:[38,20],color:'#f1c477',background:'crossroads',monster:'신호 로봇',robotTint:'hue-rotate(25deg)',portals:[]},
  station6:{id:'station6',name:'역삼역 6번 출구',subtitle:'출구 광장 · 안전 구역',en:'YEOKSAM STATION · EXIT 6',description:'사거리를 건너 도착한 조용한 출구 광장. 오른쪽 포탈은 강남성균검도관으로 이어집니다.',width:1800,danger:0,minLevel:1,maxLevel:1,position:[64,20],color:'#9edbc8',background:'station-six',portals:[]},
  alley:{id:'alley',name:'테헤란 뒷골목',subtitle:'던전 · Lv. 1–3',en:'TEHERAN BACKSTREET',description:'작은 로봇들이 돌아다니는 첫 번째 사냥터.',width:2600,danger:1,minLevel:1,maxLevel:3,position:[12,51],color:'#93d8db',tint:'#113b5270',monster:'꼬마 로봇',portals:[]},
@@ -91,6 +96,7 @@ connect('station6',1630,'dojo',100);
 connect('alley',2430,'depths',100);
 connect('town',100,'park',2430);
 connect('town',1370,'gym',1430);
+connect('town',2090,'olympic',100);
 connect('park',100,'subway',1540);
 connect('depths',2830,'subway',100);
 connect('subway',3130,'rooftop',100);
@@ -109,16 +115,18 @@ export const MAP_ROUTES = [
  {id:'boss-route',tab:'advanced',title:'군인 승현의 결투',hint:'주조소 → 강남역에서 정비 → Lv.25 보스',maps:['foundry','gangnam','pocha']},
  {id:'gangnam-route',tab:'town',title:'강남역 마을',hint:'주조소에서 이동 · 물약과 두 마을 귀환 주문서',maps:['foundry','gangnam']},
  {id:'gym-route',tab:'town',title:'바디빌더 전직',hint:'Lv. 10 · 1번 출구에서 바로 이동',maps:['town','gym']},
- {id:'dojo-route',tab:'town',title:'검사 전직',hint:'Lv. 10 · 몬스터가 있는 사거리를 통과',maps:['town','crossroads','station6','dojo']}
+ {id:'dojo-route',tab:'town',title:'검사 전직',hint:'Lv. 10 · 몬스터가 있는 사거리를 통과',maps:['town','crossroads','station6','dojo']},
+ {id:'olympic-route',tab:'town',title:'고양이 · 시위대 전직',hint:'Lv. 10 · 1번 출구에서 올림픽공원으로',maps:['town','olympic']}
 ];
-export const mapTabFor=id=>['rooftop','relay','canal','foundry','nexus','pocha'].includes(id)?'advanced':['town','crossroads','station6','gym','dojo','gangnam'].includes(id)?'town':'hunt';
+export const mapTabFor=id=>['rooftop','relay','canal','foundry','nexus','pocha'].includes(id)?'advanced':['town','crossroads','station6','gym','dojo','gangnam','olympic'].includes(id)?'town':'hunt';
 // A schematic world layout; paths are derived from real portals, never from visual proximity.
 export const WORLD_MAP_LAYOUT = {
  gym:{x:140,y:72,label:'피치플레이'},town:{x:350,y:72,label:'역삼역 1번 출구'},crossroads:{x:560,y:72,label:'역삼역사거리'},station6:{x:770,y:72,label:'역삼역 6번 출구'},dojo:{x:980,y:72,label:'강남성균검도관'},
  depths:{x:140,y:175,label:'불 꺼진 공사장'},alley:{x:350,y:175,label:'테헤란 뒷골목'},park:{x:560,y:175,label:'달빛 근린공원'},
  subway:{x:350,y:278,label:'폐쇄된 승강장'},rooftop:{x:560,y:278,label:'테헤란 스카이루프'},relay:{x:770,y:278,label:'방치된 중계소'},canal:{x:980,y:278,label:'지하 냉각수로'},
  nexus:{x:560,y:381,label:'중앙 제어실'},foundry:{x:770,y:381,label:'자동화 주조소'},gangnam:{x:980,y:381,label:'강남역'},
- pocha:{x:980,y:484,label:'한사발포차'}
+ pocha:{x:980,y:484,label:'한사발포차'},
+ olympic:{x:250,y:140,label:'올림픽공원'}
 };
 export function worldMapConnections(){
  const seen=new Set(),edges=[];
@@ -153,6 +161,12 @@ export const isPowered=p=>p?.job==='bodybuilder'&&p.powerTime>0;
 export const basicAttackPower=p=>Math.round(attackPower(p)*(isPowered(p)?1.8:1));
 export function effectiveSkill(p,key){
  const base=SKILLS.find(s=>s.key===key);if(!base)return null;let skill={...base};
+ if(p?.classId==='cat'){
+  if(key==='q')return {...skill,name:'앞발 할퀴기',icon:'爪',mp:9,cooldown:2.4,damage:2.25,range:195,description:'전방의 적을 발톱으로 크게 할퀴어요.',enhanced:''};
+  if(key==='w')return {...skill,name:'뒤로 뛰기',icon:'↶',mp:12,cooldown:5.5,damage:0,range:0,dash:210,invulnerable:.7,description:'바라보는 방향의 뒤로 빠르게 뛰어 0.7초 동안 무적이 돼요.',enhanced:''};
+  if(key==='e')return {...skill,name:p.job==='protester'?'화염병':'전직 스킬',icon:'🔥',mp:20,cooldown:7,damage:2.5,range:180,maxRange:490,charge:1,radius:105,burn:3,description:p.job==='protester'?'E를 최대 1초간 누르면 사거리가 늘어요. 착탄 폭발 후 바닥에 3초간 불길을 남깁니다.':'올림픽공원에서 시위대로 전직하세요.',enhanced:''};
+  if(key==='r')return {...skill,name:p.job==='protester'?'부정선거':'전직 궁극기',icon:'▣',mp:36,cooldown:32,damage:.9,range:245,duration:5,tick:.5,description:p.job==='protester'?'투표함을 5초간 설치합니다. 주변에 휘날리는 투표지가 적에게 지속 피해를 줘요.':'올림픽공원에서 시위대로 전직하세요.',enhanced:''};
+ }
  if(base.requiresJob&&!JOBS[p.job])skill={...skill,name:key==='e'?'전직 스킬':'전직 궁극기',description:'Lv. 10부터 헬스장 또는 검도장에서 전직하세요.',enhanced:''};
  if(p.job==='swordsman'&&key==='q')skill={...skill,name:'번개 베기',range:skill.range*1.2,description:'검을 크게 휘둘러 전방의 적을 베어요.'};
  if(p.job==='swordsman'&&key==='w')skill={...skill,name:'발도 돌진',range:skill.range*1.2,dash:skill.dash*1.2,description:'검을 뽑으며 앞으로 돌진해 경로의 적을 베어요.'};
@@ -169,6 +183,7 @@ export const skillUnlocked=(p,s)=>p.level>=s.level&&(!s.requiresJob||!!JOBS[p.jo
 export function advanceJob(p,job){
  const target=Object.hasOwn(JOBS,job)?JOBS[job]:null;
  if(!target)return {ok:false,message:'선택할 수 없는 직업이에요.'};
+ if((p.classId==='cat')!==(target.classId==='cat'))return {ok:false,message:'이 캐릭터가 전직할 수 없는 직업이에요.'};
  if(p.job)return {ok:false,message:'이미 전직했어요. 이 캐릭터의 직업은 변경할 수 없어요.'};
  if(p.level<10)return {ok:false,message:'전직은 Lv. 10부터 할 수 있어요.'};
  if(p.map!==target.map)return {ok:false,message:`${MAPS[target.map].name}의 사범에게 전직을 배워요.`};
@@ -189,7 +204,7 @@ export function normalizeCharacter(raw){
  for(const key of ['level','xp','money','potions','mpPotions','returnScrolls','gangnamScrolls','scrap','cores','kills','bossWins'])if(Number.isFinite(raw[key]))p[key]=Math.floor(clamp(raw[key],key==='level'?1:0,key==='level'?99:9999999));
  if(Array.isArray(raw.quickSlots))p.quickSlots=Array.from({length:3},(_,i)=>validItem(raw.quickSlots[i])&&ITEMS[raw.quickSlots[i]].usable?raw.quickSlots[i]:null);
  p.uniform=Number.isFinite(raw.uniform)&&raw.uniform>0?1:0;p.uniformEquipped=p.uniform>0&&raw.uniformEquipped===true;
- p.job=p.level>=10&&Object.hasOwn(JOBS,raw.job)?raw.job:null;
+ p.job=p.level>=10&&Object.hasOwn(JOBS,raw.job)&&((p.classId==='cat')===(JOBS[raw.job].classId==='cat'))?raw.job:null;
  p.map=MAPS[raw.map]?raw.map:'town';p.x=Number.isFinite(raw.x)?clamp(raw.x,45,MAPS[p.map].width-45):530;p.y=Number.isFinite(raw.y)?clamp(raw.y,580,720):648;
  p.mpPotionCooldown=p.map==='pocha'&&Number.isFinite(raw.mpPotionCooldown)?clamp(raw.mpPotionCooldown,0,10):0;
  p.hp=Number.isFinite(raw.hp)?clamp(raw.hp,0,maxHp(p)):maxHp(p);p.mp=Number.isFinite(raw.mp)?clamp(raw.mp,0,maxMp(p)):maxMp(p);
@@ -209,7 +224,7 @@ export function usePotion(p){if(p.potions<=0)return {ok:false,message:'물약이
 export function canUseSkill(p,key,cooldown=p.cooldowns?.[key]??0){
  const s=effectiveSkill(p,key);if(!s)return {ok:false,message:'알 수 없는 스킬이에요.'};
  if(p.level<s.level)return {ok:false,message:`${s.name}은 Lv. ${s.level}에 배울 수 있어요.`};
- if(s.requiresJob&&!JOBS[p.job])return {ok:false,message:'헬스장이나 검도장에서 먼저 전직해 주세요.'};
+ if(s.requiresJob&&!JOBS[p.job])return {ok:false,message:p.classId==='cat'?'올림픽공원에서 먼저 전직해 주세요.':'헬스장이나 검도장에서 먼저 전직해 주세요.'};
  if(key==='r'&&isPowered(p))return {ok:false,message:'이미 근육 펭귄으로 변신 중이에요.'};
  if(cooldown>0)return {ok:false,message:'스킬이 아직 준비되지 않았어요.'};
  if(p.mp<s.mp)return {ok:false,message:'MP가 부족해요. 잠시 기다리면 회복됩니다.'};

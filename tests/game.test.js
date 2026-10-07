@@ -30,7 +30,7 @@ function harness(){
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),hidden:false,activeElement:el('#game')};
  const context=vm.createContext({...core,...bossCore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;this.complete=true;this.naturalWidth=1500;this.naturalHeight=1000;this.onload?.();}},Promise,Math,Date,Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
- vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,get:()=>({mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
+ vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,get:()=>({catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
  return {api:context.gameTest,persistence,draws,labels,strokes,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
 }
 function advance(h,seconds){for(let t=0;t<seconds;t+=1/60)h.api.update(1/60);}
@@ -43,6 +43,37 @@ test('one attack deals damage once, and dead monsters award XP and drops exactly
  const h=harness(),p=core.createCharacter('fight');p.map='alley';p.x=520;h.api.start(p);const m=h.api.get().monsters[0];m.x=600;m.y=p.y;
  h.api.attack();assert.equal(m.hp,m.maxHp-core.attackPower(p));h.api.attack();assert.equal(m.hp,m.maxHp-core.attackPower(p));advance(h,.35);h.api.attack();advance(h,.35);h.api.attack();assert.ok(m.dead);assert.equal(p.kills,1);const xp=p.xp;h.api.attack();assert.equal(p.xp,xp);assert.ok(h.api.get().drops.length>=2);
  p.x=m.x;advance(h,1);assert.ok(p.money>500);assert.ok(p.scrap>=1);
+});
+test('cat punches, claws and backsteps with a brief invulnerable jump',()=>{
+ const h=harness(),p=core.createCharacter('고양이','cat');p.level=7;p.hp=core.maxHp(p);p.mp=core.maxMp(p);p.map='alley';p.x=1000;h.api.start(p);
+ const m=h.api.get().monsters[0];m.x=1100;m.y=p.y;m.speed=0;m.hp=m.maxHp=1000;
+ h.api.attack();assert.equal(m.hp,1000-core.attackPower(p));advance(h,.4);
+ const before=m.hp;h.api.cast('q');assert.equal(before-m.hp,Math.round(core.attackPower(p)*core.effectiveSkill(p,'q').damage));
+ const x=p.x;h.api.cast('w');assert.equal(p.x,x-core.effectiveSkill(p,'w').dash);assert.ok(h.api.get().invincible>=.7);assert.ok(h.api.get().pz>0);
+});
+test('cat walk, jump and every attack use distinct full-body motion poses',()=>{
+ const h=harness(),p=core.createCharacter('동작','cat');p.level=15;p.job='protester';p.mp=core.maxMp(p);h.api.start(p);
+ const current=()=>{render(h);return h.draws.find(d=>['assets/cat-motion.png','assets/cat-skills.png','assets/cat.png'].includes(d.asset));};
+ assert.equal(current().asset,'assets/cat.png');
+ const walk=new Set();h.api.keys.add('ArrowRight');for(let i=0;i<42;i++){h.api.update(1/60);const pose=current();assert.equal(pose.asset,'assets/cat-motion.png');walk.add(pose.source.slice(0,2).join(','));assert.ok(Math.abs(pose.y+pose.height-p.y)<3);}
+ assert.ok(walk.size>=3,'walking alternates visible arm and leg poses');h.api.keys.clear();
+ h.api.jump();assert.equal(current().source[1],1000/3,'jump starts with a crouch');advance(h,.2);assert.equal(current().source[1],1000/3,'airborne pose stays on the jump row');advance(h,1.1);assert.equal(current().asset,'assets/cat.png');
+ h.api.attack();assert.equal(current().asset,'assets/cat-motion.png');advance(h,.08);assert.equal(current().source[1],2000/3,'A shows the extended punch');advance(h,.3);
+ h.api.cast('q');advance(h,.08);assert.equal(current().source[1],2000/3,'Q shows the wide claw swipe');advance(h,.4);
+ h.api.cast('w');assert.equal(current().source[1],2000/3,'W uses the backward-leap pose');advance(h,1);
+ p.mp=core.maxMp(p);assert.equal(h.api.startCatCharge('test'),true);assert.equal(current().asset,'assets/cat-skills.png');assert.equal(current().source[0],95,'E holds the bottle while charging');
+ h.api.releaseCatCharge('test');assert.equal(current().source[0],736,'E shows the throw on release');advance(h,.35);
+ p.mp=core.maxMp(p);h.api.cast('r');assert.equal(current().source[0],1518,'R places the ballot box');
+ for(const asset of ['cat-motion','cat-skills']){const png=fs.readFileSync(new URL(`../dist/assets/${asset}.png`,import.meta.url)),width=png.readUInt32BE(16),height=png.readUInt32BE(20);assert.equal(width,asset==='cat-motion'?1145:2172);assert.equal(height,asset==='cat-motion'?1374:724);}
+});
+test('protester bottle charges up to one second, explodes, burns and ballot box ticks for five seconds',()=>{
+ const h=harness(),p=core.createCharacter('목소리','cat');p.level=15;p.job='protester';p.map='alley';p.x=1000;p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);
+ const m=h.api.get().monsters[0];m.x=1490;m.y=p.y;m.home=m.x;m.speed=0;m.hp=m.maxHp=10000;
+ assert.equal(h.api.startCatCharge('test'),true);advance(h,1.02);
+ assert.equal(h.api.get().catCharge,null);assert.equal(h.api.get().catProjectiles.length,1);assert.equal(h.api.get().catProjectiles[0].toX,1490);
+ advance(h,.6);assert.ok(m.hp<10000,'bottle explosion hit at maximum range');assert.equal(h.api.get().catFires.length,1);
+ const afterExplosion=m.hp;advance(h,1);assert.ok(m.hp<afterExplosion,'lingering fire deals damage');
+ m.x=p.x+130;m.home=m.x;const beforeR=m.hp;h.api.cast('r');assert.equal(h.api.get().catBallot.remaining,5);advance(h,1);assert.ok(m.hp<beforeR,'ballot box deals repeated area damage');advance(h,4.2);assert.equal(h.api.get().catBallot,null);
 });
 test('contact damage has global invulnerability, jumping avoids collision, lethal hit saves town respawn',()=>{
  const h=harness(),p=core.createCharacter('collision');p.map='alley';p.x=600;p.hp=100;h.api.start(p);const group=h.api.get().monsters;group.forEach(m=>{m.x=p.x;m.y=p.y;m.home=p.x;});advance(h,2.1);
@@ -84,13 +115,13 @@ test('travel preserves awakening and cooldowns, death removes awakening, re-entr
 test('map hotkey toggles the map, pauses gameplay and keeps keyboard state clean',()=>{
  const h=harness(),p=core.createCharacter('지도');h.api.start(p);h.api.keys.add('ArrowRight');const x=p.x;
  const event={code:'KeyM',repeat:false,preventDefault(){},target:{matches(){return false;}}};h.events.get('keydown')(event);
- assert.equal(h.api.get().modal,'world-map');assert.equal(h.api.keys.size,0);advance(h,2);assert.equal(p.x,x);assert.match(h.el('#modal-root').innerHTML,/16 지역 탐험/);for(const id of Object.keys(core.MAPS))assert.match(h.el('#modal-root').innerHTML,new RegExp(`data-map="${id}"`));
+ assert.equal(h.api.get().modal,'world-map');assert.equal(h.api.keys.size,0);advance(h,2);assert.equal(p.x,x);assert.match(h.el('#modal-root').innerHTML,/17 지역 탐험/);for(const id of Object.keys(core.MAPS))assert.match(h.el('#modal-root').innerHTML,new RegExp(`data-map="${id}"`));
  h.events.get('keydown')(event);assert.equal(h.api.get().modal,null);assert.equal(h.api.keys.size,0);
 });
 test('new regions are playable via portals and record exploration; training room heals',async()=>{
- const h=harness(),p=core.createCharacter('탐험');h.api.start(p);const itinerary=['gym','town','crossroads','station6','dojo','station6','crossroads','town','park','subway','rooftop','relay','canal','foundry','gangnam','pocha','gangnam','foundry','nexus','foundry','canal','relay','rooftop','subway','depths','alley','town'];
+ const h=harness(),p=core.createCharacter('탐험');h.api.start(p);const itinerary=['olympic','town','gym','town','crossroads','station6','dojo','station6','crossroads','town','park','subway','rooftop','relay','canal','foundry','gangnam','pocha','gangnam','foundry','nexus','foundry','canal','relay','rooftop','subway','depths','alley','town'];
  for(const to of itinerary){const portal=core.MAPS[p.map].portals.find(x=>x.to===to);assert.ok(portal);const pending=h.api.travel(portal);await h.flush();await pending;assert.equal(p.map,to);assert.equal(p.x,portal.spawnX);assert.ok(p.visited.includes(to));assert.equal(h.api.get().monsters.length,core.monsterCount(to));if(to==='gym'){p.hp=1;p.mp=0;advance(h,1);assert.ok(p.hp>=12.99);assert.ok(p.mp>=5.99);}}
- assert.equal(p.visited.length,16);
+ assert.equal(p.visited.length,17);
 });
 
 function render(h){h.draws.length=0;h.labels.length=0;h.arcs.length=0;h.strokes.length=0;h.api.render();return h.draws;}
@@ -726,7 +757,7 @@ test('M opens the overview every time and retains the old detailed route guide a
  assert.equal(h.api.get().mapView,'overview');assert.equal(h.el('#map-view-overview').hidden,false);assert.equal(h.el('#map-view-details').hidden,true);
  const html=h.el('#modal-root').innerHTML;assert.match(html,/role="tablist"/);assert.match(html,/상세 안내/);assert.match(html,/초반 사냥/);assert.match(html,/고레벨 던전/);assert.match(html,/마을 · 전직/);
  const graph=html.slice(html.indexOf('<div class="atlas-board">'),html.indexOf('<div class="atlas-legend">'));
- assert.equal([...graph.matchAll(/data-map="/g)].length,16);assert.equal([...graph.matchAll(/data-map-edge="/g)].length,16);assert.equal([...graph.matchAll(/aria-current="location"/g)].length,1);
+ assert.equal([...graph.matchAll(/data-map="/g)].length,17);assert.equal([...graph.matchAll(/data-map-edge="/g)].length,17);assert.equal([...graph.matchAll(/aria-current="location"/g)].length,1);
  h.api.showMapView('details');assert.equal(h.el('#map-view-overview').hidden,true);assert.equal(h.el('#map-view-details').hidden,false);
  h.api.closeModal();h.api.worldMap();assert.equal(h.api.get().mapView,'overview');assert.equal(h.api.get().mapSelection,p.map);
 });

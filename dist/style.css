@@ -56,6 +56,15 @@ main{width:100%;max-width:1512px;min-height:100svh;margin:0 auto;padding:24px;di
 /* Keep the interaction prompt clear of the seated merchant's small silhouette. */
 .context-hint.small-npc-hint{top:46%;bottom:auto;}
 
+.class-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:18px}
+.modal .class-option{display:flex;align-items:center;gap:8px;min-width:0;margin:0;padding:9px;border:1px solid #658884;border-radius:9px;background:#1b3a43;cursor:pointer}
+.modal .class-option:has(input:checked){border-color:#ffc28d;box-shadow:inset 0 0 0 1px #ffc28d;background:#2c484b}
+.class-option input{position:absolute;opacity:0;width:1px;height:1px;margin:0;padding:0}
+.class-option img{width:54px;height:69px;object-fit:contain;flex:none}
+.class-option span{min-width:0}.class-option strong,.class-option small{display:block;line-height:1.45}.class-option strong{font-size:13px;color:#f4e8d4}.class-option small{font-size:10px;color:#b9d1cb;margin-top:3px;word-break:keep-all}
+.class-option:has(input:focus-visible){outline:2px solid #ffcf9d;outline-offset:2px}
+@media(max-width:650px){.class-choices{gap:6px}.modal .class-option{gap:5px;padding:6px}.class-option img{width:41px;height:57px}.class-option strong{font-size:11px}.class-option small{font-size:9px}}
+
 /* The encounter HUD replaces the map heading while a duel is running. */
 .boss-fight .map-panel{visibility:hidden;}
 .boss-hud{position:absolute;top:22px;left:50%;transform:translateX(-50%);width:min(420px,36%);padding:13px 16px;background:#231d20ee;border:1px solid #d49b70;border-radius:8px;color:#ffe2bb;box-shadow:0 5px 20px #0005;}
