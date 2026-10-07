@@ -8,7 +8,7 @@ export const POWER_DURATION = 12;
 export const JOBS = {
  bodybuilder:{id:'bodybuilder',name:'바디빌더',map:'gym',e:'회복',r:'근육 각성',passive:'받는 피해 10% 감소'},
  swordsman:{id:'swordsman',name:'검사',map:'dojo',e:'막기',r:'섬광 연참',passive:'기본 이동속도 +10%'},
- protester:{id:'protester',name:'시위대',map:'olympic',classId:'cat',e:'화염병',r:'부정선거',passive:'민첩한 회피'}
+ protester:{id:'protester',name:'시위대',map:'olympic',classId:'cat',e:'화염병',r:'부정선거',passive:'점프 높이 +20%'}
 };
 export const jobName=p=>JOBS[p?.job]?.name||(p?.classId==='cat'?'고양이 모험가':'펭귄 모험가');
 export const ITEMS = {
@@ -21,6 +21,7 @@ export const ITEMS = {
  cores:{name:'에너지 코어',icon:'◇',description:'강한 로봇에게서 얻은 수집 재료입니다.',usable:false}
 };
 export const equipmentName=p=>p?.job==='bodybuilder'?'핑크 덤벨':p?.job==='swordsman'?'일본도':'없음';
+export const jumpHeightMultiplier=p=>p?.classId==='cat'&&p?.job==='protester'?1.2:1;
 // Derive passives from the saved job so old characters benefit without accumulating bonuses.
 export const movementMultiplier=p=>(p?.job==='swordsman'?1.1:1)*(p?.uniform>0&&p.uniformEquipped?1.2:1);
 export const incomingDamage=(p,damage,multiplier=1)=>Math.max(0,Math.round(damage*(p?.job==='bodybuilder'?0.9:1)*multiplier));
@@ -165,7 +166,7 @@ export function effectiveSkill(p,key){
   if(key==='q')return {...skill,name:'앞발 할퀴기',icon:'爪',mp:9,cooldown:2.4,damage:2.25,range:195,description:'전방의 적을 발톱으로 크게 할퀴어요.',enhanced:''};
   if(key==='w')return {...skill,name:'뒤로 뛰기',icon:'↶',mp:12,cooldown:5.5,damage:0,range:0,dash:210,invulnerable:.7,description:'바라보는 방향의 뒤로 빠르게 뛰어 0.7초 동안 무적이 돼요.',enhanced:''};
   if(key==='e')return {...skill,name:p.job==='protester'?'화염병':'전직 스킬',icon:'🔥',mp:20,cooldown:7,damage:2.5,range:180,maxRange:490,charge:1,radius:105,burn:3,description:p.job==='protester'?'E를 최대 1초간 누르면 사거리가 늘어요. 착탄 폭발 후 바닥에 3초간 불길을 남깁니다.':'올림픽공원에서 시위대로 전직하세요.',enhanced:''};
-  if(key==='r')return {...skill,name:p.job==='protester'?'부정선거':'전직 궁극기',icon:'▣',mp:36,cooldown:32,damage:.9,range:245,duration:5,tick:.5,description:p.job==='protester'?'투표함을 5초간 설치합니다. 주변에 휘날리는 투표지가 적에게 지속 피해를 줘요.':'올림픽공원에서 시위대로 전직하세요.',enhanced:''};
+  if(key==='r')return {...skill,name:p.job==='protester'?'부정선거':'전직 궁극기',icon:'▣',mp:36,cooldown:32,damage:.9,range:490,duration:5,tick:.5,description:p.job==='protester'?'투표함을 5초간 설치합니다. 주변에 휘날리는 투표지가 적에게 지속 피해를 줘요.':'올림픽공원에서 시위대로 전직하세요.',enhanced:''};
  }
  if(base.requiresJob&&!JOBS[p.job])skill={...skill,name:key==='e'?'전직 스킬':'전직 궁극기',description:'Lv. 10부터 헬스장 또는 검도장에서 전직하세요.',enhanced:''};
  if(p.job==='swordsman'&&key==='q')skill={...skill,name:'번개 베기',range:skill.range*1.2,description:'검을 크게 휘둘러 전방의 적을 베어요.'};

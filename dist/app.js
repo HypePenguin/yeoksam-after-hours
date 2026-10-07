@@ -1,4 +1,4 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,equipUniform,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js';
 import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
@@ -10,8 +10,9 @@ function characterImage(asset,p=player){
  const dressed=images[characterAsset(asset,p)];
  return dressed?.complete&&dressed.naturalWidth?dressed:images[asset];
 }
-const characterPortrait=(p,powered=false)=>p?.classId==='cat'?'assets/cat.png':`assets/${characterAsset(powered?'penguin-power-poses':'penguin',p)}.png`;
-const loadAssets=Promise.all(['combat-brawler','combat-swordsman','combat-power','soldier-boss','soldier-counter','soldier-walk','gangnam','hansabal-pocha','city','crossroads','station-six','player','robot','penguin','penguin-power','penguin-hurt','penguin-power-poses','districts','high-dungeons','dojo','penguin-walk','penguin-power-walk','penguin-jump','penguin-power-jump','cat','cat-motion','cat-skills','npc-redfox','olympic-park','npc-hyuntori-white','npc-maguri-large-crate','npc-emperor-coach','npc-tiger-master','job-equipment','sword-guard-walk','builder-recovery-walk','power-recovery-walk',...[...UNIFORM_ASSETS].map(name=>`uniform-${name}`)].map(name=>new Promise(resolve=>{const img=new Image();images[name]=img;img.onload=()=>resolve();img.onerror=()=>{assetFailed=true;resolve();};img.src=`assets/${name}.png`;}))).then(()=>{assetsReady=true;});
+const catAsset=(asset,p=player)=>p?.job==='protester'?asset.replace('cat','cat-protester'):asset;
+const characterPortrait=(p,powered=false)=>p?.classId==='cat'?`assets/${catAsset('cat',p)}.png`:`assets/${characterAsset(powered?'penguin-power-poses':'penguin',p)}.png`;
+const loadAssets=Promise.all(['combat-brawler','combat-swordsman','combat-power','soldier-boss','soldier-counter','soldier-walk','gangnam','hansabal-pocha','city','crossroads','station-six','player','robot','penguin','penguin-power','penguin-hurt','penguin-power-poses','districts','high-dungeons','dojo','penguin-walk','penguin-power-walk','penguin-jump','penguin-power-jump','cat','cat-motion','cat-skills','cat-protester','cat-protester-motion','cat-protester-skills','npc-redfox','olympic-park','npc-hyuntori-white','npc-maguri-large-crate','npc-emperor-coach','npc-tiger-master','job-equipment','sword-guard-walk','builder-recovery-walk','power-recovery-walk',...[...UNIFORM_ASSETS].map(name=>`uniform-${name}`)].map(name=>new Promise(resolve=>{const img=new Image();images[name]=img;img.onload=()=>resolve();img.onerror=()=>{assetFailed=true;resolve();};img.src=`assets/${name}.png`;}))).then(()=>{assetsReady=true;});
 let records=[],storageBroken=false;
 try{const saved=localStorage.getItem(SAVE_KEY);if(saved){const parsed=JSON.parse(saved);if(!parsed||parsed.version!==1||!Array.isArray(parsed.characters))throw new Error('invalid save');records=parsed.characters.map(normalizeCharacter).filter(Boolean);}}catch{storageBroken=true;}
 let scene='title',player=null,selectedId=records[0]?.id??null,modal=null,returnFocus=null,keys=new Set(),monsters=[],drops=[],effects=[],texts=[],camera=0,worldTime=0,screenWidth=1440,prev=0,lastHud=0,saveClock=0,toastTimer=null,transitionId=0,lastSavedLabel='',walking=false,walkPhase=0,soundOn=false,audioContext=null;
@@ -23,7 +24,7 @@ const CAMERA_GROUND=650;
 const viewOffsetY=()=>CAMERA_GROUND*(1-cameraZoom);
 const viewWidth=()=>screenWidth/cameraZoom;
 const screenToWorld=(x,y)=>({x:(x-viewShakeX)/cameraZoom+camera,y:(y-viewOffsetY()-viewShakeY)/cameraZoom});
-let pz=0,pvz=0,jumpPrep=0,jumpLanding=0,facing=1,attackTimer=0,invincible=0,hurtTime=0,cooldowns={q:0,w:0,e:0,r:0},interactionTarget=null,shake=0,swordUlt=null,guardTime=0,combatMotion=null,recovery=null;
+let pz=0,pvz=0,jumpScale=1,jumpPrep=0,jumpLanding=0,facing=1,attackTimer=0,invincible=0,hurtTime=0,cooldowns={q:0,w:0,e:0,r:0},interactionTarget=null,shake=0,swordUlt=null,guardTime=0,combatMotion=null,recovery=null;
 const NPCS=[{id:'gm',x:650,y:621,name:'현토리',role:'운영자 · 게임 안내',asset:'npc-hyuntori-white',icon:'?'},{id:'shop',x:1060,y:654,name:'마구리',role:'물약 · 귀환 주문서',asset:'npc-maguri-large-crate',icon:'+'}];
 const MAGURI_CROP=[94,25,1115,1157];
 // Match the previous frog's eye spacing; the larger silhouette comes from the crate.
@@ -470,7 +471,7 @@ function drawBossTelegraphs(){
   ctx.restore();
  }
 }
-function resetJump(){pz=0;pvz=0;jumpPrep=0;jumpLanding=0;}
+function resetJump(){pz=0;pvz=0;jumpScale=1;jumpPrep=0;jumpLanding=0;}
 function jump(){
  if(scene!=='playing'||modal||swordUlt||pz>0||pvz!==0||jumpPrep>0)return;
  walking=false;jumpPrep=player?.classId==='cat' ? .11 : .065;jumpLanding=0;beep(isPowered(player)?190:310,.12,'triangle',.04);
@@ -480,10 +481,11 @@ function updateJump(dt){
  if(jumpPrep>0){
   const preparing=Math.min(dt,jumpPrep);jumpPrep=Math.max(0,jumpPrep-preparing);dt-=preparing;
   if(jumpPrep>0)return;
-  pvz=540;pz=1;
+  // Scale the entire vertical trajectory: +20% height without extra airtime.
+  jumpScale=jumpHeightMultiplier(player);pvz=540*jumpScale;pz=jumpScale;
  }
  if(pz<=0&&pvz<=0)return;
- pvz-=1350*dt;pz+=pvz*dt;
+ pvz-=1350*jumpScale*dt;pz+=pvz*dt;
  if(pz<=0){
   pz=0;pvz=0;jumpLanding=isPowered(player) ? .16 : player?.classId==='cat' ? .15 : .12;
   effects.push({type:'ring',x:player.x,y:player.y+2,life:.24,max:.24,color:isPowered(player)?'#bfeaff88':'#d7eced66',size:isPowered(player)?62:30});
@@ -491,7 +493,7 @@ function updateJump(dt){
 }
 function jumpFrame(){
  if(jumpPrep>0)return 0;
- if(pz>0){if(pvz>350)return 1;if(pvz>105)return 2;if(pvz>-120)return 3;return 4;}
+ if(pz>0){if(pvz/jumpScale>350)return 1;if(pvz/jumpScale>105)return 2;if(pvz/jumpScale>-120)return 3;return 4;}
  return jumpLanding>0?5:-1;
 }
 function textAt(text,x,y,color='#ffe2a7'){texts.push({text,x,y,life:1.15,max:1.15,color});}
@@ -569,7 +571,7 @@ function cast(key){
    monsters.filter(m=>canTarget(m)&&Math.abs(m.y-player.y)<105&&Math.abs(m.x-player.x)<skill.range&&(m.x-player.x)*facing>-25).forEach(m=>hitMonster(m,Math.round(attackPower(player)*skill.damage)));
    beep(620,.12,'sawtooth',.018);
   }else if(key==='w'){
-   const from=player.x;player.x=clamp(from-facing*skill.dash,45,MAPS[player.map].width-45);pz=20;pvz=500;jumpPrep=0;jumpLanding=0;invincible=Math.max(invincible,skill.invulnerable);
+   const from=player.x;player.x=clamp(from-facing*skill.dash,45,MAPS[player.map].width-45);jumpScale=jumpHeightMultiplier(player);pz=20*jumpScale;pvz=500*jumpScale;jumpPrep=0;jumpLanding=0;invincible=Math.max(invincible,skill.invulnerable);
    playCombatMotion('catBack',.34);effects.push({type:'dash',x:from,y:player.y-45,toX:player.x,toY:player.y-45,life:.35,max:.35,color:'#d9eaf5',accent:'#fff',outline:'#62778d',glow:'#e6f3ff',travelDuration:.28});
    textAt('회피!',player.x,player.y-145,'#d4f4ff');beep(720,.12);
   }else if(key==='r'){
@@ -859,15 +861,6 @@ function drawPowerSteam(x,y,front){
  }
  ctx.restore();
 }
-function drawCatScarf(height){
- const h=height;ctx.save();ctx.fillStyle='#bb3439';ctx.strokeStyle='#722331';ctx.lineWidth=2;
- ctx.beginPath();ctx.moveTo(-h*.19,-h*.49);ctx.quadraticCurveTo(0,-h*.43,h*.2,-h*.49);ctx.lineTo(h*.1,-h*.37);ctx.lineTo(-h*.025,-h*.43);ctx.lineTo(-h*.14,-h*.36);ctx.closePath();ctx.fill();ctx.stroke();
- ctx.fillStyle='#e35d60';ctx.beginPath();ctx.arc(h*.18,-h*.48,h*.052,0,Math.PI*2);ctx.fill();ctx.restore();
- ctx.save();ctx.translate(h*.21,-h*.91);ctx.strokeStyle='#70252c';ctx.lineWidth=2;ctx.fillStyle='#d8444f';
- ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(-h*.15,-h*.14,-h*.2,-h*.08);ctx.quadraticCurveTo(-h*.19,h*.015,0,0);ctx.fill();ctx.stroke();
- ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(h*.15,-h*.14,h*.2,-h*.06);ctx.quadraticCurveTo(h*.15,h*.05,0,0);ctx.fill();ctx.stroke();
- ctx.fillStyle='#ef6871';ctx.beginPath();ctx.arc(0,0,h*.045,0,Math.PI*2);ctx.fill();ctx.restore();
-}
 const CAT_SKILL_CROPS=[
  [95,62,513,629],   // Wind up the bottle close to the chest.
  [724+12,56,704,637], // Release the bottle above the leading paw.
@@ -878,20 +871,20 @@ const CAT_SKILL_CROPS=[
 const CAT_MOTION_FACING=[-1,-1,1,-1,-1,-1,-1,-1,-1];
 const CAT_SKILL_FACING=[-1,1,1];
 function catPose(){
- if(catCharge)return {sheet:'cat-skills',frame:0,scarfY:0};
+ if(catCharge)return {sheet:'cat-skills',frame:0};
  const motion=combatMotion?.kind;
- if(motion==='catThrow')return {sheet:'cat-skills',frame:1,scarfY:0};
- if(motion==='catBallot')return {sheet:'cat-skills',frame:2,scarfY:18};
- if(motion==='catBack')return {sheet:'cat-motion',frame:8,scarfY:7};
- if(motion==='catPunch')return {sheet:'cat-motion',frame:combatMotion.elapsed/combatMotion.duration<.16?1:6,scarfY:0};
- if(motion==='catClaw')return {sheet:'cat-motion',frame:combatMotion.elapsed/combatMotion.duration<.16?6:7,scarfY:0};
+ if(motion==='catThrow')return {sheet:'cat-skills',frame:1};
+ if(motion==='catBallot')return {sheet:'cat-skills',frame:2};
+ if(motion==='catBack')return {sheet:'cat-motion',frame:8};
+ if(motion==='catPunch')return {sheet:'cat-motion',frame:combatMotion.elapsed/combatMotion.duration<.16?1:6};
+ if(motion==='catClaw')return {sheet:'cat-motion',frame:combatMotion.elapsed/combatMotion.duration<.16?6:7};
  const airborne=jumpFrame();
- if(airborne>=0){const frame=[3,4,4,4,4,5][airborne];return {sheet:'cat-motion',frame,scarfY:frame===3?22:frame===5?17:0};}
- if(walking){return {sheet:'cat-motion',frame:[0,1,2,1][Math.floor(walkPhase*4)%4],scarfY:0};}
+ if(airborne>=0){const frame=[3,4,4,4,4,5][airborne];return {sheet:'cat-motion',frame};}
+ if(walking){return {sheet:'cat-motion',frame:[0,1,2,1][Math.floor(walkPhase*4)%4]};}
  return null;
 }
 function drawCatPose(pose,height){
- const img=images[pose.sheet];if(!img?.complete||!img.naturalWidth)return false;
+ const img=images[catAsset(pose.sheet)];if(!img?.complete||!img.naturalWidth)return false;
  const [sx,sy,sw,sh]=pose.sheet==='cat-motion'?
   [(pose.frame%3)*img.naturalWidth/3,Math.floor(pose.frame/3)*img.naturalHeight/3,img.naturalWidth/3,img.naturalHeight/3]:CAT_SKILL_CROPS[pose.frame];
  const width=height*sw/sh;
@@ -907,9 +900,8 @@ function drawCatPlayer(x,y){
  if(walking)ctx.translate(0,-Math.abs(step)*1.4);
  if(combatMotion?.kind==='catBack')ctx.rotate(-.08);
  ctx.globalAlpha=alpha;ctx.filter=hurtTime>0?'brightness(1.35)':'none';
- if(!pose||!drawCatPose(pose,height))sprite('cat',0,0,height*.835,height,{flip:true});
+ if(!pose||!drawCatPose(pose,height))sprite(catAsset('cat'),0,0,height*.835,height,{flip:true});
  ctx.filter='none';
- if(player.job==='protester'){ctx.save();ctx.translate(0,pose?.scarfY||0);drawCatScarf(height);ctx.restore();}
  ctx.restore();label(player.name,x,y-pz-height-15,'#e5f3ff',14);
 }
 function drawPlayer(){
@@ -978,7 +970,7 @@ function drawWindSwing(e,t){
 function drawCatFields(){
  for(const fire of catFires){const x=fire.x-camera,y=fire.y,t=fire.remaining/fire.duration;ctx.save();ctx.globalAlpha=.45+.25*t;const glow=ctx.createRadialGradient(x,y,2,x,y,fire.radius);glow.addColorStop(0,'#ffe9a7a8');glow.addColorStop(.55,'#fb71376c');glow.addColorStop(1,'#f23b1700');ctx.fillStyle=glow;ctx.beginPath();ctx.ellipse(x,y-10,fire.radius,fire.radius*.55,0,0,Math.PI*2);ctx.fill();for(let i=0;i<11;i++){const px=x+Math.sin(i*17)*fire.radius*.72,py=y-8-(i%3)*6-Math.abs(Math.sin(worldTime*8+i))*20*t;ctx.fillStyle=i%2?'#ffb64b':'#ff6b38';ctx.beginPath();ctx.ellipse(px,py,5+4*t,10+8*t,0,0,Math.PI*2);ctx.fill();}ctx.restore();}
  for(const bottle of catProjectiles){const t=clamp(bottle.elapsed/bottle.duration,0,1),x=bottle.x+(bottle.toX-bottle.x)*t-camera,y=bottle.y+(bottle.toY-bottle.y)*t-90*Math.sin(Math.PI*t);ctx.save();ctx.translate(x,y);ctx.rotate(t*9);ctx.shadowColor='#ff8b46';ctx.shadowBlur=16;ctx.fillStyle='#b45339';ctx.fillRect(-8,-12,16,22);ctx.fillStyle='#ffbd58';ctx.fillRect(-5,-8,10,15);ctx.fillStyle='#efe0b6';ctx.fillRect(-3,-17,6,6);ctx.restore();}
- if(catBallot){const b=catBallot,x=b.x-camera,y=b.y,t=b.remaining/b.skill.duration;ctx.save();ctx.globalAlpha=Math.min(1,t*3);ctx.strokeStyle='#f4d8c0';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y-43,b.skill.range*.82,b.skill.range*.36,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#ece6d9';ctx.strokeStyle='#493f49';ctx.lineWidth=3;ctx.fillRect(x-24,y-75,48,69);ctx.strokeRect(x-24,y-75,48,69);ctx.fillStyle='#aeb9bb';ctx.fillRect(x-28,y-82,56,12);ctx.fillStyle='#403b43';ctx.fillRect(x-9,y-79,18,3);for(let i=0;i<15;i++){const a=i*2.4+worldTime*3,r=45+(i%5)*35;ctx.save();ctx.translate(x+Math.cos(a)*r,y-95+Math.sin(a*1.3)*42);ctx.rotate(a);ctx.fillStyle='#fffaf0';ctx.fillRect(-7,-4,14,8);ctx.strokeStyle='#d6bc8e';ctx.strokeRect(-7,-4,14,8);ctx.restore();}ctx.restore();}
+ if(catBallot){const b=catBallot,x=b.x-camera,y=b.y,t=b.remaining/b.skill.duration;ctx.save();ctx.globalAlpha=Math.min(1,t*3);ctx.strokeStyle='#f4d8c0';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y-43,b.skill.range*.82,b.skill.range*.36,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#ece6d9';ctx.strokeStyle='#493f49';ctx.lineWidth=3;ctx.fillRect(x-24,y-75,48,69);ctx.strokeRect(x-24,y-75,48,69);ctx.fillStyle='#aeb9bb';ctx.fillRect(x-28,y-82,56,12);ctx.fillStyle='#403b43';ctx.fillRect(x-9,y-79,18,3);for(let i=0;i<15;i++){const a=i*2.4+worldTime*3,r=(45+(i%5)*35)*b.skill.range/245;ctx.save();ctx.translate(x+Math.cos(a)*r,y-95+Math.sin(a*1.3)*42*b.skill.range/245);ctx.rotate(a);ctx.fillStyle='#fffaf0';ctx.fillRect(-7,-4,14,8);ctx.strokeStyle='#d6bc8e';ctx.strokeRect(-7,-4,14,8);ctx.restore();}ctx.restore();}
  if(catCharge){const skill=catCharge.skill,t=catCharge.elapsed/skill.charge,reach=skill.range+(skill.maxRange-skill.range)*t,x=player.x+facing*reach-camera;ctx.save();ctx.strokeStyle='#ffb777';ctx.setLineDash([9,7]);ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(player.x-camera,player.y-20);ctx.quadraticCurveTo((player.x-camera+x)/2,player.y-150,x,player.y-20);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.ellipse(x,player.y-20,skill.radius*.7,skill.radius*.25,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
 }
 function drawEffects(){effects.forEach(e=>{const t=e.life/e.max,route=e.followDash,x=route?route.fromX+(route.toX-route.fromX)*dashProgress(e.max-e.life,route.duration):e.x;ctx.save();ctx.translate(x-camera,e.y);ctx.globalAlpha=Math.min(1,t*2);ctx.strokeStyle=e.color;ctx.fillStyle=e.color;ctx.shadowColor=e.glow||e.color;ctx.shadowBlur=18;ctx.lineWidth=e.type==='slash'?9:4;if(e.type==='lightning'){

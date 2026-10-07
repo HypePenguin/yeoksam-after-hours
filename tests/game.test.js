@@ -35,6 +35,42 @@ function harness(){
 }
 function advance(h,seconds){for(let t=0;t<seconds;t+=1/60)h.api.update(1/60);}
 
+test('protester jumps 20% higher at different frame rates without extending airtime or W distance',()=>{
+ const measure=(job,backstep,fps)=>{
+  const h=harness(),p=core.createCharacter('점프','cat');Object.assign(p,{level:15,job,x:1000});p.mp=core.maxMp(p);h.api.start(p);
+  backstep?h.api.cast('w'):h.api.jump();let apex=h.api.get().pz,landing=0;
+  for(let i=0;i<fps*2;i++){h.api.update(1/fps);const state=h.api.get();apex=Math.max(apex,state.pz);if(!state.pz&&!state.jumpPrep){landing=i;break;}}
+  return {apex,landing,x:p.x};
+ };
+ for(const fps of [30,60,120])for(const backstep of [false,true]){
+  const base=measure(null,backstep,fps),advanced=measure('protester',backstep,fps);
+  assert.ok(Math.abs(advanced.apex/base.apex-1.2)<1e-10);assert.equal(advanced.landing,base.landing);assert.equal(advanced.x,base.x);
+ }
+ for(const job of [null,'bodybuilder','swordsman'])assert.equal(core.jumpHeightMultiplier({classId:'penguin',job}),1);
+});
+
+test('ballot ultimate hits within the doubled radius and leaves targets beyond it unharmed',()=>{
+ const h=harness(),p=core.createCharacter('범위','cat');Object.assign(p,{level:15,job:'protester',map:'alley',x:1000});p.mp=core.maxMp(p);h.api.start(p);
+ const [near,far]=h.api.get().monsters;h.api.cast('r');const box=h.api.get().catBallot;
+ Object.assign(near,{x:box.x+480,y:box.y,speed:0,hp:10000,maxHp:10000,home:box.x+480});
+ Object.assign(far,{x:box.x+510,y:box.y,speed:0,hp:10000,maxHp:10000,home:box.x+510});
+ advance(h,.1);assert.ok(near.hp<10000);assert.equal(far.hp,10000);
+});
+
+test('only advanced cats use the integrated ribbon artwork in portraits and movement',()=>{
+ const h=harness(),p=core.createCharacter('복장','cat');h.api.start(p);
+ render(h);assert.ok(h.draws.some(d=>d.asset==='assets/cat.png'));
+ h.api.keys.add('ArrowLeft');h.api.update(1/60);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/cat-motion.png'));
+ p.level=10;p.map='olympic';assert.equal(core.advanceJob(p,'protester').ok,true);
+ h.api.update(1/60);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/cat-protester-motion.png'));
+ h.api.characters([p],p.id);assert.ok(h.el('#screens').innerHTML.includes('assets/cat-protester.png'));
+ for(const suffix of ['','-motion','-skills']){
+  const original=fs.readFileSync(new URL(`../dist/assets/cat${suffix}.png`,import.meta.url));
+  const dressed=fs.readFileSync(new URL(`../dist/assets/cat-protester${suffix}.png`,import.meta.url));
+  assert.deepEqual(dressed.subarray(16,24),original.subarray(16,24),'frame geometry stays aligned');
+ }
+});
+
 test('continuous controls move in all directions, jump keeps ground y independent and lands',()=>{
  const h=harness(),p=core.createCharacter('move');h.api.start(p);const x=p.x,y=p.y;h.api.keys.add('ArrowRight');h.api.jump();advance(h,.2);assert.ok(p.x>x+40);assert.ok(h.api.get().pz>0);assert.equal(p.y,y);
  h.api.keys.clear();advance(h,.8);assert.equal(h.api.get().pz,0);h.api.keys.add('ArrowUp');advance(h,2);assert.equal(p.y,580);h.api.keys.clear();h.api.keys.add('ArrowDown');advance(h,2);assert.equal(p.y,720);
@@ -53,15 +89,15 @@ test('cat punches, claws and backsteps with a brief invulnerable jump',()=>{
 });
 test('cat walk, jump and every attack use distinct full-body motion poses',()=>{
  const h=harness(),p=core.createCharacter('동작','cat');p.level=15;p.job='protester';p.mp=core.maxMp(p);h.api.start(p);
- const current=()=>{render(h);return h.draws.find(d=>['assets/cat-motion.png','assets/cat-skills.png','assets/cat.png'].includes(d.asset));};
- assert.equal(current().asset,'assets/cat.png');
- const walk=new Set();h.api.keys.add('ArrowRight');for(let i=0;i<42;i++){h.api.update(1/60);const pose=current();assert.equal(pose.asset,'assets/cat-motion.png');walk.add(pose.source.slice(0,2).join(','));assert.ok(Math.abs(pose.y+pose.height-p.y)<3);}
+ const current=()=>{render(h);return h.draws.find(d=>['assets/cat-protester-motion.png','assets/cat-protester-skills.png','assets/cat-protester.png'].includes(d.asset));};
+ assert.equal(current().asset,'assets/cat-protester.png');
+ const walk=new Set();h.api.keys.add('ArrowRight');for(let i=0;i<42;i++){h.api.update(1/60);const pose=current();assert.equal(pose.asset,'assets/cat-protester-motion.png');walk.add(pose.source.slice(0,2).join(','));assert.ok(Math.abs(pose.y+pose.height-p.y)<3);}
  assert.ok(walk.size>=3,'walking alternates visible arm and leg poses');h.api.keys.clear();
- h.api.jump();assert.equal(current().source[1],1000/3,'jump starts with a crouch');advance(h,.2);assert.equal(current().source[1],1000/3,'airborne pose stays on the jump row');advance(h,1.1);assert.equal(current().asset,'assets/cat.png');
- h.api.attack();assert.equal(current().asset,'assets/cat-motion.png');advance(h,.08);assert.equal(current().source[1],2000/3,'A shows the extended punch');advance(h,.3);
+ h.api.jump();assert.equal(current().source[1],1000/3,'jump starts with a crouch');advance(h,.2);assert.equal(current().source[1],1000/3,'airborne pose stays on the jump row');advance(h,1.1);assert.equal(current().asset,'assets/cat-protester.png');
+ h.api.attack();assert.equal(current().asset,'assets/cat-protester-motion.png');advance(h,.08);assert.equal(current().source[1],2000/3,'A shows the extended punch');advance(h,.3);
  h.api.cast('q');advance(h,.08);assert.equal(current().source[1],2000/3,'Q shows the wide claw swipe');advance(h,.4);
  h.api.cast('w');assert.equal(current().source[1],2000/3,'W uses the backward-leap pose');advance(h,1);
- p.mp=core.maxMp(p);assert.equal(h.api.startCatCharge('test'),true);assert.equal(current().asset,'assets/cat-skills.png');assert.equal(current().source[0],95,'E holds the bottle while charging');
+ p.mp=core.maxMp(p);assert.equal(h.api.startCatCharge('test'),true);assert.equal(current().asset,'assets/cat-protester-skills.png');assert.equal(current().source[0],95,'E holds the bottle while charging');
  h.api.releaseCatCharge('test');assert.equal(current().source[0],736,'E shows the throw on release');advance(h,.35);
  p.mp=core.maxMp(p);h.api.cast('r');assert.equal(current().source[0],1518,'R places the ballot box');
  for(const asset of ['cat-motion','cat-skills']){const png=fs.readFileSync(new URL(`../dist/assets/${asset}.png`,import.meta.url)),width=png.readUInt32BE(16),height=png.readUInt32BE(20);assert.equal(width,asset==='cat-motion'?1145:2172);assert.equal(height,asset==='cat-motion'?1374:724);}
@@ -71,7 +107,7 @@ test('cat artwork consistently faces travel and attack direction across mirrored
  const motionHeading=[-1,-1,1,-1,-1,-1,-1,-1,-1];
  for(const dir of [-1,1]){
   const h=harness(),p=core.createCharacter('방향','cat');Object.assign(p,{level:15,job:'protester',x:1100});p.mp=core.maxMp(p);h.api.start(p);
-  const heading=()=>{render(h);const d=h.draws.find(d=>['assets/cat.png','assets/cat-motion.png','assets/cat-skills.png'].includes(d.asset));assert.ok(d);const sourceDir=d.asset==='assets/cat.png'?-1:d.asset==='assets/cat-skills.png'?(d.source[0]===95?-1:1):motionHeading[Math.round(d.source[1]/(1000/3))*3+Math.round(d.source[0]/500)];return sourceDir*Math.sign(d.matrix[0]);};
+  const heading=()=>{render(h);const d=h.draws.find(d=>['assets/cat-protester.png','assets/cat-protester-motion.png','assets/cat-protester-skills.png'].includes(d.asset));assert.ok(d);const sourceDir=d.asset==='assets/cat-protester.png'?-1:d.asset==='assets/cat-protester-skills.png'?(d.source[0]===95?-1:1):motionHeading[Math.round(d.source[1]/(1000/3))*3+Math.round(d.source[0]/500)];return sourceDir*Math.sign(d.matrix[0]);};
   h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');const startX=p.x;
   for(let i=0;i<50;i++){h.api.update(1/60);assert.equal(heading(),dir,'every walking frame faces the movement direction');}
   assert.ok((p.x-startX)*dir>0);h.api.keys.clear();h.api.update(1/60);assert.equal(heading(),dir,'idle keeps the same heading');
