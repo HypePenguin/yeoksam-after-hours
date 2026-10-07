@@ -66,6 +66,25 @@ test('cat walk, jump and every attack use distinct full-body motion poses',()=>{
  p.mp=core.maxMp(p);h.api.cast('r');assert.equal(current().source[0],1518,'R places the ballot box');
  for(const asset of ['cat-motion','cat-skills']){const png=fs.readFileSync(new URL(`../dist/assets/${asset}.png`,import.meta.url)),width=png.readUInt32BE(16),height=png.readUInt32BE(20);assert.equal(width,asset==='cat-motion'?1145:2172);assert.equal(height,asset==='cat-motion'?1374:724);}
 });
+test('cat artwork consistently faces travel and attack direction across mirrored atlas frames',()=>{
+ // These headings describe the source artwork, independently of the renderer's transforms.
+ const motionHeading=[-1,-1,1,-1,-1,-1,-1,-1,-1];
+ for(const dir of [-1,1]){
+  const h=harness(),p=core.createCharacter('방향','cat');Object.assign(p,{level:15,job:'protester',x:1100});p.mp=core.maxMp(p);h.api.start(p);
+  const heading=()=>{render(h);const d=h.draws.find(d=>['assets/cat.png','assets/cat-motion.png','assets/cat-skills.png'].includes(d.asset));assert.ok(d);const sourceDir=d.asset==='assets/cat.png'?-1:d.asset==='assets/cat-skills.png'?(d.source[0]===95?-1:1):motionHeading[Math.round(d.source[1]/(1000/3))*3+Math.round(d.source[0]/500)];return sourceDir*Math.sign(d.matrix[0]);};
+  h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');const startX=p.x;
+  for(let i=0;i<50;i++){h.api.update(1/60);assert.equal(heading(),dir,'every walking frame faces the movement direction');}
+  assert.ok((p.x-startX)*dir>0);h.api.keys.clear();h.api.update(1/60);assert.equal(heading(),dir,'idle keeps the same heading');
+  h.api.jump();assert.equal(heading(),dir);advance(h,.25);assert.equal(heading(),dir);advance(h,1);
+  h.api.attack();advance(h,.08);assert.equal(heading(),dir);
+  h.api.keys.add(dir<0?'ArrowRight':'ArrowLeft');h.api.update(1/60);assert.equal(heading(),dir,'a started punch keeps its hit direction');h.api.keys.clear();advance(h,.4);
+  h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');h.api.update(1/60);h.api.keys.clear();
+  h.api.cast('q');advance(h,.08);assert.equal(heading(),dir);advance(h,.4);
+  const beforeBack=p.x;h.api.cast('w');assert.ok((p.x-beforeBack)*dir<0,'W travels backward intentionally');assert.equal(heading(),dir);advance(h,1);
+  p.mp=core.maxMp(p);h.api.startCatCharge('test');assert.equal(heading(),dir);h.api.releaseCatCharge('test');assert.equal(heading(),dir);assert.ok((h.api.get().catProjectiles[0].toX-p.x)*dir>0);advance(h,.4);
+  p.mp=core.maxMp(p);h.api.cast('r');assert.equal(heading(),dir);assert.ok((h.api.get().catBallot.x-p.x)*dir>0);
+ }
+});
 test('protester bottle charges up to one second, explodes, burns and ballot box ticks for five seconds',()=>{
  const h=harness(),p=core.createCharacter('목소리','cat');p.level=15;p.job='protester';p.map='alley';p.x=1000;p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);
  const m=h.api.get().monsters[0];m.x=1490;m.y=p.y;m.home=m.x;m.speed=0;m.hp=m.maxHp=10000;

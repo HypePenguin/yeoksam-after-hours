@@ -873,6 +873,10 @@ const CAT_SKILL_CROPS=[
  [724+12,56,704,637], // Release the bottle above the leading paw.
  [1448+70,128,528,577] // Place the ballot box at the feet.
 ];
+// Normalize each drawing to face right before applying the player's facing.
+// The atlas alternates leading feet, but its source drawings also change direction.
+const CAT_MOTION_FACING=[-1,-1,1,-1,-1,-1,-1,-1,-1];
+const CAT_SKILL_FACING=[-1,1,1];
 function catPose(){
  if(catCharge)return {sheet:'cat-skills',frame:0,scarfY:0};
  const motion=combatMotion?.kind;
@@ -891,18 +895,19 @@ function drawCatPose(pose,height){
  const [sx,sy,sw,sh]=pose.sheet==='cat-motion'?
   [(pose.frame%3)*img.naturalWidth/3,Math.floor(pose.frame/3)*img.naturalHeight/3,img.naturalWidth/3,img.naturalHeight/3]:CAT_SKILL_CROPS[pose.frame];
  const width=height*sw/sh;
- ctx.imageSmoothingEnabled=true;ctx.drawImage(img,sx,sy,sw,sh,-width/2,-height,width,height);
+ const sourceFacing=(pose.sheet==='cat-motion'?CAT_MOTION_FACING:CAT_SKILL_FACING)[pose.frame];
+ ctx.save();ctx.scale(sourceFacing,1);ctx.imageSmoothingEnabled=true;ctx.drawImage(img,sx,sy,sw,sh,-width/2,-height,width,height);ctx.restore();
  return true;
 }
 function drawCatPlayer(x,y){
  const height=132,alpha=hurtTime<=0&&invincible>0&&Math.floor(invincible*13)%2===0?.55:1;
  ctx.save();ctx.fillStyle='#03162570';ctx.beginPath();ctx.ellipse(x,y+3,Math.max(18,32-pz*.09),Math.max(3,8-pz*.02),0,0,Math.PI*2);ctx.fill();ctx.translate(x,y-pz);
- if(facing<0)ctx.scale(-1,1);
+ if((combatMotion?.dir??facing)<0)ctx.scale(-1,1);
  const pose=catPose(),step=walking&&pz===0?Math.sin(walkPhase*Math.PI*4):0;
  if(walking)ctx.translate(0,-Math.abs(step)*1.4);
  if(combatMotion?.kind==='catBack')ctx.rotate(-.08);
  ctx.globalAlpha=alpha;ctx.filter=hurtTime>0?'brightness(1.35)':'none';
- if(!pose||!drawCatPose(pose,height))sprite('cat',0,0,height*.835,height);
+ if(!pose||!drawCatPose(pose,height))sprite('cat',0,0,height*.835,height,{flip:true});
  ctx.filter='none';
  if(player.job==='protester'){ctx.save();ctx.translate(0,pose?.scarfY||0);drawCatScarf(height);ctx.restore();}
  ctx.restore();label(player.name,x,y-pz-height-15,'#e5f3ff',14);
