@@ -4,6 +4,7 @@ import vm from 'node:vm';
 import fs from 'node:fs';
 import * as core from '../dist/core.js';
 import * as bossCore from '../dist/boss.js';
+import * as typeACore from '../dist/type-a.js';
 
 // Runs the actual game loop against lightweight DOM/timer adapters. No live browser state.
 function harness(){
@@ -28,7 +29,7 @@ function harness(){
  },{get:(obj,key)=>key in obj?obj[key]:()=>{}});
  function el(selector){if(elements.has(selector))return elements.get(selector);const obj={parentElement:{},style:{},dataset:{},classList:{add(){},remove(){},toggle(){}},textContent:'',innerHTML:'',hidden:false,isConnected:true,disabled:false,onclick:null,listeners:new Map(),setPointerCapture(){},focus(){},setAttribute(k,v){this[k]=v;},getAttribute(k){return this[k]??null;},getBoundingClientRect(){return {width:1448,height:818};},addEventListener(n,f){this.listeners.set(n,f);},querySelector:child=>el(`${selector} ${child}`),querySelectorAll:()=>[],getContext:()=>drawing};elements.set(selector,obj);return obj;}
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),hidden:false,activeElement:el('#game')};
- const context=vm.createContext({...core,...bossCore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;this.complete=true;this.naturalWidth=1500;this.naturalHeight=1000;this.onload?.();}},Promise,Math,Date,Number,String,Set});
+ const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;this.complete=true;this.naturalWidth=1500;this.naturalHeight=1000;this.onload?.();}},Promise,Math,Date,Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
  vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,get:()=>({catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
  return {api:context.gameTest,persistence,draws,labels,strokes,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
@@ -170,7 +171,7 @@ test('travel preserves awakening and cooldowns, death removes awakening, re-entr
 test('map hotkey toggles the map, pauses gameplay and keeps keyboard state clean',()=>{
  const h=harness(),p=core.createCharacter('지도');h.api.start(p);h.api.keys.add('ArrowRight');const x=p.x;
  const event={code:'KeyM',repeat:false,preventDefault(){},target:{matches(){return false;}}};h.events.get('keydown')(event);
- assert.equal(h.api.get().modal,'world-map');assert.equal(h.api.keys.size,0);advance(h,2);assert.equal(p.x,x);assert.match(h.el('#modal-root').innerHTML,/17 지역 탐험/);for(const id of Object.keys(core.MAPS))assert.match(h.el('#modal-root').innerHTML,new RegExp(`data-map="${id}"`));
+ assert.equal(h.api.get().modal,'world-map');assert.equal(h.api.keys.size,0);advance(h,2);assert.equal(p.x,x);assert.match(h.el('#modal-root').innerHTML,/21 지역 탐험/);for(const id of Object.keys(core.MAPS))assert.match(h.el('#modal-root').innerHTML,new RegExp(`data-map="${id}"`));
  h.events.get('keydown')(event);assert.equal(h.api.get().modal,null);assert.equal(h.api.keys.size,0);
 });
 test('new regions are playable via portals and record exploration; training room heals',async()=>{
@@ -830,7 +831,7 @@ test('M opens the overview every time and retains the old detailed route guide a
  assert.equal(h.api.get().mapView,'overview');assert.equal(h.el('#map-view-overview').hidden,false);assert.equal(h.el('#map-view-details').hidden,true);
  const html=h.el('#modal-root').innerHTML;assert.match(html,/role="tablist"/);assert.match(html,/상세 안내/);assert.match(html,/초반 사냥/);assert.match(html,/고레벨 던전/);assert.match(html,/마을 · 전직/);
  const graph=html.slice(html.indexOf('<div class="atlas-board">'),html.indexOf('<div class="atlas-legend">'));
- assert.equal([...graph.matchAll(/data-map="/g)].length,17);assert.equal([...graph.matchAll(/data-map-edge="/g)].length,17);assert.equal([...graph.matchAll(/aria-current="location"/g)].length,1);
+ assert.equal([...graph.matchAll(/data-map="/g)].length,21);assert.equal([...graph.matchAll(/data-map-edge="/g)].length,21);assert.equal([...graph.matchAll(/aria-current="location"/g)].length,1);
  h.api.showMapView('details');assert.equal(h.el('#map-view-overview').hidden,true);assert.equal(h.el('#map-view-details').hidden,false);
  h.api.closeModal();h.api.worldMap();assert.equal(h.api.get().mapView,'overview');assert.equal(h.api.get().mapSelection,p.map);
 });
@@ -1339,4 +1340,36 @@ test('MP potion cooldown applies throughout boss room, pauses in inventory and i
  const b=h.api.get().boss;b.phase='recover';b.elapsed=-20;advance(h,10.1);assert.equal(p.mpPotionCooldown,0);p.mp=0;h.api.useQuickSlot(1);assert.equal(p.mp,50);assert.equal(p.mpPotions,8);
  const saved=core.normalizeCharacter(p);assert.equal(saved.mpPotionCooldown,10);
  p.map='town';p.mp=0;h.api.useQuickSlot(0);h.api.useQuickSlot(1);assert.equal(p.mp,100);assert.equal(p.mpPotionCooldown,0);assert.equal(p.mpPotions,6);
+});
+
+test('A-type safety execution kills outside even with damage reduction, but safe floor and timed immunity survive',()=>{
+ for(const mode of ['outside','safe','backstep','guard','recovery']){
+  const h=harness(),p=core.createCharacter('A형시험',mode==='backstep'?'cat':'wanderer');Object.assign(p,{level:35,job:mode==='backstep'?'protester':mode==='recovery'?'bodybuilder':'swordsman',map:'hangar',x:1100,y:650});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);h.api.startBossFight();
+  const b=h.api.get().boss;b.phase='recover';b.elapsed=-20;advance(h,1);h.api.hitMonster(b,999999);assert.equal(b.phase,'safety');
+  const frozen=b.hp;h.api.attack();h.api.cast('q');assert.equal(b.hp,frozen);h.api.worldMap();advance(h,2);assert.equal(b.elapsed,0);h.api.closeModal();
+  advance(h,6.7);
+  if(mode==='safe'){p.x=b.safeZone.x;p.y=b.safeZone.y;}
+  if(mode==='backstep')h.api.cast('w');
+  if(mode==='guard'||mode==='recovery')h.api.cast('e');
+  advance(h,.4);
+  assert.equal(h.api.get().scene,['outside','recovery'].includes(mode)?'dead':'playing',mode);
+ }
+});
+test('A-type encounter requires interaction, awards once, and abandon/recall clears its hazards',()=>{
+ const h=harness(),p=core.createCharacter('로봇결투');Object.assign(p,{level:35,job:'swordsman',map:'hangar',x:1150,y:650,returnScrolls:2});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);const b=h.api.get().boss;assert.equal(b.active,false);
+ h.api.interact();assert.match(h.el('#modal-root').innerHTML,/Lv.35 A형/);h.el('#challenge-boss').onclick();assert.equal(b.active,true);
+ b.safetyUsed=true;b.hp=1;const money=p.money,cores=p.cores;h.api.hitMonster(b,2);assert.equal(b.dead,true);assert.equal(p.typeAWins,1);assert.equal(p.money,money+6000);assert.equal(p.cores,cores+15);h.api.winBoss();assert.equal(p.typeAWins,1);
+ h.api.closeModal();h.api.startBossFight();const rematch=h.api.get().boss;assert.equal(rematch.hp,typeACore.TYPE_A.hp);assert.equal(rematch.safetyUsed,false);h.api.abandonBoss();assert.equal(h.api.get().boss.active,false);
+ h.api.startBossFight();h.api.useInventoryItem('returnScrolls');assert.equal(p.map,'town');assert.equal(h.api.get().boss,null);
+});
+test('A-type pull changes position inside its radius and spin deals repeated damage with visible animation frames',()=>{
+ const h=harness(),p=core.createCharacter('회전시험');Object.assign(p,{level:35,job:'swordsman',map:'hangar',x:1100,y:650});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);h.api.startBossFight();const b=h.api.get().boss;b.phase='recover';b.elapsed=-20;advance(h,1);
+ b.enraged=true;b.safetyUsed=true;b.phase='pull-charge';b.elapsed=.69;const before=p.x;h.api.update(.02);assert.ok(p.x>before+200);assert.ok(p.hp<core.maxHp(p));
+ b.phase='spin';b.elapsed=0;b.strikes=0;p.x=b.x-120;p.hp=core.maxHp(p);const frames=new Set();for(let i=0;i<120;i++){h.api.update(1/60);render(h);frames.add(h.draws.find(d=>d.asset==='assets/type-a.png').source.slice(0,2).join(','));}
+ assert.ok(frames.size>=2);assert.ok(p.hp<core.maxHp(p)-100);assert.equal(h.el('#boss-name').textContent,'Lv.35 A형 · 광폭화');
+});
+
+// Victory clears persistent effects while their damage tick is still resolving.
+test('cat ballot can finish A-type without reading a cleared effect',()=>{
+ const h=harness(),p=core.createCharacter('지속피해','cat');Object.assign(p,{level:35,job:'protester',map:'hangar',x:1100,y:650});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);h.api.startBossFight();const b=h.api.get().boss;p.x=b.x-100;b.safetyUsed=true;b.hp=1;h.api.cast('r');assert.doesNotThrow(()=>advance(h,.6));assert.equal(b.dead,true);assert.equal(p.typeAWins,1);assert.equal(h.api.get().catBallot,null);
 });

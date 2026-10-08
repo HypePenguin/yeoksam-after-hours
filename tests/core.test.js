@@ -96,9 +96,9 @@ test('legacy saves become normal penguins without losing progress; corrupted coo
  const p=normalizeCharacter(raw);for(const key of Object.keys(raw))assert.equal(p[key],raw[key]);assert.equal(p.powerTime,0);assert.deepEqual(p.visited,['town','depths']);assert.deepEqual(p.cooldowns,{q:0,w:0,e:0,r:0});
  const bad=normalizeCharacter({...raw,powerTime:9999,cooldowns:{r:999,q:-10,e:'bad'},visited:['bad','town','town']});assert.equal(bad.powerTime,0);assert.equal(bad.cooldowns.r,30);assert.equal(bad.cooldowns.q,0);assert.equal(bad.cooldowns.e,0);assert.deepEqual(bad.visited,['town','depths']);
 });
-test('all seventeen regions have return routes, progressive enemies, and safe portal arrivals',()=>{
- assert.equal(Object.keys(MAPS).length,17);const visited=new Set(),queue=['town'];while(queue.length){const id=queue.shift();if(visited.has(id))continue;visited.add(id);for(const p of MAPS[id].portals){const back=MAPS[p.to].portals.find(b=>b.to===id);assert.ok(back,`${id} -> ${p.to} return`);assert.ok(Math.abs(back.x-p.spawnX)>145);assert.ok(p.spawnX>45&&p.spawnX<MAPS[p.to].width-45);queue.push(p.to);}}
- assert.equal(visited.size,17);
+test('all twenty-one regions have return routes, progressive enemies, and safe portal arrivals',()=>{
+ assert.equal(Object.keys(MAPS).length,21);const visited=new Set(),queue=['town'];while(queue.length){const id=queue.shift();if(visited.has(id))continue;visited.add(id);for(const p of MAPS[id].portals){const back=MAPS[p.to].portals.find(b=>b.to===id);assert.ok(back,`${id} -> ${p.to} return`);assert.ok(Math.abs(back.x-p.spawnX)>145);assert.ok(p.spawnX>45&&p.spawnX<MAPS[p.to].width-45);queue.push(p.to);}}
+ assert.equal(visited.size,21);
  for(const map of Object.values(MAPS)){if(!map.danger)continue;assert.equal(makeMonster(map.id,0).level,map.minLevel);assert.equal(makeMonster(map.id,monsterCount(map.id)-1).level,map.maxLevel);}
 });
 
@@ -178,14 +178,14 @@ test('map guide uses real portal edges and returns shortest bidirectional routes
  assert.deepEqual(findMapRoute('relay','relay'),['relay']);assert.deepEqual(findMapRoute('missing','town'),[]);assert.deepEqual(findMapRoute('town','__proto__'),[]);
 });
 test('hunting recommendations advance at each difficulty boundary without recommending an overlevelled zone',()=>{
- for(const [level,id] of [[1,'alley'],[3,'park'],[4,'depths'],[6,'subway'],[10,'rooftop'],[12,'rooftop'],[13,'relay'],[16,'relay'],[17,'canal'],[20,'canal'],[21,'foundry'],[24,'foundry'],[25,'nexus'],[30,'nexus'],[99,'nexus']]){assert.equal(recommendedMap(level).id,id);assert.ok(recommendedMap(level).minLevel<=level);}
+ for(const [level,id] of [[1,'alley'],[3,'park'],[4,'depths'],[6,'subway'],[10,'rooftop'],[12,'rooftop'],[13,'relay'],[16,'relay'],[17,'canal'],[20,'canal'],[21,'foundry'],[24,'foundry'],[25,'nexus'],[30,'nexus'],[31,'accelerator'],[33,'accelerator'],[34,'arsenal'],[36,'arsenal'],[37,'reactor'],[40,'reactor'],[99,'reactor']]){assert.equal(recommendedMap(level).id,id);assert.ok(recommendedMap(level).minLevel<=level);}
 });
 
 
 test('overview contains every region once and exactly the bidirectional portal graph',()=>{
  assert.deepEqual(Object.keys(WORLD_MAP_LAYOUT).sort(),Object.keys(MAPS).sort());
  const actual=worldMapConnections(),expected=new Set(Object.values(MAPS).flatMap(m=>m.portals.map(p=>[m.id,p.to].sort().join(':'))));
- assert.equal(actual.length,17);assert.equal(actual.length,expected.size);assert.deepEqual(new Set(actual.map(e=>e.key)),expected);
+ assert.equal(actual.length,21);assert.equal(actual.length,expected.size);assert.deepEqual(new Set(actual.map(e=>e.key)),expected);
  for(const edge of actual){assert.ok(MAPS[edge.from].portals.some(p=>p.to===edge.to));assert.ok(MAPS[edge.to].portals.some(p=>p.to===edge.from));}
  assert.equal(actual.some(e=>e.key==='dojo:gym'),false);
  for(const {x,y} of Object.values(WORLD_MAP_LAYOUT)){assert.ok(x>80&&x<1040);assert.ok(y>40&&y<510);}

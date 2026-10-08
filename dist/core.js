@@ -44,10 +44,10 @@ export function buyItem(p,id){
 export function useItem(p,id){
  if(id==='potions')return usePotion(p);
  if(id==='mpPotions'){
-  if(p.map==='pocha'&&p.mpPotionCooldown>0)return {ok:false,message:`MP 포션은 ${Math.ceil(p.mpPotionCooldown)}초 뒤에 사용할 수 있어요.`};
+  if(MAPS[p.map]?.boss&&p.mpPotionCooldown>0)return {ok:false,message:`MP 포션은 ${Math.ceil(p.mpPotionCooldown)}초 뒤에 사용할 수 있어요.`};
   if(!(p.mpPotions>0))return {ok:false,message:'MP 포션이 없어요. 마구리의 상점에서 구입하세요.'};
   if(p.mp>=maxMp(p))return {ok:false,message:'MP가 이미 가득 찼어요.'};
-  const restored=Math.min(50,maxMp(p)-p.mp);p.mpPotions--;p.mp+=restored;p.mpPotionCooldown=p.map==='pocha'?10:0;
+  const restored=Math.min(50,maxMp(p)-p.mp);p.mpPotions--;p.mp+=restored;p.mpPotionCooldown=MAPS[p.map]?.boss?10:0;
   return {ok:true,message:`MP가 ${Math.round(restored)} 회복되었어요.`};
  }
  const item=validItem(id)?ITEMS[id]:null,destination=item?.recall;
@@ -83,11 +83,16 @@ export const MAPS = {
  foundry:{id:'foundry',name:'자동화 주조소',subtitle:'고레벨 던전 · Lv. 21–24',en:'AUTOMATED FOUNDRY',description:'밤새 붉게 타오르는 용광로와 제련 로봇. 더 강한 접촉 공격에 대비해 회복과 막기를 활용하세요. 강남역 마을에서 정비하거나 중앙 제어실로 사냥을 이어갈 수 있어요.',width:3600,danger:7,minLevel:21,maxLevel:24,color:'#f3a28a',background:'high-dungeons',backgroundTile:2,monster:'제련 로봇',monsterCount:9,robotTint:'hue-rotate(195deg) saturate(2)',portals:[]},
  gangnam:{id:'gangnam',name:'강남역',subtitle:'마을 · 안전 구역',en:'GANGNAM STATION',description:'자동화 주조소를 지나 만나는 안전한 마을. 마구리에게 물약과 귀환 주문서를 구입하고, 오른쪽 빨간 포탈로 한사발포차 보스에 도전하세요.',width:2200,danger:0,minLevel:1,maxLevel:1,color:'#9ce1d4',background:'gangnam',portals:[]},
  pocha:{id:'pocha',name:'한사발포차 역삼점',subtitle:'중간보스 · 권장 Lv. 20–25',en:'HANSABAL POCHA · DUEL',description:'강남역 마을의 빨간 포탈로 들어오는 포차. 군인 승현에게 말을 걸면 Lv. 25 중간보스 결투가 시작됩니다. 전투 중 물약 재사용 10초. 보상: EXP 3,500 · 이동속도 +20% 군복.',width:1600,danger:0,boss:true,minLevel:20,maxLevel:25,color:'#eabb77',background:'hansabal-pocha',portals:[]},
- nexus:{id:'nexus',name:'중앙 제어실',subtitle:'고레벨 던전 · Lv. 25–30',en:'CENTRAL CONTROL NEXUS',description:'도시의 로봇을 제어하는 최심부. 가장 강한 코어 수호 로봇이 기다립니다. 돌아갈 때는 왼쪽 포탈이나 귀환 주문서를 이용하세요.',width:4000,danger:8,minLevel:25,maxLevel:30,color:'#c7b3f6',background:'high-dungeons',backgroundTile:3,monster:'코어 수호 로봇',monsterCount:10,robotTint:'hue-rotate(110deg) saturate(2)',portals:[]}
+ nexus:{id:'nexus',name:'중앙 제어실',subtitle:'고레벨 던전 · Lv. 25–30',en:'CENTRAL CONTROL NEXUS',description:'도시의 로봇을 제어하는 중앙 시설. 오른쪽 가속 실험구역부터 Lv. 31–40의 새로운 사냥길이 이어집니다.',width:4000,danger:8,minLevel:25,maxLevel:30,color:'#c7b3f6',background:'high-dungeons',backgroundTile:3,monster:'코어 수호 로봇',monsterCount:10,robotTint:'hue-rotate(110deg) saturate(2)',portals:[]},
+ accelerator:{id:'accelerator',name:'가속 실험구역',subtitle:'고레벨 던전 · Lv. 31–33',en:'ACCELERATOR LAB',description:'중앙 제어실 뒤의 폐쇄 실험구역. 푸른 가속 코일 사이를 고속 정찰 로봇이 지켜요.',width:3800,danger:9,minLevel:31,maxLevel:33,color:'#7cdcf2',background:'endgame-dungeons',backgroundTile:0,monster:'가속 정찰 로봇',monsterCount:10,robotTint:'hue-rotate(35deg) saturate(1.6)',portals:[]},
+ arsenal:{id:'arsenal',name:'병기 조립라인',subtitle:'고레벨 던전 · Lv. 34–36',en:'WEAPONS ASSEMBLY',description:'전투 로봇이 생산되는 심층 공장. 조립 로봇을 돌파하고 적색 동력로로 이동하세요.',width:4000,danger:10,minLevel:34,maxLevel:36,color:'#bea6f7',background:'endgame-dungeons',backgroundTile:1,monster:'병기 조립 로봇',monsterCount:11,robotTint:'hue-rotate(120deg) saturate(1.7)',portals:[]},
+ reactor:{id:'reactor',name:'적색 동력로',subtitle:'고레벨 던전 · Lv. 37–40',en:'CRIMSON REACTOR',description:'Lv. 40까지 사냥할 수 있는 최심부. 오른쪽 빨간 포탈은 Lv. 35 A형의 격납고로 연결됩니다.',width:4200,danger:11,minLevel:37,maxLevel:40,color:'#ff8e9d',background:'endgame-dungeons',backgroundTile:2,monster:'동력로 수호 로봇',monsterCount:12,robotTint:'hue-rotate(185deg) saturate(2.2)',portals:[]},
+ hangar:{id:'hangar',name:'A형 격납고',subtitle:'보스 · Lv. 35 A형',en:'TYPE A · TERMINAL HANGAR',description:'대형 전투 로봇 A형. F로 가동합니다. HP 40%에 7초 안전지대 시험, 20%에 광폭화합니다. 파란 영역으로 이동하거나 무적기로 즉사를 피하세요.',width:1800,danger:0,boss:true,bossName:'A형',bossLevel:35,minLevel:35,maxLevel:40,color:'#ff7088',background:'endgame-dungeons',backgroundTile:3,portals:[]}
+
 };
 // Every connection is bidirectional and arrivals stay outside the return portal's interaction radius.
 function connect(a,ax,b,bx){
- const add=(from,x,to,tx)=>MAPS[from].portals.push({x,y:646,to,spawnX:tx+(tx<MAPS[to].width/2?190:-190),spawnY:648,label:MAPS[to].name,level:MAPS[to].boss?'중간보스 · 권장 Lv. 20–25':MAPS[to].danger?`권장 Lv. ${MAPS[to].minLevel}–${MAPS[to].maxLevel}`:'안전 구역'});
+ const add=(from,x,to,tx)=>MAPS[from].portals.push({x,y:646,to,spawnX:tx+(tx<MAPS[to].width/2?190:-190),spawnY:648,label:MAPS[to].name,level:MAPS[to].boss?`보스 · 권장 Lv. ${MAPS[to].minLevel}–${MAPS[to].maxLevel}`:MAPS[to].danger?`권장 Lv. ${MAPS[to].minLevel}–${MAPS[to].maxLevel}`:'안전 구역'});
  add(a,ax,b,bx);add(b,bx,a,ax);
 }
 connect('town',2430,'alley',100);
@@ -107,26 +112,32 @@ connect('canal',3230,'foundry',100);
 connect('foundry',2950,'gangnam',100);
 connect('gangnam',1930,'pocha',100);
 connect('foundry',3430,'nexus',100);
+connect('nexus',3830,'accelerator',100);
+connect('accelerator',3630,'arsenal',100);
+connect('arsenal',3830,'reactor',100);
+connect('reactor',4030,'hangar',100);
 
 // Route lists describe actual adjacent portals; the map never implies a shortcut.
 export const MAP_ROUTES = [
  {id:'backstreet',tab:'hunt',title:'골목 사냥길',hint:'Lv. 1–9 · 공사장을 지나 승강장으로',maps:['town','alley','depths','subway']},
  {id:'parkway',tab:'hunt',title:'공원 사냥길',hint:'Lv. 3–9 · 승강장으로 가는 짧은 길',maps:['town','park','subway']},
  {id:'deep-route',tab:'advanced',title:'도시의 깊은 밤',hint:'Lv. 10–30 · 아래로 갈수록 강한 몬스터',maps:['rooftop','relay','canal','foundry','nexus']},
+ {id:'endgame-route',tab:'advanced',title:'A형을 향한 심층 사냥길',hint:'Lv. 31–40 · 마지막 지역에서 Lv.35 A형에 도전',maps:['nexus','accelerator','arsenal','reactor','hangar']},
  {id:'boss-route',tab:'advanced',title:'군인 승현의 결투',hint:'주조소 → 강남역에서 정비 → Lv.25 보스',maps:['foundry','gangnam','pocha']},
  {id:'gangnam-route',tab:'town',title:'강남역 마을',hint:'주조소에서 이동 · 물약과 두 마을 귀환 주문서',maps:['foundry','gangnam']},
  {id:'gym-route',tab:'town',title:'바디빌더 전직',hint:'Lv. 10 · 1번 출구에서 바로 이동',maps:['town','gym']},
  {id:'dojo-route',tab:'town',title:'검사 전직',hint:'Lv. 10 · 몬스터가 있는 사거리를 통과',maps:['town','crossroads','station6','dojo']},
  {id:'olympic-route',tab:'town',title:'고양이 · 시위대 전직',hint:'Lv. 10 · 1번 출구에서 올림픽공원으로',maps:['town','olympic']}
 ];
-export const mapTabFor=id=>['rooftop','relay','canal','foundry','nexus','pocha'].includes(id)?'advanced':['town','crossroads','station6','gym','dojo','gangnam','olympic'].includes(id)?'town':'hunt';
+export const mapTabFor=id=>['rooftop','relay','canal','foundry','nexus','pocha','accelerator','arsenal','reactor','hangar'].includes(id)?'advanced':['town','crossroads','station6','gym','dojo','gangnam','olympic'].includes(id)?'town':'hunt';
 // A schematic world layout; paths are derived from real portals, never from visual proximity.
 export const WORLD_MAP_LAYOUT = {
  gym:{x:140,y:72,label:'피치플레이'},town:{x:350,y:72,label:'역삼역 1번 출구'},crossroads:{x:560,y:72,label:'역삼역사거리'},station6:{x:770,y:72,label:'역삼역 6번 출구'},dojo:{x:980,y:72,label:'강남성균검도관'},
  depths:{x:140,y:175,label:'불 꺼진 공사장'},alley:{x:350,y:175,label:'테헤란 뒷골목'},park:{x:560,y:175,label:'달빛 근린공원'},
  subway:{x:350,y:278,label:'폐쇄된 승강장'},rooftop:{x:560,y:278,label:'테헤란 스카이루프'},relay:{x:770,y:278,label:'방치된 중계소'},canal:{x:980,y:278,label:'지하 냉각수로'},
  nexus:{x:560,y:381,label:'중앙 제어실'},foundry:{x:770,y:381,label:'자동화 주조소'},gangnam:{x:980,y:381,label:'강남역'},
- pocha:{x:980,y:484,label:'한사발포차'},
+ accelerator:{x:350,y:381,label:'가속 실험구역'},arsenal:{x:140,y:381,label:'병기 조립라인'},reactor:{x:140,y:468,label:'적색 동력로'},hangar:{x:350,y:468,label:'A형 격납고'},
+ pocha:{x:980,y:468,label:'한사발포차'},
  olympic:{x:250,y:140,label:'올림픽공원'}
 };
 export function worldMapConnections(){
@@ -196,18 +207,18 @@ export function createCharacter(name,classId='wanderer'){
  const clean=String(name).trim();
  if(!/^[\p{L}\p{N}_ ]{1,12}$/u.test(clean))throw new Error('이름은 한글·영문·숫자 1~12자로 입력해 주세요.');
  const stats=CLASSES.find(c=>c.id===classId);if(!stats)throw new Error('선택할 수 없는 캐릭터입니다.');
- return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:stats.hp,mp:stats.mp,money:500,potions:3,mpPotions:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,quickSlots:['potions',null,null],uniform:0,uniformEquipped:false,bossWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
+ return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:stats.hp,mp:stats.mp,money:500,potions:3,mpPotions:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,quickSlots:['potions',null,null],uniform:0,uniformEquipped:false,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
 }
 export function normalizeCharacter(raw){
  if(!raw||typeof raw.id!=='string'||typeof raw.name!=='string')return null;
  let p;try{p=createCharacter(raw.name,CLASSES.some(c=>c.id===raw.classId)?raw.classId:'wanderer');}catch{return null;}
  p.id=raw.id.slice(0,100);
- for(const key of ['level','xp','money','potions','mpPotions','returnScrolls','gangnamScrolls','scrap','cores','kills','bossWins'])if(Number.isFinite(raw[key]))p[key]=Math.floor(clamp(raw[key],key==='level'?1:0,key==='level'?99:9999999));
+ for(const key of ['level','xp','money','potions','mpPotions','returnScrolls','gangnamScrolls','scrap','cores','kills','bossWins','typeAWins'])if(Number.isFinite(raw[key]))p[key]=Math.floor(clamp(raw[key],key==='level'?1:0,key==='level'?99:9999999));
  if(Array.isArray(raw.quickSlots))p.quickSlots=Array.from({length:3},(_,i)=>validItem(raw.quickSlots[i])&&ITEMS[raw.quickSlots[i]].usable?raw.quickSlots[i]:null);
  p.uniform=Number.isFinite(raw.uniform)&&raw.uniform>0?1:0;p.uniformEquipped=p.uniform>0&&raw.uniformEquipped===true;
  p.job=p.level>=10&&Object.hasOwn(JOBS,raw.job)&&((p.classId==='cat')===(JOBS[raw.job].classId==='cat'))?raw.job:null;
  p.map=MAPS[raw.map]?raw.map:'town';p.x=Number.isFinite(raw.x)?clamp(raw.x,45,MAPS[p.map].width-45):530;p.y=Number.isFinite(raw.y)?clamp(raw.y,580,720):648;
- p.mpPotionCooldown=p.map==='pocha'&&Number.isFinite(raw.mpPotionCooldown)?clamp(raw.mpPotionCooldown,0,10):0;
+ p.mpPotionCooldown=MAPS[p.map]?.boss&&Number.isFinite(raw.mpPotionCooldown)?clamp(raw.mpPotionCooldown,0,10):0;
  p.hp=Number.isFinite(raw.hp)?clamp(raw.hp,0,maxHp(p)):maxHp(p);p.mp=Number.isFinite(raw.mp)?clamp(raw.mp,0,maxMp(p)):maxMp(p);
  p.savedAt=typeof raw.savedAt==='string'?raw.savedAt:null;
  p.visited=[...new Set(['town',...(Array.isArray(raw.visited)?raw.visited.filter(id=>MAPS[id]):[]),p.map])];

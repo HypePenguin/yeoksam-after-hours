@@ -1,5 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=53';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=53';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=53';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={};let assetsReady=false,assetFailed=false;
@@ -12,13 +13,14 @@ function characterImage(asset,p=player){
 }
 const catAsset=(asset,p=player)=>p?.job==='protester'?asset.replace('cat','cat-protester'):asset;
 const characterPortrait=(p,powered=false)=>p?.classId==='cat'?`assets/${catAsset('cat',p)}.png`:`assets/${characterAsset(powered?'penguin-power-poses':'penguin',p)}.png`;
-const loadAssets=Promise.all(['combat-brawler','combat-swordsman','combat-power','soldier-boss','soldier-counter','soldier-walk','gangnam','hansabal-pocha','city','crossroads','station-six','player','robot','penguin','penguin-power','penguin-hurt','penguin-power-poses','districts','high-dungeons','dojo','penguin-walk','penguin-power-walk','penguin-jump','penguin-power-jump','cat','cat-motion','cat-skills','cat-protester','cat-protester-motion','cat-protester-skills','npc-redfox','olympic-park','npc-hyuntori-white','npc-maguri-large-crate','npc-emperor-coach','npc-tiger-master','job-equipment','sword-guard-walk','builder-recovery-walk','power-recovery-walk',...[...UNIFORM_ASSETS].map(name=>`uniform-${name}`)].map(name=>new Promise(resolve=>{const img=new Image();images[name]=img;img.onload=()=>resolve();img.onerror=()=>{assetFailed=true;resolve();};img.src=`assets/${name}.png`;}))).then(()=>{assetsReady=true;});
+const loadAssets=Promise.all(['type-a','endgame-dungeons','combat-brawler','combat-swordsman','combat-power','soldier-boss','soldier-counter','soldier-walk','gangnam','hansabal-pocha','city','crossroads','station-six','player','robot','penguin','penguin-power','penguin-hurt','penguin-power-poses','districts','high-dungeons','dojo','penguin-walk','penguin-power-walk','penguin-jump','penguin-power-jump','cat','cat-motion','cat-skills','cat-protester','cat-protester-motion','cat-protester-skills','npc-redfox','olympic-park','npc-hyuntori-white','npc-maguri-large-crate','npc-emperor-coach','npc-tiger-master','job-equipment','sword-guard-walk','builder-recovery-walk','power-recovery-walk',...[...UNIFORM_ASSETS].map(name=>`uniform-${name}`)].map(name=>new Promise(resolve=>{const img=new Image();images[name]=img;img.onload=()=>resolve();img.onerror=()=>{assetFailed=true;resolve();};img.src=`assets/${name}.png`;}))).then(()=>{assetsReady=true;});
 let records=[],storageBroken=false;
 try{const saved=localStorage.getItem(SAVE_KEY);if(saved){const parsed=JSON.parse(saved);if(!parsed||parsed.version!==1||!Array.isArray(parsed.characters))throw new Error('invalid save');records=parsed.characters.map(normalizeCharacter).filter(Boolean);}}catch{storageBroken=true;}
 let scene='title',player=null,selectedId=records[0]?.id??null,modal=null,returnFocus=null,keys=new Set(),monsters=[],drops=[],effects=[],texts=[],camera=0,worldTime=0,screenWidth=1440,prev=0,lastHud=0,saveClock=0,toastTimer=null,transitionId=0,lastSavedLabel='',walking=false,walkPhase=0,soundOn=false,audioContext=null;
 let inventorySelection='potions',boss=null,potionCooldown=0,catCharge=null,catProjectiles=[],catFires=[],catBallot=null;
 const bossActive=()=>!!boss?.active;
-const canTarget=m=>!m.dead&&(!m.isBoss||targetableBoss(m));
+const canTarget=m=>!m.dead&&(!m.isBoss||(isTypeA(m)?typeATargetable(m):targetableBoss(m)));
+const bossInfo=()=>isTypeA(boss)?TYPE_A:SOLDIER;
 let cameraZoom=1,viewShakeX=0,viewShakeY=0;
 const CAMERA_GROUND=650;
 const viewOffsetY=()=>CAMERA_GROUND*(1-cameraZoom);
@@ -96,25 +98,27 @@ async function enterWorld(id){
  await Promise.all([loadAssets,new Promise(r=>setTimeout(r,1000))]);if(token!==transitionId)return;if(assetFailed)toast('일부 이미지가 로드되지 않았어요. 새로고침해 주세요.');
  resetWorld();setScene('playing');screens.innerHTML='';buildHUD();canvas.focus();save();toast(player.kills===0?'역삼역에 오신 걸 환영해요! 운영자 현토리에게 F로 말을 걸어보세요.':`${player.name}, 다시 오신 걸 환영해요.`);
 }
-function resetWorld(){cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;if(player.map!=='pocha')player.mpPotionCooldown=0;boss=player.map==='pocha'?createSoldier():null;potionCooldown=0;resetJump();resetGait();cancelSword();resetCombat();hurtTime=0;monsters=Array.from({length:monsterCount(player.map)},(_,i)=>makeMonster(player.map,i));drops=[];effects=[];texts=[];attackTimer=0;invincible=2;cooldowns=player.cooldowns;camera=clamp(player.x-screenWidth*.45,0,Math.max(0,MAPS[player.map].width-screenWidth));saveClock=0;}
+function resetWorld(){cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;if(!MAPS[player.map].boss)player.mpPotionCooldown=0;boss=player.map==='hangar'?createTypeA():player.map==='pocha'?createSoldier():null;potionCooldown=0;resetJump();resetGait();cancelSword();resetCombat();hurtTime=0;monsters=Array.from({length:monsterCount(player.map)},(_,i)=>makeMonster(player.map,i));drops=[];effects=[];texts=[];attackTimer=0;invincible=2;cooldowns=player.cooldowns;camera=clamp(player.x-screenWidth*.45,0,Math.max(0,MAPS[player.map].width-screenWidth));saveClock=0;}
 async function travel(portal){
  if(scene!=='playing')return;if(bossActive()){toast('결투 중에는 출구를 사용할 수 없어요. 메뉴에서 도전을 포기하거나 귀환 주문서를 사용하세요.');return;}const target={...portal};save();closeModal();setScene('loading');const token=++transitionId;
  screens.innerHTML=`<div class="screen-overlay"><small class="eyebrow">NEXT STOP</small><h2 class="screen-title">${MAPS[target.to].name}</h2><div class="loading-track"><i></i></div><p class="screen-subtitle">${MAPS[target.to].danger?'로봇과 부딪히면 피해를 받아요. 점프로 피할 수 있어요.':'마을에서는 천천히 체력이 회복됩니다.'}</p></div>`;
  await new Promise(r=>setTimeout(r,800));if(token!==transitionId)return;player.map=target.to;player.x=target.spawnX;player.y=target.spawnY??648;if(!player.visited.includes(target.to))player.visited.push(target.to);resetWorld();setScene('playing');screens.innerHTML='';buildHUD();save();canvas.focus();toast(`${MAPS[player.map].name}에 도착했어요.`);
 }
-function buildHUD(){ui.innerHTML=`<div class="game-screen"><div class="hud-top"><div class="player-panel"><img class="avatar" src="${characterPortrait(player)}" alt=""><div class="player-info"><div class="player-name"><span id="hud-level" class="level"></span><strong id="hud-name"></strong></div><small id="hud-job" class="job-label"></small><div class="resource-meter"><div class="bar-label"><span>HP</span><span id="hp-text"></span></div><div class="bar"><i id="hp-bar"></i></div></div><div class="resource-meter"><div class="bar-label"><span>MP</span><span id="mp-text"></span></div><div class="bar mp"><i id="mp-bar"></i></div></div><div class="resource-meter"><div class="bar-label"><span>EXP</span><span id="xp-text" class="xp-label"></span></div><div class="bar exp"><i id="xp-bar"></i></div></div></div></div><div class="map-panel"><small>${MAPS[player.map].en}</small><div class="map-title">${MAPS[player.map].name}</div><div class="map-subtitle">${MAPS[player.map].subtitle}</div></div><div class="hud-tools"><button id="map-button" aria-label="지도 보기 (M)" title="지도 · M">${icon('map')}</button><button id="inventory-button" aria-label="인벤토리 열기 (I)" title="인벤토리 · I">${icon('bag')}</button><button id="save-button" aria-label="현재 위치 저장" title="현재 위치 저장">${icon('save')}</button><button id="menu-button" aria-label="게임 메뉴 (Esc)" title="메뉴 · Esc">${icon('menu')}</button></div></div><div class="power-banner" id="power-banner" hidden><strong>근육 각성</strong><span id="power-clock"></span><small>모든 스킬 강화</small><div class="power-track"><i id="power-bar"></i></div></div><div class="power-banner combat-banner" id="combat-banner" hidden><strong id="combat-title"></strong><span id="combat-clock"></span><small id="combat-detail"></small><div class="power-track"><i id="combat-bar"></i></div></div><div class="boss-hud" id="boss-hud" hidden><div><strong>Lv.25 군인 승현</strong><span id="boss-hp-text"></span></div><div class="boss-hp-track"><i id="boss-hp-fill"></i></div><p id="boss-cue"></p><small id="boss-potion-clock"></small></div><div class="context-hint" id="context-hint" hidden></div><div class="hud-bottom"><div class="hotbar"><button class="skill" data-skill="a" title="기본 공격 · A"><span class="skill-symbol">╱</span><b>A</b></button>${skillsFor(player).map(s=>`<button class="skill" data-skill="${s.key}" aria-label="${s.name}, ${s.key.toUpperCase()} 키, 레벨 ${s.level}, MP ${s.mp}" title="${s.name} · Lv.${s.level} · MP ${s.mp} · ${s.description}"><span class="skill-symbol">${s.icon}</span><b>${s.key.toUpperCase()}</b><span class="lock-level"></span></button>`).join('')}<div class="item-hotbar">${[0,1,2].map(i=>`<button class="skill item-slot" data-item-slot="${i}"></button>`).join('')}</div></div><div class="game-bottom-right"><span class="money" id="hud-money"></span><span class="saved" id="hud-saved"></span></div></div></div>`;
+function buildHUD(){ui.innerHTML=`<div class="game-screen"><div class="hud-top"><div class="player-panel"><img class="avatar" src="${characterPortrait(player)}" alt=""><div class="player-info"><div class="player-name"><span id="hud-level" class="level"></span><strong id="hud-name"></strong></div><small id="hud-job" class="job-label"></small><div class="resource-meter"><div class="bar-label"><span>HP</span><span id="hp-text"></span></div><div class="bar"><i id="hp-bar"></i></div></div><div class="resource-meter"><div class="bar-label"><span>MP</span><span id="mp-text"></span></div><div class="bar mp"><i id="mp-bar"></i></div></div><div class="resource-meter"><div class="bar-label"><span>EXP</span><span id="xp-text" class="xp-label"></span></div><div class="bar exp"><i id="xp-bar"></i></div></div></div></div><div class="map-panel"><small>${MAPS[player.map].en}</small><div class="map-title">${MAPS[player.map].name}</div><div class="map-subtitle">${MAPS[player.map].subtitle}</div></div><div class="hud-tools"><button id="map-button" aria-label="지도 보기 (M)" title="지도 · M">${icon('map')}</button><button id="inventory-button" aria-label="인벤토리 열기 (I)" title="인벤토리 · I">${icon('bag')}</button><button id="save-button" aria-label="현재 위치 저장" title="현재 위치 저장">${icon('save')}</button><button id="menu-button" aria-label="게임 메뉴 (Esc)" title="메뉴 · Esc">${icon('menu')}</button></div></div><div class="power-banner" id="power-banner" hidden><strong>근육 각성</strong><span id="power-clock"></span><small>모든 스킬 강화</small><div class="power-track"><i id="power-bar"></i></div></div><div class="power-banner combat-banner" id="combat-banner" hidden><strong id="combat-title"></strong><span id="combat-clock"></span><small id="combat-detail"></small><div class="power-track"><i id="combat-bar"></i></div></div><div class="boss-hud" id="boss-hud" hidden><div><strong id="boss-name">Lv.${bossInfo().level} ${bossInfo().name}</strong><span id="boss-hp-text"></span></div><div class="boss-hp-track"><i id="boss-hp-fill"></i></div><p id="boss-cue"></p><small id="boss-potion-clock"></small></div><div class="type-a-warning" id="type-a-warning" role="status" hidden></div><div class="context-hint" id="context-hint" hidden></div><div class="hud-bottom"><div class="hotbar"><button class="skill" data-skill="a" title="기본 공격 · A"><span class="skill-symbol">╱</span><b>A</b></button>${skillsFor(player).map(s=>`<button class="skill" data-skill="${s.key}" aria-label="${s.name}, ${s.key.toUpperCase()} 키, 레벨 ${s.level}, MP ${s.mp}" title="${s.name} · Lv.${s.level} · MP ${s.mp} · ${s.description}"><span class="skill-symbol">${s.icon}</span><b>${s.key.toUpperCase()}</b><span class="lock-level"></span></button>`).join('')}<div class="item-hotbar">${[0,1,2].map(i=>`<button class="skill item-slot" data-item-slot="${i}"></button>`).join('')}</div></div><div class="game-bottom-right"><span class="money" id="hud-money"></span><span class="saved" id="hud-saved"></span></div></div></div>`;
  $('#map-button').onclick=worldMap;$('#inventory-button').onclick=inventory;$('#save-button').onclick=()=>save(false);$('#menu-button').onclick=menu;document.querySelectorAll('[data-skill]').forEach(bindSkillButton);document.querySelectorAll('[data-item-slot]').forEach(b=>b.onclick=()=>{useQuickSlot(Number(b.dataset.itemSlot));canvas.focus();});refreshHUD();
 }
 function refreshHUD(){if(scene!=='playing'||!$('#hud-level'))return;$('#hud-name').textContent=player.name;$('#hud-job').title=JOBS[player.job]?.passive||'';$('#hud-job').textContent=jobName(player)+(player.uniformEquipped?' · 군복 +20%':'');$('#xp-text').textContent=`${player.xp} / ${xpNeeded(player.level)}`;$('#hud-level').textContent=`Lv.${player.level}`;$('#hp-text').textContent=`${Math.ceil(player.hp)} / ${maxHp(player)}`;$('#mp-text').textContent=`${Math.floor(player.mp)} / ${maxMp(player)}`;$('#hp-bar').style.width=`${player.hp/maxHp(player)*100}%`;$('#mp-bar').style.width=`${player.mp/maxMp(player)*100}%`;$('#xp-bar').style.width=`${player.xp/xpNeeded(player.level)*100}%`;$('#xp-bar').parentElement.title=`경험치 ${player.xp} / ${xpNeeded(player.level)}`;$('#hud-money').textContent=player.money.toLocaleString();refreshItemSlots();refreshBossHUD();$('#hud-saved').textContent=storageBroken?'저장 실패 · 브라우저 설정 확인':lastSavedLabel||'자동 저장 중';skillsFor(player).forEach(s=>{const b=$(`[data-skill="${s.key}"]`),locked=!skillUnlocked(player,s);b.title=`${s.name} · Lv.${s.level}${s.requiresJob?' · 전직 필요':''} · ${s.description}`;b.setAttribute('aria-label',`${s.name}, ${s.key.toUpperCase()} 키, 레벨 ${s.level}${s.requiresJob?' 전직 후':''}, MP ${s.mp}`);b.classList.toggle('locked',locked);b.classList.toggle('cooldown',cooldowns[s.key]>0);b.querySelector('.skill-symbol').textContent=cooldowns[s.key]>0?Math.ceil(cooldowns[s.key]):s.icon;b.querySelector('.lock-level').textContent=locked?(player.level<s.level?`Lv.${s.level}`:'전직'):`${s.mp}`;});const powered=isPowered(player);$('.game-shell').classList.toggle('powered',powered);$('.game-shell').classList.toggle('sword-cinematic',!!swordUlt||cameraZoom<.99);$('#power-banner').hidden=!powered||!!recovery;$('#power-clock').textContent=`${Math.ceil(player.powerTime)}초`;$('#power-bar').style.width=`${player.powerTime/POWER_DURATION*100}%`;const avatar=$('.avatar'),avatarSrc=characterPortrait(player,powered);avatar.style.objectPosition=player.classId==='cat'?'center':powered?'9% center':'center';if(avatar.getAttribute('src')!==avatarSrc)avatar.setAttribute('src',avatarSrc);document.querySelectorAll('[data-skill]').forEach(b=>b.classList.toggle('empowered',powered&&['a','q','w','e'].includes(b.dataset.skill)));refreshCombatHUD();const hint=$('#context-hint');hint.classList.toggle('small-npc-hint',interactionTarget?.id==='shop');if(interactionTarget){hint.hidden=false;hint.innerHTML=`<kbd>F</kbd> ${interactionTarget.id?escapeHtml(interactionTarget.name)+'에게 말 걸기':escapeHtml(interactionTarget.label)+' 이동'}`;}else{hint.hidden=true;}}
 function help(){showModal('help','모험 안내',`<div class="help-grid"><span><kbd>← ↑ ↓ →</kbd></span><span>거리의 네 방향으로 이동</span><span><kbd>SPACE</kbd></span><span>점프 · 이동하면서 대각선 점프</span><span><kbd>A</kbd></span><span>기본 공격 · 누르고 있으면 연속 공격</span><span><kbd>Q W E R</kbd></span><span>Q Lv. 3 · W Lv. 7 · E 전직 Lv. 10 · R Lv. 15</span><span><kbd>M</kbd></span><span>지도 · 현재 지역과 포탈 연결 보기</span><span><kbd>F</kbd></span><span>가까운 NPC와 대화 / 포탈 이용</span><span><kbd>1 2 3</kbd></span><span>등록한 아이템 사용 · I에서 등록 변경</span><span><kbd>I</kbd> <kbd>ESC</kbd></span><span>인벤토리 / 메뉴 · 열면 일시정지</span></div><p class="help-note">펭귄은 Lv. 10부터 피치플레이헬스&amp;필라테스 역삼점에서 바디빌더, 강남성균검도관에서 검사로 전직해요. 고양이는 역삼역 1번 출구에서 올림픽공원으로 이동해 빨간 두건을 두르고 화염병을 든 여우 레드폭스에게 시위대로 전직할 수 있어요. 피치플레이는 1번 출구에서 바로 갈 수 있어요. 검도관은 1번 출구 → 역삼역사거리 → 6번 출구를 거쳐 이동해요. R은 Lv. 15에 배웁니다. 바디빌더는 12초간 근육 각성, 검사는 최대 5명을 조준해 연속 베기를 발동해요. 시위대는 E를 최대 1초간 눌러 화염병 사거리를 늘리고, R로 투표함을 5초간 설치해요.</p><p>쓰러진 로봇의 돈과 아이템은 가까이 가면 줍습니다. MP는 자연 회복되고, 마을에서는 HP도 회복돼요. 사망하면 아무것도 잃지 않고 마을에서 부활합니다.</p><p>진행 상황은 현재 브라우저에 저장됩니다. 브라우저 데이터를 지우거나 다른 기기를 쓰면 이어지지 않습니다.</p>`);}
 function refreshBossHUD(){
  const hud=$('#boss-hud');if(!hud)return;hud.hidden=!bossActive();$('.game-shell').classList.toggle('boss-fight',bossActive());
+ const warning=$('#type-a-warning');warning.hidden=!bossActive()||!isTypeA(boss)||!['safety','enrage'].includes(boss.phase);if(!warning.hidden)warning.textContent=boss.phase==='safety'?`안전지대를 찾으세요! ${Math.max(0,7-boss.elapsed).toFixed(1)}초 · 파란 영역 / 무적기로 회피`:'A형 광폭화 · 회전 칼날과 자기장 주의';
  if(!bossActive())return;
+ $('#boss-name').textContent=`Lv.${bossInfo().level} ${bossInfo().name}${boss.enraged?' · 광폭화':''}`;
  $('#boss-hp-text').textContent=`${Math.ceil(boss.hp).toLocaleString()} / ${boss.maxHp.toLocaleString()}`;
- $('#boss-hp-fill').style.width=`${boss.hp/boss.maxHp*100}%`;$('#boss-cue').textContent=soldierCue(boss);hud.classList.toggle('counter-active',boss.phase==='counter');
+ $('#boss-hp-fill').style.width=`${boss.hp/boss.maxHp*100}%`;$('#boss-cue').textContent=isTypeA(boss)?typeACue(boss):soldierCue(boss);hud.classList.toggle('counter-active',boss.phase==='counter');
  $('#boss-potion-clock').textContent=`HP 물약 ${potionCooldown>0?potionCooldown.toFixed(1)+'초':'준비'} · MP 포션 ${player.mpPotionCooldown>0?player.mpPotionCooldown.toFixed(1)+'초':'준비'} · 각각 10초 대기`;
 }
-function itemCooldown(id){return id==='mpPotions'?(player.map==='pocha'?player.mpPotionCooldown||0:0):id==='potions'&&bossActive()?potionCooldown:0;}
+function itemCooldown(id){return id==='mpPotions'?(MAPS[player.map].boss?player.mpPotionCooldown||0:0):id==='potions'&&bossActive()?potionCooldown:0;}
 function refreshItemSlots(){
  document.querySelectorAll('[data-item-slot]').forEach(b=>{
   const index=Number(b.dataset.itemSlot),id=player.quickSlots[index],item=ITEMS[id],wait=itemCooldown(id),waiting=wait>0;
@@ -179,18 +183,18 @@ function shop(){
  $('.modal').classList.add('shop-dialog');
  for(const id of SHOP_ITEMS)$(`#buy-${id}`).onclick=()=>{const result=buyItem(player,id);if(result.ok){save();beep(800);refreshShop();}toast(result.message);refreshHUD();};
 }
-function findInteraction(){if(!player||bossActive())return null;const candidates=[...(boss?[{id:'soldier',name:SOLDIER.name,x:boss.x,y:boss.y}]:[]),...mapNPCs(),...MAPS[player.map].portals];return candidates.filter(o=>Math.hypot(player.x-o.x,(player.y-o.y)*1.8)<145).sort((a,b)=>Math.hypot(player.x-a.x,player.y-a.y)-Math.hypot(player.x-b.x,player.y-b.y))[0]??null;}
+function findInteraction(){if(!player||bossActive())return null;const candidates=[...(boss?[{id:'soldier',name:bossInfo().name,x:boss.x,y:boss.y}]:[]),...mapNPCs(),...MAPS[player.map].portals];return candidates.filter(o=>Math.hypot(player.x-o.x,(player.y-o.y)*1.8)<145).sort((a,b)=>Math.hypot(player.x-a.x,player.y-a.y)-Math.hypot(player.x-b.x,player.y-b.y))[0]??null;}
 const MAP_TABS=[['hunt','초반 사냥'],['advanced','고레벨 던전'],['town','마을 · 전직']];
 function mapNode(id,index){
  const map=MAPS[id],current=id===player.map,visited=player.visited.includes(id);
- return `<li><button class="map-node ${current?'current':''}" data-map="${id}" style="--region-color:${map.color}" aria-pressed="false"><span class="node-marker">${index+1}</span><span class="node-copy"><strong>${escapeHtml(map.name)}</strong><small>${map.boss?'군인 승현 · 대화로 도전':map.danger?`${map.monster} · ${monsterCount(id)}마리`:id==='gym'?'바디빌더 전직 · Lv. 10':id==='dojo'?'검사 전직 · Lv. 10':'안전 구역'}</small></span><span class="node-state"><b>${map.danger||map.boss?`Lv. ${map.minLevel}–${map.maxLevel}`:'안전'}</b><small>${current?'● 현재 위치':visited?'✓ 탐험 완료':'미탐험'}</small></span></button></li>`;
+ return `<li><button class="map-node ${current?'current':''}" data-map="${id}" style="--region-color:${map.color}" aria-pressed="false"><span class="node-marker">${index+1}</span><span class="node-copy"><strong>${escapeHtml(map.name)}</strong><small>${map.boss?`${map.bossName||'군인 승현'} · 대화로 도전`:map.danger?`${map.monster} · ${monsterCount(id)}마리`:id==='gym'?'바디빌더 전직 · Lv. 10':id==='dojo'?'검사 전직 · Lv. 10':'안전 구역'}</small></span><span class="node-state"><b>${map.danger||map.boss?`Lv. ${map.minLevel}–${map.maxLevel}`:'안전'}</b><small>${current?'● 현재 위치':visited?'✓ 탐험 완료':'미탐험'}</small></span></button></li>`;
 }
 let mapView='overview',mapSelection=null;
 function atlasMarkup(){
  const edges=worldMapConnections();
  return `<div class="atlas-toolbar"><div><span class="atlas-location-dot" aria-hidden="true"></span>현재 위치 <strong>${escapeHtml(MAPS[player.map].name)}</strong></div><button id="atlas-locate">내 위치 찾기</button></div><div class="atlas-scroll" id="atlas-scroll" tabindex="0" aria-label="지역 연결 지도. 좁은 화면에서는 좌우로 스크롤하세요."><div class="atlas-board"><div class="atlas-background" aria-hidden="true"></div><svg class="atlas-roads" viewBox="0 0 1120 550" preserveAspectRatio="none" aria-hidden="true">${edges.map(edge=>{const a=WORLD_MAP_LAYOUT[edge.from],b=WORLD_MAP_LAYOUT[edge.to];return `<g><path class="atlas-road-border" d="M ${a.x} ${a.y} L ${b.x} ${b.y}"/><path class="atlas-road" data-map-edge="${edge.key}" d="M ${a.x} ${a.y} L ${b.x} ${b.y}"/></g>`;}).join('')}</svg>${Object.entries(WORLD_MAP_LAYOUT).map(([id,point])=>{
   const map=MAPS[id],current=id===player.map,visited=player.visited.includes(id),kind=map.boss?'boss':map.danger?'hunt':'safe';
-  const level=map.boss?'보스 · Lv. 20–25':map.danger?`Lv. ${map.minLevel}–${map.maxLevel}`:id==='gym'?'바디빌더 전직':id==='dojo'?'검사 전직':id==='olympic'?'시위대 전직':'안전 구역';
+  const level=map.boss?`보스 · Lv. ${map.bossLevel||25}`:map.danger?`Lv. ${map.minLevel}–${map.maxLevel}`:id==='gym'?'바디빌더 전직':id==='dojo'?'검사 전직':id==='olympic'?'시위대 전직':'안전 구역';
   return `<button class="atlas-node ${kind} ${current?'current':''} ${visited?'visited':''}" data-map="${id}" aria-pressed="false" ${current?'aria-current="location"':''} aria-label="${escapeHtml(map.name)} · ${level}${current?' · 현재 위치':''}" title="${escapeHtml(map.name)}" style="left:${point.x/1120*100}%;top:${point.y/550*100}%">${current?'<span class="atlas-here">현재 위치</span>':''}<span class="atlas-dot" aria-hidden="true">${map.boss?'⚔':''}</span><span class="atlas-label"><strong>${point.label}</strong><small>${level}</small></span></button>`;
  }).join('')}</div></div><div class="atlas-legend"><span><i class="safe"></i>안전 · 전직</span><span><i class="hunt"></i>사냥터</span><span><i class="boss"></i>보스</span><span><i class="road"></i>포탈 연결</span><small>지역을 누르면 가는 길이 표시돼요.</small></div><div id="atlas-selection" class="atlas-selection" aria-live="polite"></div>`;
 }
@@ -245,7 +249,7 @@ function showMapDetails(id,focusDetails=false){
  document.querySelectorAll('[data-map]').forEach(button=>{const selected=button.dataset.map===id;button.classList.toggle('selected',selected);button.classList.toggle('on-route',!current&&route.includes(button.dataset.map));button.setAttribute('aria-pressed',String(selected));});
  const background=map.background|| (Number.isInteger(map.backgroundTile)?'districts':'city'),tile=map.backgroundTile;
  const artStyle=`background-image:url('assets/${background}.png');${Number.isInteger(tile)?`background-size:200% 200%;background-position:${tile%2?'100%':'0'} ${tile>1?'100%':'0'};`:''}`;
- $('#map-details').innerHTML=`<button class="map-list-back" id="map-list-back">↑ 지역 목록으로</button><div class="map-art" style="${artStyle}" aria-hidden="true"></div><div class="map-detail-body"><span class="map-detail-tag">${current?'● 현재 위치':player.visited.includes(id)?'✓ 탐험 완료':'◇ 미탐험'} · ${map.danger||map.boss?`Lv. ${map.minLevel}–${map.maxLevel}`:'안전 구역'}</span><h3>${escapeHtml(map.name)}</h3><p>${map.description}</p>${map.boss?'<div class="map-monster-info">중간보스 <strong>Lv.25 군인 승현</strong><span>EXP 3,500 · 군복 · 물약 대기 10초</span></div>':''}${map.danger?`<div class="map-monster-info">${map.monster} <strong>${monsterCount(id)}마리</strong>${player.level<map.minLevel?'<span>현재 레벨보다 강한 적이 있어요.</span>':''}</div>`:''}<div class="map-navigation"><h4>${current?'지금 이동할 수 있는 곳':`현재 위치에서 포탈 ${route.length-1}번`}</h4>${next?`<div class="map-next"><small>다음 포탈 · ${direction}</small><strong>${escapeHtml(MAPS[next.to].name)}</strong><span>왼쪽부터 ${portalNumber}번째 포탈에서 <kbd>F</kbd></span></div><ol class="map-breadcrumb" aria-label="현재 위치부터 목적지까지">${route.map((step,i)=>`<li>${i?'<span aria-hidden="true">→</span>':''}<button data-map-link="${step}" ${i===route.length-1?'aria-current="location"':''}>${escapeHtml(MAPS[step].name)}</button></li>`).join('')}</ol>`:''}${!current?`<details class="map-adjacent"><summary>이 지역의 연결 포탈 · ${map.portals.length}곳</summary>`:''}<div class="map-connections">${[...map.portals].sort((a,b)=>a.x-b.x).map((portal,i)=>`<button data-map-link="${portal.to}"><span>${i+1}</span>${escapeHtml(portal.label)}<b>↔</b></button>`).join('')}</div>${!current?'</details>':''}</div></div>`;
+ $('#map-details').innerHTML=`<button class="map-list-back" id="map-list-back">↑ 지역 목록으로</button><div class="map-art" style="${artStyle}" aria-hidden="true"></div><div class="map-detail-body"><span class="map-detail-tag">${current?'● 현재 위치':player.visited.includes(id)?'✓ 탐험 완료':'◇ 미탐험'} · ${map.danger||map.boss?`Lv. ${map.minLevel}–${map.maxLevel}`:'안전 구역'}</span><h3>${escapeHtml(map.name)}</h3><p>${map.description}</p>${map.boss?(id==='hangar'?'<div class="map-monster-info">보스 <strong>Lv.35 A형</strong><span>EXP 12,000 · 6,000원 · 에너지 코어 15개</span></div>':'<div class="map-monster-info">중간보스 <strong>Lv.25 군인 승현</strong><span>EXP 3,500 · 군복 · 물약 대기 10초</span></div>'):''}${map.danger?`<div class="map-monster-info">${map.monster} <strong>${monsterCount(id)}마리</strong>${player.level<map.minLevel?'<span>현재 레벨보다 강한 적이 있어요.</span>':''}</div>`:''}<div class="map-navigation"><h4>${current?'지금 이동할 수 있는 곳':`현재 위치에서 포탈 ${route.length-1}번`}</h4>${next?`<div class="map-next"><small>다음 포탈 · ${direction}</small><strong>${escapeHtml(MAPS[next.to].name)}</strong><span>왼쪽부터 ${portalNumber}번째 포탈에서 <kbd>F</kbd></span></div><ol class="map-breadcrumb" aria-label="현재 위치부터 목적지까지">${route.map((step,i)=>`<li>${i?'<span aria-hidden="true">→</span>':''}<button data-map-link="${step}" ${i===route.length-1?'aria-current="location"':''}>${escapeHtml(MAPS[step].name)}</button></li>`).join('')}</ol>`:''}${!current?`<details class="map-adjacent"><summary>이 지역의 연결 포탈 · ${map.portals.length}곳</summary>`:''}<div class="map-connections">${[...map.portals].sort((a,b)=>a.x-b.x).map((portal,i)=>`<button data-map-link="${portal.to}"><span>${i+1}</span>${escapeHtml(portal.label)}<b>↔</b></button>`).join('')}</div>${!current?'</details>':''}</div></div>`;
  document.querySelectorAll('[data-map-link]').forEach(button=>button.onclick=()=>selectMapDestination(button.dataset.mapLink));
  $('#map-list-back').onclick=()=>$('.map-tabs').scrollIntoView?.({block:'start',behavior:'smooth'});
  if(focusDetails&&window.matchMedia?.('(max-width:650px)').matches)$('#map-details').scrollIntoView?.({block:'start',behavior:'smooth'});
@@ -257,8 +261,9 @@ function cancelSword(immediate=true){
 function updateCamera(dt){
  const oldCenter=camera+viewWidth()/2;
  // Map-wide targeting is independent of the finite camera baseline; widen for marked enemies.
- let targetZoom=1;
- if(swordUlt){
+ const safety=isTypeA(boss)&&bossActive()&&boss.phase==='safety';
+ let targetZoom=safety?Math.min(.8,screenWidth/(TYPE_A.width+80)):1;
+ if(swordUlt&&!safety){
   const u=swordUlt,marked=monsters.filter(m=>!m.dead&&u.targets.includes(m.id));
   u.viewRadius=Math.max(u.viewRadius,Math.abs(player.x-u.focusX)+(u.phase==='charging'?u.skill.cameraRange:0),...marked.map(m=>Math.abs(m.x-u.focusX)));
   targetZoom=Math.min(.58,Math.max(1,screenWidth-152)/(2*(u.viewRadius+35)));
@@ -267,9 +272,9 @@ function updateCamera(dt){
  if(Math.abs(cameraZoom-targetZoom)<.001)cameraZoom=targetZoom;
  const width=viewWidth(),maxLeft=Math.max(0,MAPS[player.map].width-width);
  // Let the cinematic frame extend past map edges so distant edge reticles remain visible.
- const desiredLeft=swordUlt?swordUlt.focusX-width/2:clamp(player.x-width*.45,0,maxLeft);
+ const desiredLeft=safety?TYPE_A.width/2-width/2:swordUlt?swordUlt.focusX-width/2:clamp(player.x-width*.45,0,maxLeft);
  const center=oldCenter+(desiredLeft+width/2-oldCenter)*(1-Math.exp(-dt*10));
- camera=swordUlt||cameraZoom!==1?center-width/2:clamp(center-width/2,0,maxLeft);
+ camera=safety||swordUlt||cameraZoom!==1?center-width/2:clamp(center-width/2,0,maxLeft);
 }
 
 function swordCandidates(seen=new Set()){
@@ -356,13 +361,14 @@ function drawCombatIndicators(){
 }
 function bossTalk(){
  if(!boss||bossActive())return;
+ if(isTypeA(boss)){typeATalk();return;}
  showModal('boss-talk',`${SOLDIER.name} · Lv. ${SOLDIER.level}`,`<div class="boss-intro"><span class="boss-eyebrow">한사발포차 역삼점 · 중간보스</span><h3>“준비됐나? 제대로 겨뤄 보자.”</h3><p>더 빠르고 넓어진 검 2연격, 범위 안에서 지속 피해를 주는 백색 장풍, 착지 충격파와 등 뒤 기습 5연격을 사용합니다. 바닥의 공격 예고를 보고 피하세요. 칼을 한 바퀴 돌리면 공격을 멈추세요. 이어지는 3초 동안 공격하면 보스 대신 내가 피해를 받습니다.</p><ul><li>권장 Lv. 20–25 · 체력 ${SOLDIER.hp.toLocaleString()}</li><li>반격 피해는 돌진·궁극기의 무적과 막기를 뚫습니다. 공격을 멈추면 안전합니다.</li><li>전투 중 체력 물약은 공통 재사용 대기 <strong>10초</strong></li><li>출구는 잠깁니다. 메뉴에서 도전을 포기하거나 귀환 주문서를 사용할 수 있어요.</li></ul><p class="boss-reward">승리 보상 · EXP ${SOLDIER.xp.toLocaleString()} + 군복<br><small>군복 장착 시 이동속도 +20% · 중복 획득 없음</small></p>${player.level<20?'<p>현재 레벨은 권장 레벨보다 낮아요. 충분히 준비한 뒤 도전해 보세요.</p>':''}<button class="primary" id="challenge-boss">${boss.dead?'다시 결투하기':'결투 시작하기'}</button></div>`,'#challenge-boss');
  $('#challenge-boss').onclick=startBossFight;
 }
 function startBossFight(){
- if(scene!=='playing'||player.map!=='pocha'||!boss||!beginSoldier(boss))return;
+ if(scene!=='playing'||!MAPS[player.map].boss||!boss||!(isTypeA(boss)?beginTypeA(boss):beginSoldier(boss)))return;
  closeModal();resetJump();resetGait();cancelSword();resetCombat();hurtTime=0;attackTimer=0;
- player.x=720;player.y=650;facing=1;invincible=.8;potionCooldown=0;
+ player.x=isTypeA(boss)?600:720;player.y=650;facing=1;invincible=.8;potionCooldown=0;
  monsters=[boss];effects=[];texts=[];drops=[];interactionTarget=null;
  buildHUD();save();canvas.focus();toast('결투 시작! 공격 예고를 보고 피한 뒤 빈틈을 노리세요.');
 }
@@ -370,6 +376,7 @@ function abandonBoss(){
  if(!bossActive())return;closeModal();player.x=290;player.y=648;resetWorld();buildHUD();save();toast('도전을 마쳤어요. 준비가 되면 다시 말을 걸어 주세요.');
 }
 function winBoss(){
+ if(isTypeA(boss)){winTypeA();return;}
  if(!boss||!defeatSoldier(boss))return;
  const owned=player.uniform>0;cancelSword();potionCooldown=0;player.uniform=1;player.bossWins++;player.kills++;
  const gained=gainXp(player,SOLDIER.xp);save();refreshHUD();
@@ -380,6 +387,7 @@ function winBoss(){
 }
 function updateBossFight(dt){
  if(!bossActive())return;
+ if(isTypeA(boss)){updateTypeAFight(dt);return;}
  const events=stepSoldier(boss,dt,{x:player.x,y:player.y,facing});
  for(const event of events){
   if(event.type==='land'){shake=Math.max(shake,8);effects.push({type:'ring',x:boss.x,y:boss.y,life:.35,max:.35,color:'#ffc080',size:SOLDIER.landing.range});}
@@ -396,6 +404,100 @@ function updateBossFight(dt){
   if(player.hp<=0){die();return;}
  }
 }
+function typeATalk(){
+ showModal('boss-talk','Lv.35 A형 · 가동 대기',`<div class="boss-intro"><span class="boss-eyebrow">A형 격납고 · 전투 로봇</span><h3>침입자 감지. 전투 프로토콜 준비.</h3><p>전방 칼날, 기관총 연사, 붉은 충전 후 돌진, 0.5초 간격 4연속 표적 폭격을 사용합니다.</p><ul><li>HP 40%: 7초간 무적. 파란 안전지대 밖은 즉사합니다. 무적기나 막기로 회피할 수 있습니다.</li><li>HP 20%: 광폭화. 이동과 패턴이 빨라지고 4초 회전 칼날, 넓은 원형 자기장 흡인이 추가됩니다.</li><li>체력 ${TYPE_A.hp.toLocaleString()} · 물약 재사용 10초</li></ul><p class="boss-reward">EXP 12,000 · 6,000원 · 에너지 코어 15개</p><button class="primary" id="challenge-boss">${boss.dead?'A형 다시 가동':'A형 가동 · 전투 시작'}</button></div>`,'#challenge-boss');
+ $('#challenge-boss').onclick=startBossFight;
+}
+function winTypeA(){
+ if(!defeatTypeA(boss))return;
+ cancelSword();cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;potionCooldown=0;player.typeAWins=(player.typeAWins||0)+1;player.kills++;
+ player.money+=TYPE_A.money;player.cores+=TYPE_A.cores;gainXp(player,TYPE_A.xp);save();refreshHUD();
+ showModal('boss-victory','A형 격파',`<div class="boss-intro"><h3>전투 프로토콜 종료.</h3><p>${player.typeAWins}번째 A형 격파! 격납고의 출구가 열렸어요.</p><p class="boss-reward">EXP +12,000 · 6,000원 · 에너지 코어 15개</p><button class="primary" id="type-a-reward-close">모험 계속하기</button></div>`,'#type-a-reward-close');
+ $('#type-a-reward-close').onclick=closeModal;
+}
+function updateTypeAFight(dt){
+ const events=stepTypeA(boss,dt,{x:player.x,y:player.y,facing});
+ for(const e of events){
+  if(e.type==='muzzle'){effects.push({type:'spark',x:e.x,y:e.y,life:.12,max:.12,color:'#ffdb9a',size:36});beep(130,.04,'square',.008);continue;}
+  if(e.type==='bomb-launch'){beep(420,.06);continue;}
+  if(e.type==='blade')effects.push({type:'slash',x:e.x,y:e.y-95,dir:e.dir,life:.32,max:.32,color:'#ff8295',size:e.range});
+  if(e.type==='bomb')effects.push({type:'ring',x:e.x,y:e.y-12,life:.45,max:.45,color:'#ff7755',size:e.radius});
+  if(e.type==='execution'){shake=16;effects.push({type:'ring',x:player.x,y:650,life:.7,max:.7,color:'#ff3159',size:1200});}
+  if(!typeAHit(e,{x:player.x,y:player.y,z:pz}))continue;
+  if(e.type==='bullet')e.shot.spent=true;
+  if(e.type==='dash')boss.dashHit=true;
+  // The safety blast ignores defense/reduction and jumping, but respects actual invulnerability skills.
+  if(invincible>0||guardTime>0){if(e.type==='execution')textAt('회피 성공!',player.x,player.y-150,'#b8f4ff');continue;}
+  if(e.type==='pull'){
+   const dx=boss.x-player.x,dy=boss.y-player.y,d=Math.hypot(dx,dy)||1,travel=Math.max(0,d-100);
+   player.x=clamp(player.x+dx/d*travel,45,MAPS[player.map].width-45);player.y=clamp(player.y+dy/d*travel,580,720);
+   resetGait();
+  }
+  const damage=e.type==='execution'?player.hp:playerDamage(e.damage);
+  player.hp=Math.max(0,player.hp-damage);hurtTime=.32;invincible=.12;shake=Math.max(shake,e.type==='bomb'?10:5);
+  textAt(e.type==='execution'?'즉사':`−${damage}`,player.x,player.y-120,'#ff8b91');
+  if(player.hp<=0){die();return;}
+ }
+}
+function typeAFrame(b){
+ if(b.dead)return 8;
+ if(b.phase==='safety'||b.phase==='enrage')return 12;
+ if(b.walking)return [1,2,3,2][Math.floor(b.walkPhase*4)%4];
+ return {'blade-charge':4,blade:b.elapsed<.2?5:6,'gun-charge':7,gun:7,'dash-charge':8,dash:9,'bomb-charge':10,bomb:(b.elapsed%.5)<.22?11:10,'spin-charge':4,spin:13+Math.floor(b.elapsed/.1)%2,'pull-charge':8,pull:15}[b.phase]??0;
+}
+function drawTypeABoss(){
+ const b=boss,img=images['type-a'];if(!img?.complete||!img.naturalWidth)return;
+ const frame=typeAFrame(b),cell=img.naturalWidth/4,ch=img.naturalHeight/4,scale=TYPE_A.height/(ch*.96),x=b.x-camera;
+ ctx.save();ctx.fillStyle='#0008';ctx.beginPath();ctx.ellipse(x,b.y+5,90,20,0,0,Math.PI*2);ctx.fill();
+ ctx.translate(x,b.y);ctx.scale(b.dir,1);ctx.imageSmoothingEnabled=true;ctx.globalAlpha=b.dead?.45:1;
+ if(b.phase==='dash-charge'||b.enraged){ctx.shadowColor='#ff274f';ctx.shadowBlur=b.phase==='dash-charge'?20+Math.sin(worldTime*24)*12:14;ctx.filter='sepia(.2) saturate(1.6)';}
+ if(b.hit>0)ctx.filter='brightness(1.6)';
+ ctx.save();ctx.translate(-cell*.5*scale,-ch*.98*scale);ctx.scale(scale,scale);
+ // Only the fully extended blade crosses its atlas cell; clip away the neighboring robot's lower leg.
+ if(frame===5){ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(cell*1.25,0);ctx.lineTo(cell*1.25,ch*.47);ctx.lineTo(cell,ch*.47);ctx.lineTo(cell,ch);ctx.lineTo(0,ch);ctx.closePath();ctx.clip();ctx.drawImage(img,cell,ch,cell*1.25,ch,0,0,cell*1.25,ch);}
+ else{
+  if(frame===6||frame===10){ctx.beginPath();ctx.moveTo(cell*.24,0);ctx.lineTo(cell,0);ctx.lineTo(cell,ch);ctx.lineTo(0,ch);ctx.lineTo(0,ch*.47);ctx.lineTo(cell*.24,ch*.47);ctx.closePath();ctx.clip();}
+  ctx.drawImage(img,frame%4*cell,Math.floor(frame/4)*ch,cell,ch,0,0,cell,ch);
+ }
+ ctx.restore();ctx.filter='none';ctx.shadowBlur=0;
+ if(b.phase==='gun'&&b.elapsed%TYPE_A.gun.interval<.07){ctx.fillStyle='#fff1ae';ctx.beginPath();ctx.moveTo(120,-220);ctx.lineTo(175,-230);ctx.lineTo(145,-206);ctx.lineTo(178,-198);ctx.lineTo(120,-201);ctx.closePath();ctx.fill();}
+ if(b.phase==='bomb-charge'||b.phase==='bomb'&&b.elapsed%.5>=.22){ctx.fillStyle='#242c35';ctx.strokeStyle='#ff546a';ctx.lineWidth=3;ctx.beginPath();ctx.arc(35,-TYPE_A.height+20,19,0,Math.PI*2);ctx.fill();ctx.stroke();}
+ if(b.phase==='safety'){ctx.strokeStyle='#a6e6ff';ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(0,-TYPE_A.height*.48,125,TYPE_A.height*.54,0,0,Math.PI*2);ctx.stroke();}
+ ctx.restore();label(b.dead?'A형 · 가동 정지':`Lv.35 A형${b.enraged?' · 광폭화':''}`,x,b.y-TYPE_A.height-24,b.enraged?'#ff8b9c':'#f2d2d8',18);
+}
+function drawTypeATelegraphs(){
+ const b=boss;ctx.save();
+ const zone=(x,y,rx,ry,color)=>{ctx.fillStyle=color+'35';ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(x-camera,y,rx,ry,0,0,Math.PI*2);ctx.fill();ctx.stroke();};
+ if(b.phase==='safety'){
+  const s=b.safeZone;ctx.fillStyle='#ef234d66';ctx.fillRect(-camera,570,TYPE_A.width,160);
+  for(let x=0;x<TYPE_A.width;x+=85){ctx.strokeStyle='#ff668466';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x-camera,575);ctx.lineTo(x+100-camera,725);ctx.stroke();}
+  // Blue is drawn last so hazard stripes never obscure the safe zone.
+  ctx.fillStyle='#176f9f';ctx.strokeStyle='#72d8ff';ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(s.x-camera,s.y,s.rx,s.ry,0,0,Math.PI*2);ctx.fill();ctx.stroke();label('안전지대',s.x-camera,s.y-13,'#effcff',20);
+ }
+ if(b.phase==='blade-charge'){ctx.fillStyle='#ff496644';ctx.fillRect(b.x-camera+(b.dir<0?-TYPE_A.blade.range:0),b.y-65,TYPE_A.blade.range,130);}
+ if(b.phase==='gun-charge'||b.phase==='gun'){ctx.fillStyle='#ffb05222';ctx.fillRect(b.dir>0?b.x-camera:-camera,b.y-25,b.dir>0?TYPE_A.width-b.x:b.x,50);}
+ if(b.phase==='dash-charge'){
+  ctx.strokeStyle='#ff385d';ctx.lineWidth=50;ctx.globalAlpha=.22;ctx.beginPath();ctx.moveTo(b.x-camera,b.y);ctx.lineTo(b.target.x-camera,b.target.y);ctx.stroke();ctx.globalAlpha=1;
+  zone(b.x,b.y,105,48,'#ff385d');label('돌진 준비',b.x-camera,b.y-TYPE_A.height-55,'#ffacb9',16);
+ }
+ for(const bomb of b.bombs){
+  const t=1-bomb.remaining/bomb.duration;zone(bomb.x,bomb.y,TYPE_A.bomb.radius,TYPE_A.bomb.radius/1.5,'#ff664e');
+  ctx.strokeStyle='#ffe4b8';ctx.lineWidth=4;ctx.beginPath();ctx.arc(bomb.x-camera,bomb.y,22,-Math.PI/2,-Math.PI/2+t*Math.PI*2);ctx.stroke();
+  const x=bomb.fromX+(bomb.x-bomb.fromX)*t-camera,y=bomb.fromY+(bomb.y-bomb.fromY)*t-Math.sin(t*Math.PI)*120;
+  ctx.fillStyle='#303c49';ctx.strokeStyle='#ff6475';ctx.beginPath();ctx.arc(x,y,15,0,Math.PI*2);ctx.fill();ctx.stroke();
+ }
+ for(const shot of b.projectiles){const height=70+140*Math.max(0,1-Math.abs(shot.x-shot.originX)/320);ctx.strokeStyle='#ffdd9e';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(shot.x-camera-shot.dir*25,shot.y-height);ctx.lineTo(shot.x-camera,shot.y-height);ctx.stroke();}
+ if(b.phase==='spin-charge'||b.phase==='spin'){
+  zone(b.x,b.y,TYPE_A.spin.radius,TYPE_A.spin.radius/1.5,'#ff5979');
+  if(b.phase==='spin')for(let i=0;i<4;i++){const a=worldTime*17+i*Math.PI/2;ctx.strokeStyle=i%2?'#fff3ef':'#f85076';ctx.lineWidth=7;ctx.beginPath();ctx.ellipse(b.x-camera,b.y-95,TYPE_A.spin.radius,TYPE_A.spin.radius*.5,0,a,a+1.1);ctx.stroke();}
+ }
+ if(b.phase==='pull-charge'||b.phase==='pull'){
+  zone(b.x,b.y,TYPE_A.pull.radius,TYPE_A.pull.radius/1.5,'#a6a2ff');
+  for(let i=0;i<3;i++){const r=TYPE_A.pull.radius*(1-((worldTime*1.8+i/3)%1));ctx.strokeStyle='#c2baffaa';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(b.x-camera,b.y,r,r/1.5,0,0,Math.PI*2);ctx.stroke();}
+ }
+ ctx.restore();
+}
+
 const SOLDIER_FRAMES=[
  [19,11,414,498,283,498],[462,85,579,410,376,410],[1078,49,394,459,202,459],
  [148,520,428,489,163,489],[577,543,523,461,216,461],[1143,529,362,451,178,475]
@@ -411,6 +513,7 @@ const SOLDIER_WALK_FRAMES=[
 ];
 function drawBoss(){
  if(!boss)return;
+ if(isTypeA(boss)){drawTypeABoss();return;}
  const b=boss,phase=b.phase,counterPose=phase==='counter-windup'?Math.min(2,Math.floor(b.elapsed/SOLDIER.counter.windup*3)):phase==='counter'?3+Math.floor(b.elapsed/.12)%3:-1,walkPose=b.active&&!b.dead&&b.z===0&&phase==='approach'&&b.walking?Math.floor(b.walkPhase*8)%8:-1,img=images[counterPose>=0?'soldier-counter':walkPose>=0?'soldier-walk':'soldier-boss'],x=b.x-camera;
  const pose=phase==='leap'?5:['palm-charge','leap-charge'].includes(phase)?3:phase==='palm-release'?4:['slash','flurry'].includes(phase)?1+(Math.max(0,b.strikes-1)%2):phase==='landing'?2:0;
  ctx.save();ctx.fillStyle='#03101866';ctx.beginPath();ctx.ellipse(x,b.y+4,38*(1-b.z/420),10,0,0,Math.PI*2);ctx.fill();
@@ -455,7 +558,7 @@ function drawBossAura(b){
  }
 }
 function drawBossTelegraphs(){
- if(!bossActive())return;const b=boss;
+ if(!bossActive())return;if(isTypeA(boss)){drawTypeATelegraphs();return;}const b=boss;
  const lane=(x,y,dir,length,half,color)=>{
   ctx.save();ctx.translate(x-camera,y);ctx.scale(dir,1);ctx.fillStyle=color+'38';ctx.strokeStyle=color;ctx.lineWidth=2;
   ctx.fillRect(-22,-half,length+22,half*2);ctx.strokeRect(-22,-half,length+22,half*2);
@@ -554,7 +657,7 @@ function updateCatCombat(dt){
  catProjectiles=catProjectiles.filter(b=>b.elapsed<b.duration);
  for(const fire of catFires){fire.remaining-=dt;fire.tick-=dt;if(fire.tick<=0){fire.tick+=.5;catAreaHit(fire.x,fire.y,fire.radius,.43);}}
  catFires=catFires.filter(f=>f.remaining>0);
- if(catBallot){catBallot.remaining-=dt;catBallot.tick-=dt;if(catBallot.tick<=0){catBallot.tick+=catBallot.skill.tick;catAreaHit(catBallot.x,catBallot.y,catBallot.skill.range,catBallot.skill.damage);}if(catBallot.remaining<=0)catBallot=null;}
+ if(catBallot){const ballot=catBallot;ballot.remaining-=dt;ballot.tick-=dt;if(ballot.tick<=0){ballot.tick+=ballot.skill.tick;catAreaHit(ballot.x,ballot.y,ballot.skill.range,ballot.skill.damage);}if(catBallot===ballot&&ballot.remaining<=0)catBallot=null;}
 }
 function attack(){
  if(scene!=='playing'||modal||swordUlt||guardTime>0||recovery||attackTimer>0)return;
@@ -639,7 +742,7 @@ function reflectBossAttack(b,rawDamage){
  if(player.hp<=0){die();return;}
  refreshHUD();save();
 }
-function hitMonster(m,damage){if(scene!=='playing'||!canTarget(m))return;if(m.isBoss){if(m!==boss)return;const reflected=counterDamage(m,damage);if(reflected){reflectBossAttack(m,reflected);return;}m.hp=Math.max(0,m.hp-damage);m.hit=.16;textAt(String(damage),m.x,m.y-180,!player.job?'#e0e5e8':player.job==='bodybuilder'?FX_PALETTES.builder.color:undefined);if(m.hp<=0)winBoss();return;}m.hp-=damage;m.hit=.28;m.hitDir=facing;m.x=clamp(m.x+facing*14,60,MAPS[player.map].width-60);textAt(String(damage),m.x,m.y-90,!player.job?'#e0e5e8':player.job==='bodybuilder'?FX_PALETTES.builder.color:undefined);attackImpactAt(m.x,m.y-38,42);shake=Math.max(shake,isPowered(player)?5:2.5);if(player.job)effects.push({type:'spark',x:m.x,y:m.y-38,life:.2,max:.2,color:player.job==='bodybuilder'?FX_PALETTES.builder.accent:'#ffd79a',size:25});if(m.hp>0)return;m.dead=true;m.deathFx=.28;m.respawnIn=12;player.kills++;drops.push({x:m.x-17,y:m.y+6,type:'money',amount:14+m.level*8,life:60},{x:m.x+20,y:m.y-3,type:m.level>=4?'cores':'scrap',amount:1,life:60});if(Math.random()<.22)drops.push({x:m.x+4,y:m.y+23,type:'potions',amount:1,life:60});const gained=gainXp(player,12+m.level*7);if(gained){textAt(`LEVEL UP · ${player.level}`,player.x,player.y-155,'#b8ffe3');const unlocked=skillsFor(player).filter(s=>skillUnlocked(player,s)&&s.level>player.level-gained);toast(`Lv. ${player.level} 달성! HP·MP 완전 회복${unlocked.length?' · '+unlocked.map(s=>s.key.toUpperCase()+' '+s.name).join(', ')+' 습득':''}${!player.job&&player.level>=10&&player.level-gained<10?(player.classId==='cat'?' · 올림픽공원에서 전직 가능':' · 헬스장/검도장에서 전직 가능'):''}`);effects.push({type:'ring',x:player.x,y:player.y-40,life:1,max:1,color:'#ffe6a6',size:160});beep(900,.45);}save();}
+function hitMonster(m,damage){if(scene!=='playing'||!canTarget(m))return;if(m.isBoss){if(m!==boss)return;if(isTypeA(m)){const dealt=damageTypeA(m,damage,player);textAt(String(dealt),m.x,m.y-300,'#ffbdad');if(m.hp<=0)winBoss();return;}const reflected=counterDamage(m,damage);if(reflected){reflectBossAttack(m,reflected);return;}m.hp=Math.max(0,m.hp-damage);m.hit=.16;textAt(String(damage),m.x,m.y-180,!player.job?'#e0e5e8':player.job==='bodybuilder'?FX_PALETTES.builder.color:undefined);if(m.hp<=0)winBoss();return;}m.hp-=damage;m.hit=.28;m.hitDir=facing;m.x=clamp(m.x+facing*14,60,MAPS[player.map].width-60);textAt(String(damage),m.x,m.y-90,!player.job?'#e0e5e8':player.job==='bodybuilder'?FX_PALETTES.builder.color:undefined);attackImpactAt(m.x,m.y-38,42);shake=Math.max(shake,isPowered(player)?5:2.5);if(player.job)effects.push({type:'spark',x:m.x,y:m.y-38,life:.2,max:.2,color:player.job==='bodybuilder'?FX_PALETTES.builder.accent:'#ffd79a',size:25});if(m.hp>0)return;m.dead=true;m.deathFx=.28;m.respawnIn=12;player.kills++;drops.push({x:m.x-17,y:m.y+6,type:'money',amount:14+m.level*8,life:60},{x:m.x+20,y:m.y-3,type:m.level>=4?'cores':'scrap',amount:1,life:60});if(Math.random()<.22)drops.push({x:m.x+4,y:m.y+23,type:'potions',amount:1,life:60});const gained=gainXp(player,12+m.level*7);if(gained){textAt(`LEVEL UP · ${player.level}`,player.x,player.y-155,'#b8ffe3');const unlocked=skillsFor(player).filter(s=>skillUnlocked(player,s)&&s.level>player.level-gained);toast(`Lv. ${player.level} 달성! HP·MP 완전 회복${unlocked.length?' · '+unlocked.map(s=>s.key.toUpperCase()+' '+s.name).join(', ')+' 습득':''}${!player.job&&player.level>=10&&player.level-gained<10?(player.classId==='cat'?' · 올림픽공원에서 전직 가능':' · 헬스장/검도장에서 전직 가능'):''}`);effects.push({type:'ring',x:player.x,y:player.y-40,life:1,max:1,color:'#ffe6a6',size:160});beep(900,.45);}save();}
 function die(){if(scene!=='playing')return;closeModal();setScene('dead');beep(130,.5,'triangle');screens.innerHTML=`<div class="screen-overlay"><div class="death-symbol">☾</div><h2 class="screen-title">잠시, 숨을 고를 시간</h2><p class="screen-subtitle">괜찮아요. 돈과 아이템은 그대로입니다.<br>마을에서 다시 모험을 시작해 보세요.</p><button class="primary" id="revive">마을에서 부활하기</button></div>`;respawn(player);save();$('#revive').onclick=()=>{resetWorld();setScene('playing');screens.innerHTML='';buildHUD();canvas.focus();toast('체력과 MP가 모두 회복되었어요. 다시 출발해 볼까요?');};}
 function update(dt){
  walking=false;worldTime+=dt;if(scene!=='playing'||modal||document.hidden)return;
