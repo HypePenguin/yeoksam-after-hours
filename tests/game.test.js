@@ -390,6 +390,24 @@ test('Maguri sells potions and both destination scrolls in both towns without ov
   }
  }
 });
+test('buying repeatedly preserves the shop dialog and refreshes stock, balance and affordability',()=>{
+ for(const map of ['town','gangnam']){
+  const h=harness(),p=core.createCharacter('스크롤');Object.assign(p,{map,money:1700});h.api.start(p);h.api.shop();
+  const body=h.el('.npc-dialog-body'),help=h.el('.npc-details'),button=h.el('#buy-gangnamScrolls');
+  body.scrollTop=120;help.open=true;h.document.activeElement=button;
+  const dialogMarkup=h.el('#modal-root').innerHTML;
+  Object.defineProperty(h.el('#modal-root'),'innerHTML',{get:()=>dialogMarkup,set(){assert.fail('a purchase must not rebuild the dialog');}});
+  for(let i=0;i<2;i++){
+   const price=core.itemPrice(p,'gangnamScrolls'),balance=p.money,stock=p.gangnamScrolls;
+   button.onclick();
+   assert.equal(p.gangnamScrolls,stock+(balance>=price?1:0));
+   assert.equal(body.scrollTop,120);assert.equal(help.open,true);assert.equal(h.document.activeElement,button);
+   assert.equal(h.el('.shop-money').textContent,`${p.money.toLocaleString()}원`);
+   assert.equal(h.el('#shop-stock-gangnamScrolls').textContent,`즉시 귀환 · 보유 ${p.gangnamScrolls}개`);
+   for(const id of ['potions','mpPotions','returnScrolls','gangnamScrolls'])assert.equal(h.el(`#buy-${id}`).disabled,p.money<core.itemPrice(p,id));
+  }
+ }
+});
 test('both recall scrolls appear in the bag, bind independently and work between towns after reload',async()=>{
  const h=harness(),p=core.createCharacter('왕복귀환');Object.assign(p,{returnScrolls:2,gangnamScrolls:2,hp:31,mp:17});h.api.start(p);
  h.api.inventory('returnScrolls');key(h,'Digit2');h.api.inventory('gangnamScrolls');key(h,'Digit3');

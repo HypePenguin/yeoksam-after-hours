@@ -164,10 +164,20 @@ function jobModal(job){
 }
 
 function interact(){if(scene!=='playing'||modal)return;interactionTarget=findInteraction();if(!interactionTarget){toast('NPC나 포탈에 조금 더 가까이 가보세요.');return;}const t=interactionTarget;if(t.id==='soldier'){bossTalk();return;}if(t.job){jobModal(t.job);return;}if(!t.id){if((MAPS[t.to].danger||MAPS[t.to].boss)&&player.level<MAPS[t.to].minLevel){showModal('portal','더 깊은 거리로',`<p>${MAPS[t.to].name}에는 Lv. ${MAPS[t.to].minLevel}–${MAPS[t.to].maxLevel} ${MAPS[t.to].boss?'중간보스가':'로봇이'} 있어요.<br>현재 Lv. ${player.level}입니다. 도전을 이어가시겠어요?</p><button class="primary" id="portal-confirm">${MAPS[t.to].name} 이동</button>`);$('#portal-confirm').onclick=()=>travel(t);}else travel(t);return;}if(t.id==='gm'){showModal('gm','운영자 현토리',`<p>역삼역에 온 걸 환영해요, <strong>${escapeHtml(player.name)}</strong>!<br>이곳은 안전한 마을이에요. 처음엔 오른쪽의 물약 상인 마구리에게 들러 보세요.</p><p>오른쪽 끝의 테헤란 뒷골목 포탈에서 <strong>F</strong>를 누르면 첫 사냥터로 이동할 수 있어요. 로봇은 귀엽지만 부딪히면 아프니 조심하세요!</p><details class="npc-details"><summary>아이템 · 전직 · 성장 안내</summary><p>I키로 인벤토리를 열고 아이템을 1·2·3번에 등록할 수 있어요. 마구리에게 귀환 주문서를 사 두면 멀리서도 마을로 돌아올 수 있죠. M키로 지도를 확인해 보세요. 피치플레이헬스&amp;필라테스 역삼점은 이곳 1번 출구에서 바로 갈 수 있어요. 강남성균검도관에 가려면 몬스터가 있는 역삼역사거리를 지나 6번 출구로 가세요. Q는 Lv. 3, W는 Lv. 7에 배우고 Lv. 10부터 헬스장·검도장에서 전직해 E를 배워요. 전직 후 Lv. 15에 R을 습득합니다! 쓰러져도 돈이나 아이템을 잃지 않으니 편하게 모험해 보세요.</p></details><button class="primary" id="gm-help">자세한 조작법 보기</button>`);$('#gm-help').onclick=help;}else shop();}
+const SHOP_ITEMS=['potions','mpPotions','returnScrolls','gangnamScrolls'];
+const shopItemSummary=id=>`${id==='potions'?'HP +60':id==='mpPotions'?'MP +50':'즉시 귀환'} · 보유 ${player[id]}개`;
+function refreshShop(){
+ // Keep the existing dialog nodes so buying preserves scroll, focus and expanded help.
+ $('.shop-money').textContent=`${player.money.toLocaleString()}원`;
+ for(const id of SHOP_ITEMS){
+  $(`#shop-stock-${id}`).textContent=shopItemSummary(id);
+  $(`#buy-${id}`).disabled=player.money<itemPrice(player,id);
+ }
+}
 function shop(){
- showModal('shop','마구리의 보따리 상점',`<p class="shop-balance">소지금 <strong class="shop-money">${player.money.toLocaleString()}원</strong> · 한 번에 1개씩 구매</p>${['potions','mpPotions','returnScrolls','gangnamScrolls'].map(id=>{const item=ITEMS[id],price=itemPrice(player,id);return `<div class="shop-item"><span class="bottle-icon">${item.icon}</span><div><strong>${item.name}</strong><small>${id==='potions'?'HP +60':id==='mpPotions'?'MP +50':'즉시 귀환'} · 보유 ${player[id]}개</small></div><button class="secondary" id="buy-${id}" ${player.money<price?'disabled':''}>${price.toLocaleString()}원 · 구매</button></div>`;}).join('')}<details class="npc-details"><summary>귀환 주문서 · 단축키 안내</summary><p><kbd>I</kbd> 인벤토리에서 사용하거나 1 · 2 · 3번에 등록하세요. 주문서의 목적지에 이미 있다면 소모되지 않아요. 두 마을 사이에서도 사용할 수 있어요.</p></details>`);
+ showModal('shop','마구리의 보따리 상점',`<p class="shop-balance">소지금 <strong class="shop-money">${player.money.toLocaleString()}원</strong> · 한 번에 1개씩 구매</p>${SHOP_ITEMS.map(id=>{const item=ITEMS[id],price=itemPrice(player,id);return `<div class="shop-item"><span class="bottle-icon">${item.icon}</span><div><strong>${item.name}</strong><small id="shop-stock-${id}">${shopItemSummary(id)}</small></div><button class="secondary" id="buy-${id}" ${player.money<price?'disabled':''}>${price.toLocaleString()}원 · 구매</button></div>`;}).join('')}<details class="npc-details"><summary>귀환 주문서 · 단축키 안내</summary><p><kbd>I</kbd> 인벤토리에서 사용하거나 1 · 2 · 3번에 등록하세요. 주문서의 목적지에 이미 있다면 소모되지 않아요. 두 마을 사이에서도 사용할 수 있어요.</p></details>`);
  $('.modal').classList.add('shop-dialog');
- for(const id of ['potions','mpPotions','returnScrolls','gangnamScrolls'])$(`#buy-${id}`).onclick=()=>{const result=buyItem(player,id);if(result.ok){save();beep(800);shop();}toast(result.message);refreshHUD();};
+ for(const id of SHOP_ITEMS)$(`#buy-${id}`).onclick=()=>{const result=buyItem(player,id);if(result.ok){save();beep(800);refreshShop();}toast(result.message);refreshHUD();};
 }
 function findInteraction(){if(!player||bossActive())return null;const candidates=[...(boss?[{id:'soldier',name:SOLDIER.name,x:boss.x,y:boss.y}]:[]),...mapNPCs(),...MAPS[player.map].portals];return candidates.filter(o=>Math.hypot(player.x-o.x,(player.y-o.y)*1.8)<145).sort((a,b)=>Math.hypot(player.x-a.x,player.y-a.y)-Math.hypot(player.x-b.x,player.y-b.y))[0]??null;}
 const MAP_TABS=[['hunt','초반 사냥'],['advanced','고레벨 던전'],['town','마을 · 전직']];
