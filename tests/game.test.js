@@ -31,7 +31,7 @@ function harness(){
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),hidden:false,activeElement:el('#game')};
  const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;this.complete=true;this.naturalWidth=1500;this.naturalHeight=1000;this.onload?.();}},Promise,Math,Date,Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
- vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,get:()=>({catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
+ vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,get:()=>({rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
  return {api:context.gameTest,persistence,draws,labels,strokes,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
 }
 function advance(h,seconds){for(let t=0;t<seconds;t+=1/60)h.api.update(1/60);}
@@ -1372,4 +1372,43 @@ test('A-type pull changes position inside its radius and spin deals repeated dam
 // Victory clears persistent effects while their damage tick is still resolving.
 test('cat ballot can finish A-type without reading a cleared effect',()=>{
  const h=harness(),p=core.createCharacter('지속피해','cat');Object.assign(p,{level:35,job:'protester',map:'hangar',x:1100,y:650});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);h.api.startBossFight();const b=h.api.get().boss;p.x=b.x-100;b.safetyUsed=true;b.hp=1;h.api.cast('r');assert.doesNotThrow(()=>advance(h,.6));assert.equal(b.dead,true);assert.equal(p.typeAWins,1);assert.equal(h.api.get().catBallot,null);
+});
+
+test('rabbit progression is isolated and old characters cannot become mages',()=>{
+ const p=core.createCharacter('안경토끼','rabbit');assert.equal(p.mp,90);assert.equal(core.jobName(p),'토끼 모험가');assert.equal(core.canUseSkill(p,'q').ok,false);
+ p.level=10;p.map='town';assert.equal(core.advanceJob(p,'swordsman').ok,false);assert.equal(core.advanceJob(p,'mage').ok,true);assert.equal(core.effectiveSkill(p,'w').name,'순간 이동');assert.equal(core.canUseSkill(p,'r').ok,false);
+ p.level=15;assert.equal(core.canUseSkill(p,'r').ok,true);assert.equal(core.normalizeCharacter(p).job,'mage');p.job='bodybuilder';assert.equal(core.normalizeCharacter(p).job,null);
+ const penguin=core.createCharacter('펭귄');penguin.level=15;assert.equal(core.advanceJob(penguin,'mage').ok,false);
+});
+function rabbitHarness(job='mage'){
+ const h=harness(),p=core.createCharacter('토끼시험','rabbit');Object.assign(p,{level:15,job,map:'alley',x:1000,y:650});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);const mobs=h.api.get().monsters;for(const m of mobs){m.x=m.home=2300;m.y=650;m.speed=0;m.hp=m.maxHp=10000;}return {h,p,mobs};
+}
+test('rabbit basic orb hits the first forward enemy, never behind or beyond short range; Q penetrates forward',()=>{
+ const {h,p,mobs}=rabbitHarness(null);mobs[0].x=mobs[0].home=1140;mobs[1].x=mobs[1].home=1240;mobs[2].x=mobs[2].home=910;
+ h.api.attack();assert.equal(mobs[0].hp,10000);advance(h,.4);assert.ok(mobs[0].hp<10000);assert.equal(mobs[1].hp,10000);assert.equal(mobs[2].hp,10000);assert.equal(h.api.get().rabbitOrbs.length,0);
+ for(const m of mobs){m.hp=10000;m.x=m.home=1700;}h.api.attack();advance(h,.5);assert.ok(mobs.every(m=>m.hp===10000));
+ mobs[0].x=1150;mobs[1].x=1290;mobs[2].x=910;h.api.cast('q');assert.ok(mobs[0].hp<10000);assert.ok(mobs[1].hp<10000);assert.equal(mobs[2].hp,10000);assert.equal(h.api.get().combatMotion.kind,'rabbitLightning');
+});
+test('rabbit W rolls forward before promotion, teleports after promotion, and does no damage',()=>{
+ for(const job of [null,'mage']){const {h,p,mobs}=rabbitHarness(job),before=mobs.map(m=>m.hp);const x=p.x;h.api.cast('w');assert.equal(p.x-x,job?260:180);assert.equal(h.api.get().cooldowns.w,2);assert.equal(h.api.get().combatMotion.kind,job?'rabbitTeleport':'rabbitRoll');if(!job)assert.ok(h.api.combatDisplayX()<p.x);assert.deepEqual(mobs.map(m=>m.hp),before);advance(h,2.1);assert.equal(h.api.get().cooldowns.w,0);}
+});
+test('rabbit E absorbs damage up to its pool, expires after three seconds and pulses area damage',()=>{
+ const {h,p,mobs}=rabbitHarness();mobs[0].x=1120;h.api.cast('e');assert.ok(mobs[0].hp<10000);const pool=Math.round(core.maxHp(p)*.3);assert.equal(h.api.get().rabbitShield.hp,pool);assert.equal(h.api.playerDamage(40),0);assert.equal(h.api.get().rabbitShield.hp,pool-40);assert.equal(h.api.playerDamage(pool),40);assert.equal(h.api.get().rabbitShield,null);
+ h.api.get().cooldowns.e=0;h.api.cast('e');for(const m of mobs)m.x=m.home=2300;advance(h,3.1);assert.equal(h.api.get().rabbitShield,null);
+});
+test('respect target selection is cancellable, confirmation costs once and buffs expire without permanent stats',()=>{
+ const {h,p,mobs}=rabbitHarness(),baseHp=core.maxHp(p),baseAttack=core.attackPower(p),mp=p.mp;mobs[0].x=1180;mobs[1].x=1800;
+ h.api.cast('r');assert.equal(h.api.get().modal,'respect-target');assert.match(h.el('#modal-root').innerHTML,/토끼시험 · 나/);assert.equal(p.mp,mp);h.api.closeModal();assert.equal(h.api.get().cooldowns.r,0);
+ h.api.cast('r');h.el('#respect-self').onclick();assert.equal(p.mp,mp-35);assert.equal(p.respectTime,10);assert.equal(core.maxHp(p),Math.round(baseHp*1.2));assert.equal(core.attackPower(p),baseAttack*1.2);assert.equal(core.movementMultiplier(p),1.2);assert.equal(h.api.playerDamage(100,mobs[0]),56);assert.equal(h.api.playerDamage(100,mobs[1]),80);assert.equal(h.api.get().combatMotion.kind,'rabbitSalute');h.el('#respect-self').onclick();assert.equal(p.mp,mp-35);
+ h.api.worldMap();advance(h,2);assert.equal(p.respectTime,10);h.api.closeModal();for(const m of mobs)m.x=m.home=2300;advance(h,3.1);assert.equal(mobs[0].respectTime,0);assert.ok(p.respectTime>6);advance(h,7);assert.equal(p.respectTime,0);assert.equal(core.maxHp(p),baseHp);assert.ok(p.hp<=baseHp);assert.equal(core.attackPower(p),baseAttack);assert.equal(core.movementMultiplier(p),1);
+});
+test('respect weakens both bosses and immunity execution still ignores ordinary shields',()=>{
+ for(const map of ['pocha','hangar']){const {h,p}=rabbitHarness();p.map=map;h.api.start(p);h.api.startBossFight();const b=h.api.get().boss;p.x=b.x-100;h.api.cast('r');h.el('#respect-self').onclick();assert.equal(b.respectTime,3);assert.equal(h.api.playerDamage(100,b),56);}
+ const {h,p}=rabbitHarness();p.map='hangar';h.api.start(p);h.api.startBossFight();const b=h.api.get().boss;b.phase='recover';b.elapsed=-20;advance(h,1);h.api.hitMonster(b,999999);advance(h,6.7);h.api.cast('e');advance(h,.4);assert.equal(h.api.get().scene,'dead');
+});
+test('rabbit movement, jumps and every skill render distinct frames with direction and cleanup',()=>{
+ const {h,p}=rabbitHarness();const frames=new Set();const capture=()=>{render(h);const d=h.draws.find(d=>d.asset==='assets/rabbit-motion.png');assert.ok(d);frames.add(d.source.slice(0,2).join(','));};capture();
+ h.api.keys.add('ArrowRight');for(let i=0;i<20;i++){h.api.update(.03);capture();}h.api.keys.clear();h.api.jump();for(let i=0;i<20;i++){h.api.update(.04);capture();}
+ for(const key of ['a','q','w','e','r']){key==='a'?h.api.attack():h.api.cast(key);if(key==='r')h.el('#respect-self').onclick();h.api.update(.12);capture();advance(h,1);}
+ assert.ok(frames.size>=10,`frames=${frames.size}`);h.api.resetCombat();assert.equal(h.api.get().rabbitOrbs.length,0);assert.equal(h.api.get().rabbitShield,null);
 });

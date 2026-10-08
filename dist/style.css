@@ -176,3 +176,5 @@ main{width:100%;max-width:1512px;min-height:100svh;margin:0 auto;padding:24px;di
 .shop-dialog .npc-details{font-size:12px;margin-top:6px;}
 .type-a-warning{position:absolute;top:30%;left:50%;transform:translateX(-50%);width:max-content;max-width:90%;padding:10px 18px;border:1px solid #92dfff;border-radius:8px;background:#102432ed;color:#c7f2ff;font-weight:700;text-align:center;font-size:clamp(13px,1.4vw,20px);pointer-events:none;box-shadow:0 0 24px #58bce944;}
 .type-a-warning[hidden]{display:none;}
+
+.respect-target{display:flex;align-items:center;gap:16px;width:100%;padding:16px;background:#2c2440;border:1px solid #ae8dcf;color:#f5e9ff;text-align:left;border-radius:10px}.respect-target:hover{background:#493460}.respect-target img{width:96px;height:112px;object-fit:contain}.respect-target small{display:block;margin-top:8px;line-height:1.5}.class-choices{max-height:50vh;overflow-y:auto}

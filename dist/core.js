@@ -2,15 +2,17 @@
 export const SAVE_KEY = 'yeoksam-after-hours.v1';
 export const CLASSES = [
  {id:'wanderer',name:'펭귄 모험가',description:'평소에는 동글동글, 결정적인 순간에는 누구보다 든든하게.',hp:100,mp:60,attack:18},
+ {id:'rabbit',name:'토끼 모험가',description:'동그란 안경 너머로 빛나는 마법. 현토리에게 마법사의 길을 배워요.',hp:85,mp:90,attack:16},
  {id:'cat',name:'고양이 모험가',description:'민첩한 발과 날카로운 발톱. 올림픽공원에서 새로운 길을 찾아요.',hp:90,mp:70,attack:17}
 ];
 export const POWER_DURATION = 12;
 export const JOBS = {
+ mage:{id:'mage',name:'마법사',classId:'rabbit',map:'town',e:'마력 방벽',r:'존경!',passive:'W가 순간 이동으로 변경'},
  bodybuilder:{id:'bodybuilder',name:'바디빌더',map:'gym',e:'회복',r:'근육 각성',passive:'받는 피해 10% 감소'},
  swordsman:{id:'swordsman',name:'검사',map:'dojo',e:'막기',r:'섬광 연참',passive:'기본 이동속도 +10%'},
  protester:{id:'protester',name:'시위대',map:'olympic',classId:'cat',e:'화염병',r:'부정선거',passive:'점프 높이 +20%'}
 };
-export const jobName=p=>JOBS[p?.job]?.name||(p?.classId==='cat'?'고양이 모험가':'펭귄 모험가');
+export const jobName=p=>JOBS[p?.job]?.name||(CLASSES.find(c=>c.id===p?.classId)?.name||'펭귄 모험가');
 export const ITEMS = {
  mpPotions:{name:'MP 포션',icon:'💧',description:'MP를 50 회복합니다. MP가 가득 차면 소모하지 않아요. 보스방에서는 체력 물약과 별도로 재사용 대기 10초가 적용됩니다.',usable:true,price:300},
  potions:{name:'체력 물약',icon:'♥',description:'HP를 60 회복합니다. 체력이 가득 차면 소모하지 않아요. 보스전에서는 재사용 대기 10초가 적용됩니다.',usable:true,price:50},
@@ -23,8 +25,8 @@ export const ITEMS = {
 export const equipmentName=p=>p?.job==='bodybuilder'?'핑크 덤벨':p?.job==='swordsman'?'일본도':'없음';
 export const jumpHeightMultiplier=p=>p?.classId==='cat'&&p?.job==='protester'?1.2:1;
 // Derive passives from the saved job so old characters benefit without accumulating bonuses.
-export const movementMultiplier=p=>(p?.job==='swordsman'?1.1:1)*(p?.uniform>0&&p.uniformEquipped?1.2:1);
-export const incomingDamage=(p,damage,multiplier=1)=>Math.max(0,Math.round(damage*(p?.job==='bodybuilder'?0.9:1)*multiplier));
+export const movementMultiplier=p=>(p?.job==='swordsman'?1.1:1)*(p?.uniform>0&&p.uniformEquipped?1.2:1)*(p?.respectTime>0?1.2:1);
+export const incomingDamage=(p,damage,multiplier=1)=>Math.max(0,Math.round(damage*(p?.job==='bodybuilder'?0.9:1)*(p?.respectTime>0?.8:1)*multiplier));
 export function equipUniform(p){if(!p.uniform)return {ok:false,message:'먼저 군인 승현을 처치해 군복을 얻으세요.'};p.uniformEquipped=!p.uniformEquipped;return {ok:true,message:p.uniformEquipped?'군복 장착 · 이동속도 +20%':'군복을 벗었어요.'};}
 export const validItem=id=>Object.hasOwn(ITEMS,id);
 export const itemPrice=(p,id)=>validItem(id)?id==='gangnamScrolls'&&p.map==='town'?1500:ITEMS[id].price:undefined;
@@ -166,13 +168,20 @@ export function findMapRoute(from,to){
 export const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export const xpNeeded=level=>(level<10?48:80)*level;
 const classFor=p=>CLASSES.find(c=>c.id===p.classId)||CLASSES[0];
-export const maxHp=p=>classFor(p).hp+(p.level-1)*20;
+export const maxHp=p=>Math.round((classFor(p).hp+(p.level-1)*20)*(p.respectTime>0?1.2:1));
 export const maxMp=p=>classFor(p).mp+(p.level-1)*10;
-export const attackPower=p=>classFor(p).attack+(p.level-1)*5;
+export const attackPower=p=>(classFor(p).attack+(p.level-1)*5)*(p.respectTime>0?1.2:1);
 export const isPowered=p=>p?.job==='bodybuilder'&&p.powerTime>0;
 export const basicAttackPower=p=>Math.round(attackPower(p)*(isPowered(p)?1.8:1));
 export function effectiveSkill(p,key){
  const base=SKILLS.find(s=>s.key===key);if(!base)return null;let skill={...base};
+ if(p?.classId==='rabbit'){
+  const clean={...skill,heal:0,recovery:0,reduction:0,enhanced:''};
+  if(key==='q')return {...clean,name:'보랏빛 번개',icon:'ϟ',mp:10,cooldown:2.8,damage:2.4,range:360,description:'전방으로 보라색 번개를 쏘아 경로의 적을 공격해요.'};
+  if(key==='w')return {...clean,name:p.job==='mage'?'순간 이동':'앞구르기',icon:'↠',mp:6,cooldown:2,damage:0,range:0,dash:p.job==='mage'?260:180,description:p.job==='mage'?'전방으로 순간 이동해요. 피해는 없으며 재사용은 2초예요.':'앞으로 빠르게 굴러요. 피해는 없으며 재사용은 2초예요.'};
+  if(key==='e')return {...clean,name:'마력 방벽',icon:'◈',mp:22,cooldown:9,damage:2.6,range:240,shield:.3,duration:3,description:'3초간 최대 HP의 30%를 흡수하는 보호막을 얻고 주변에 마력을 방출해요.'};
+  if(key==='r')return {...clean,name:'존경!',icon:'敬',mp:35,cooldown:35,damage:0,range:360,duration:10,description:'대상을 선택하고 경례합니다. 10초간 이동속도·공격력·최대 HP +20%, 받는 피해 20% 감소. 주변 적은 3초간 존경 상태로 공격력이 30% 감소해요.'};
+ }
  if(p?.classId==='cat'){
   if(key==='q')return {...skill,name:'앞발 할퀴기',icon:'爪',mp:9,cooldown:2.4,damage:2.25,range:195,description:'전방의 적을 발톱으로 크게 할퀴어요.',enhanced:''};
   if(key==='w')return {...skill,name:'뒤로 뛰기',icon:'↶',mp:12,cooldown:3.5,damage:0,range:0,dash:210,invulnerable:.7,description:'바라보는 방향의 뒤로 빠르게 뛰어 0.7초 동안 무적이 돼요.',enhanced:''};
@@ -195,7 +204,7 @@ export const skillUnlocked=(p,s)=>p.level>=s.level&&(!s.requiresJob||!!JOBS[p.jo
 export function advanceJob(p,job){
  const target=Object.hasOwn(JOBS,job)?JOBS[job]:null;
  if(!target)return {ok:false,message:'선택할 수 없는 직업이에요.'};
- if((p.classId==='cat')!==(target.classId==='cat'))return {ok:false,message:'이 캐릭터가 전직할 수 없는 직업이에요.'};
+ if(p.classId!==(target.classId||'wanderer'))return {ok:false,message:'이 캐릭터가 전직할 수 없는 직업이에요.'};
  if(p.job)return {ok:false,message:'이미 전직했어요. 이 캐릭터의 직업은 변경할 수 없어요.'};
  if(p.level<10)return {ok:false,message:'전직은 Lv. 10부터 할 수 있어요.'};
  if(p.map!==target.map)return {ok:false,message:`${MAPS[target.map].name}의 사범에게 전직을 배워요.`};
@@ -207,7 +216,7 @@ export function createCharacter(name,classId='wanderer'){
  const clean=String(name).trim();
  if(!/^[\p{L}\p{N}_ ]{1,12}$/u.test(clean))throw new Error('이름은 한글·영문·숫자 1~12자로 입력해 주세요.');
  const stats=CLASSES.find(c=>c.id===classId);if(!stats)throw new Error('선택할 수 없는 캐릭터입니다.');
- return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:stats.hp,mp:stats.mp,money:500,potions:3,mpPotions:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,quickSlots:['potions',null,null],uniform:0,uniformEquipped:false,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
+ return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:stats.hp,mp:stats.mp,money:500,potions:3,mpPotions:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,quickSlots:['potions',null,null],uniform:0,uniformEquipped:false,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],respectTime:0,powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
 }
 export function normalizeCharacter(raw){
  if(!raw||typeof raw.id!=='string'||typeof raw.name!=='string')return null;
@@ -216,7 +225,7 @@ export function normalizeCharacter(raw){
  for(const key of ['level','xp','money','potions','mpPotions','returnScrolls','gangnamScrolls','scrap','cores','kills','bossWins','typeAWins'])if(Number.isFinite(raw[key]))p[key]=Math.floor(clamp(raw[key],key==='level'?1:0,key==='level'?99:9999999));
  if(Array.isArray(raw.quickSlots))p.quickSlots=Array.from({length:3},(_,i)=>validItem(raw.quickSlots[i])&&ITEMS[raw.quickSlots[i]].usable?raw.quickSlots[i]:null);
  p.uniform=Number.isFinite(raw.uniform)&&raw.uniform>0?1:0;p.uniformEquipped=p.uniform>0&&raw.uniformEquipped===true;
- p.job=p.level>=10&&Object.hasOwn(JOBS,raw.job)&&((p.classId==='cat')===(JOBS[raw.job].classId==='cat'))?raw.job:null;
+ p.job=p.level>=10&&Object.hasOwn(JOBS,raw.job)&&(p.classId===(JOBS[raw.job].classId||'wanderer'))?raw.job:null;
  p.map=MAPS[raw.map]?raw.map:'town';p.x=Number.isFinite(raw.x)?clamp(raw.x,45,MAPS[p.map].width-45):530;p.y=Number.isFinite(raw.y)?clamp(raw.y,580,720):648;
  p.mpPotionCooldown=MAPS[p.map]?.boss&&Number.isFinite(raw.mpPotionCooldown)?clamp(raw.mpPotionCooldown,0,10):0;
  p.hp=Number.isFinite(raw.hp)?clamp(raw.hp,0,maxHp(p)):maxHp(p);p.mp=Number.isFinite(raw.mp)?clamp(raw.mp,0,maxMp(p)):maxMp(p);
@@ -230,13 +239,13 @@ export function normalizeCharacter(raw){
  return p;
 }
 export function gainXp(p,amount){p.xp+=Math.max(0,amount);let gained=0;while(p.xp>=xpNeeded(p.level)&&p.level<99){p.xp-=xpNeeded(p.level);p.level++;gained++;p.hp=maxHp(p);p.mp=maxMp(p);}return gained;}
-export function respawn(p){p.map='town';p.x=530;p.y=648;p.hp=maxHp(p);p.mp=maxMp(p);p.powerTime=0;p.mpPotionCooldown=0;return p;}
+export function respawn(p){p.map='town';p.x=530;p.y=648;p.hp=maxHp(p);p.mp=maxMp(p);p.powerTime=0;p.respectTime=0;p.hp=maxHp(p);p.mpPotionCooldown=0;return p;}
 export function buyPotion(p){return buyItem(p,'potions');}
 export function usePotion(p){if(p.potions<=0)return {ok:false,message:'물약이 없어요. 마을의 물약 상인을 찾아보세요.'};if(p.hp>=maxHp(p))return {ok:false,message:'체력이 이미 가득 찼어요.'};p.potions--;p.hp=Math.min(maxHp(p),p.hp+60);return {ok:true,message:'체력이 60 회복되었어요.'};}
 export function canUseSkill(p,key,cooldown=p.cooldowns?.[key]??0){
  const s=effectiveSkill(p,key);if(!s)return {ok:false,message:'알 수 없는 스킬이에요.'};
  if(p.level<s.level)return {ok:false,message:`${s.name}은 Lv. ${s.level}에 배울 수 있어요.`};
- if(s.requiresJob&&!JOBS[p.job])return {ok:false,message:p.classId==='cat'?'올림픽공원에서 먼저 전직해 주세요.':'헬스장이나 검도장에서 먼저 전직해 주세요.'};
+ if(s.requiresJob&&!JOBS[p.job])return {ok:false,message:p.classId==='rabbit'?'역삼역의 현토리에게 먼저 전직해 주세요.':p.classId==='cat'?'올림픽공원에서 먼저 전직해 주세요.':'헬스장이나 검도장에서 먼저 전직해 주세요.'};
  if(key==='r'&&isPowered(p))return {ok:false,message:'이미 근육 펭귄으로 변신 중이에요.'};
  if(cooldown>0)return {ok:false,message:'스킬이 아직 준비되지 않았어요.'};
  if(p.mp<s.mp)return {ok:false,message:'MP가 부족해요. 잠시 기다리면 회복됩니다.'};
