@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=66';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=66';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=66';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=67';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=67';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=67';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={};let assetsReady=false,assetFailed=false;
@@ -135,7 +135,7 @@ function refreshBossHUD(){
  $('#boss-hp-fill').style.width=`${boss.hp/boss.maxHp*100}%`;$('#boss-cue').textContent=isTypeA(boss)?typeACue(boss):soldierCue(boss);hud.classList.toggle('counter-active',boss.phase==='counter');
  $('#boss-potion-clock').textContent=`HP 물약 ${potionCooldown>0?potionCooldown.toFixed(1)+'초':'준비'} · MP 포션 ${player.mpPotionCooldown>0?player.mpPotionCooldown.toFixed(1)+'초':'준비'} · 각각 10초 대기`;
 }
-function itemCooldown(id){return id==='mpPotions'?(MAPS[player.map].boss?player.mpPotionCooldown||0:0):id==='potions'&&bossActive()?potionCooldown:0;}
+function itemCooldown(id){return id==='mpPotions'?(MAPS[player.map].boss?player.mpPotionCooldown||0:0):ITEMS[id]?.hpRestore&&bossActive()?potionCooldown:0;}
 function refreshItemSlots(){
  document.querySelectorAll('[data-item-slot]').forEach(b=>{
   const index=Number(b.dataset.itemSlot),id=player.quickSlots[index],item=ITEMS[id],wait=itemCooldown(id),waiting=wait>0;
@@ -165,10 +165,10 @@ function useQuickSlot(index){
 }
 function useInventoryItem(id,fromInventory=false){
  if(scene!=='playing'||(modal&&!(fromInventory&&modal==='inventory')))return;
- if(id==='potions'&&bossActive()&&potionCooldown>0){toast(`물약은 ${Math.ceil(potionCooldown)}초 뒤에 사용할 수 있어요.`);return;}
+ if(ITEMS[id]?.hpRestore&&bossActive()&&potionCooldown>0){toast(`물약은 ${Math.ceil(potionCooldown)}초 뒤에 사용할 수 있어요.`);return;}
  const isMp=id==='mpPotions',before=isMp?player.mp:player.hp,result=useItem(player,id);toast(result.message);
  if(result.ok){
-  if(id==='potions'&&bossActive())potionCooldown=SOLDIER.potionCooldown;
+  if(ITEMS[id]?.hpRestore&&bossActive())potionCooldown=SOLDIER.potionCooldown;
   if(result.recalled){closeModal();resetWorld();buildHUD();effects.push({type:'ring',x:player.x,y:player.y-25,life:.8,max:.8,color:'#b6e6ff',size:120});canvas.focus();}
   else textAt(`+${Math.round((isMp?player.mp:player.hp)-before)} ${isMp?'MP':'HP'}`,player.x,player.y-105,isMp?'#a8dfff':'#a1eebd');
   beep(700,.18);save();
@@ -185,8 +185,8 @@ function jobModal(job){
 }
 
 function interact(){if(scene!=='playing'||modal)return;interactionTarget=findInteraction();if(!interactionTarget){toast('NPC나 포탈에 조금 더 가까이 가보세요.');return;}const t=interactionTarget;if(t.id==='soldier'){bossTalk();return;}if(t.job){jobModal(t.job);return;}if(!t.id){if((MAPS[t.to].danger||MAPS[t.to].boss)&&player.level<MAPS[t.to].minLevel){showModal('portal','더 깊은 거리로',`<p>${MAPS[t.to].name}에는 Lv. ${MAPS[t.to].minLevel}–${MAPS[t.to].maxLevel} ${MAPS[t.to].boss?'중간보스가':'로봇이'} 있어요.<br>현재 Lv. ${player.level}입니다. 도전을 이어가시겠어요?</p><button class="primary" id="portal-confirm">${MAPS[t.to].name} 이동</button>`);$('#portal-confirm').onclick=()=>travel(t);}else travel(t);return;}if(t.id==='shop'&&player.classId==='rabbit'&&!player.job&&player.level>=10){jobModal('mage');return;}if(t.id==='gm'){showModal('gm','운영자 현토리',`<p>역삼역에 온 걸 환영해요, <strong>${escapeHtml(player.name)}</strong>!<br>이곳은 안전한 마을이에요. 처음엔 오른쪽의 물약 상인 마구리에게 들러 보세요.</p><p>오른쪽 끝의 테헤란 뒷골목 포탈에서 <strong>F</strong>를 누르면 첫 사냥터로 이동할 수 있어요. 로봇은 귀엽지만 부딪히면 아프니 조심하세요!</p><details class="npc-details"><summary>아이템 · 전직 · 성장 안내</summary><p>I키로 인벤토리를 열고 아이템을 1·2·3번에 등록할 수 있어요. 마구리에게 귀환 주문서를 사 두면 멀리서도 마을로 돌아올 수 있죠. M키로 지도를 확인해 보세요. 피치플레이헬스&amp;필라테스 역삼점은 이곳 1번 출구에서 바로 갈 수 있어요. 강남성균검도관에 가려면 몬스터가 있는 역삼역사거리를 지나 6번 출구로 가세요. Q는 Lv. 3, W는 Lv. 6에 배워요. Lv. 10부터 펭귄은 헬스장·검도장, 고양이는 올림픽공원, 토끼는 마구리에게 전직해 E를 배웁니다. 전직 후 Lv. 15에 R을 습득합니다! 쓰러져도 돈이나 아이템을 잃지 않으니 편하게 모험해 보세요.</p></details><button class="primary" id="gm-help">자세한 조작법 보기</button>`);$('#gm-help').onclick=help;}else shop();}
-const SHOP_ITEMS=['potions','mpPotions','returnScrolls','gangnamScrolls'];
-const shopItemSummary=id=>`${id==='potions'?'HP +60':id==='mpPotions'?'MP +100':'즉시 귀환'} · 보유 ${player[id]}개`;
+const SHOP_ITEMS=['potions','largePotions','mpPotions','returnScrolls','gangnamScrolls'];
+const shopItemSummary=id=>`${ITEMS[id]?.hpRestore?`HP +${ITEMS[id].hpRestore}`:id==='mpPotions'?'MP +100':'즉시 귀환'} · 보유 ${player[id]}개`;
 function refreshShop(){
  // Keep the existing dialog nodes so buying preserves scroll, focus and expanded help.
  $('.shop-money').textContent=`${player.money.toLocaleString()}원`;

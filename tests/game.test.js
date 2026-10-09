@@ -405,7 +405,7 @@ test('buying repeatedly preserves the shop dialog and refreshes stock, balance a
    assert.equal(body.scrollTop,120);assert.equal(help.open,true);assert.equal(h.document.activeElement,button);
    assert.equal(h.el('.shop-money').textContent,`${p.money.toLocaleString()}원`);
    assert.equal(h.el('#shop-stock-gangnamScrolls').textContent,`즉시 귀환 · 보유 ${p.gangnamScrolls}개`);
-   for(const id of ['potions','mpPotions','returnScrolls','gangnamScrolls'])assert.equal(h.el(`#buy-${id}`).disabled,p.money<core.itemPrice(p,id));
+   for(const id of ['potions','largePotions','mpPotions','returnScrolls','gangnamScrolls'])assert.equal(h.el(`#buy-${id}`).disabled,p.money<core.itemPrice(p,id));
   }
  }
 });
@@ -1495,4 +1495,21 @@ test('graduation room portal works before challenge and after victory, but is hi
  b.safetyUsed=true;b.hp=1;h.api.hitMonster(b,2);assert.equal(b.dead,true);h.api.closeModal();render(h);assert.ok(h.labels.some(l=>l.text==='역삼역주변거리'));assert.equal(h.api.findInteraction().to,'yeoksamStreet');
  pending=h.api.travel(out);await h.flush();await pending;assert.equal(p.map,'yeoksamStreet');assert.equal(p.typeAWins,1);
  h.api.worldMap();assert.match(h.el('#modal-root').innerHTML,/역삼역주변거리/);assert.match(h.el('#modal-root').innerHTML,/수료조건/);assert.doesNotMatch(h.el('#modal-root').innerHTML,/A형 격납고/);
+});
+
+
+test('large HP potion is sold for 500, heals 150, caps at max HP and persists in slots',()=>{
+ const h=harness(),p=core.createCharacter('고급물약');Object.assign(p,{level:20,hp:100,money:1000});h.api.start(p);h.api.shop();
+ assert.match(h.el('#modal-root').innerHTML,/고급 체력 물약/);assert.match(h.el('#modal-root').innerHTML,/HP \+150/);
+ h.el('#buy-largePotions').onclick();assert.equal(p.money,500);assert.equal(p.largePotions,1);h.el('#buy-largePotions').onclick();assert.equal(p.money,0);assert.equal(p.largePotions,2);assert.equal(h.el('#buy-largePotions').disabled,true);
+ assert.equal(core.buyItem(p,'largePotions').ok,false);h.api.closeModal();core.assignQuickSlot(p,2,'largePotions');h.api.useQuickSlot(2);assert.equal(p.hp,250);assert.equal(p.largePotions,1);
+ p.hp=core.maxHp(p)-20;h.api.useQuickSlot(2);assert.equal(p.hp,core.maxHp(p));assert.equal(p.largePotions,0);
+ p.largePotions=1;h.api.useQuickSlot(2);assert.equal(p.largePotions,1);const restored=core.normalizeCharacter(p);assert.equal(restored.largePotions,1);assert.equal(restored.quickSlots[2],'largePotions');
+ const old={...p};delete old.largePotions;assert.equal(core.normalizeCharacter(old).largePotions,0);
+});
+test('large HP potions share boss cooldown with regular HP potions in both directions',()=>{
+ const {h,p}=bossHarness();p.largePotions=3;p.hp=100;h.api.startBossFight();p.quickSlots=['largePotions','potions','largePotions'];
+ h.api.useQuickSlot(0);assert.equal(p.hp,250);assert.equal(p.largePotions,2);assert.equal(h.api.get().potionCooldown,10);
+ h.api.useQuickSlot(1);assert.equal(p.potions,20);h.api.inventory('largePotions');h.api.useInventoryItem('largePotions',true);assert.equal(p.largePotions,2);h.api.closeModal();
+ const b=h.api.get().boss;b.phase='recover';b.elapsed=-30;advance(h,10.1);h.api.useQuickSlot(1);assert.equal(p.hp,310);assert.equal(p.potions,19);h.api.useQuickSlot(2);assert.equal(p.largePotions,2);
 });

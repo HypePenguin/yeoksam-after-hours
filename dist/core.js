@@ -15,7 +15,8 @@ export const JOBS = {
 export const jobName=p=>JOBS[p?.job]?.name||(CLASSES.find(c=>c.id===p?.classId)?.name||'펭귄 모험가');
 export const ITEMS = {
  mpPotions:{name:'MP 포션',icon:'💧',description:'MP를 100 회복합니다. MP가 가득 차면 소모하지 않아요. 보스방에서는 체력 물약과 별도로 재사용 대기 10초가 적용됩니다.',usable:true,price:500},
- potions:{name:'체력 물약',icon:'♥',description:'HP를 60 회복합니다. 체력이 가득 차면 소모하지 않아요. 보스전에서는 재사용 대기 10초가 적용됩니다.',usable:true,price:50},
+ potions:{name:'체력 물약',icon:'♥',description:'HP를 60 회복합니다. 체력이 가득 차면 소모하지 않아요. 보스전에서는 재사용 대기 10초가 적용됩니다.',usable:true,price:50,hpRestore:60},
+ largePotions:{name:'고급 체력 물약',icon:'❤',description:'HP를 150 회복합니다. 체력이 가득 차면 소모하지 않아요. 보스전에서는 기존 체력 물약과 재사용 대기 10초를 공유합니다.',usable:true,price:500,hpRestore:150},
  returnScrolls:{name:'역삼역 1번 출구 귀환 주문서',icon:'역',description:'역삼역 1번 출구로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'town',x:530,y:648}},
  gangnamScrolls:{name:'강남역 귀환 주문서',icon:'강',description:'강남역 마을로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'gangnam',x:650,y:648}},
  scrap:{name:'로봇 부품',icon:'⚙',description:'로봇에게서 얻은 수집 재료입니다.',usable:false},
@@ -44,7 +45,7 @@ export function buyItem(p,id){
  p.money-=price;p[id]=(p[id]||0)+1;return {ok:true,message:`${item.name} 1개를 구입했어요.`};
 }
 export function useItem(p,id){
- if(id==='potions')return usePotion(p);
+ if(validItem(id)&&ITEMS[id].hpRestore)return usePotion(p,id);
  if(id==='mpPotions'){
   if(MAPS[p.map]?.boss&&p.mpPotionCooldown>0)return {ok:false,message:`MP 포션은 ${Math.ceil(p.mpPotionCooldown)}초 뒤에 사용할 수 있어요.`};
   if(!(p.mpPotions>0))return {ok:false,message:'MP 포션이 없어요. 마구리의 상점에서 구입하세요.'};
@@ -220,7 +221,7 @@ export function createCharacter(name,classId='wanderer'){
  const clean=String(name).trim();
  if(!/^[\p{L}\p{N}_ ]{1,12}$/u.test(clean))throw new Error('이름은 한글·영문·숫자 1~12자로 입력해 주세요.');
  const stats=CLASSES.find(c=>c.id===classId);if(!stats)throw new Error('선택할 수 없는 캐릭터입니다.');
- return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:maxHp({classId,level:1}),mp:stats.mp,money:500,potions:3,mpPotions:classId==='rabbit'?1:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,quickSlots:['potions',classId==='rabbit'?'mpPotions':null,null],uniform:0,uniformEquipped:false,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],respectTime:0,powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
+ return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:maxHp({classId,level:1}),mp:stats.mp,money:500,potions:3,largePotions:0,mpPotions:classId==='rabbit'?1:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,quickSlots:['potions',classId==='rabbit'?'mpPotions':null,null],uniform:0,uniformEquipped:false,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],respectTime:0,powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
 }
 export function normalizeCharacter(raw){
  if(!raw||typeof raw.id!=='string'||typeof raw.name!=='string')return null;
@@ -228,7 +229,7 @@ export function normalizeCharacter(raw){
  // Starter supplies are only granted on creation, never while loading older saves.
  p.mpPotions=0;p.quickSlots=['potions',null,null];
  p.id=raw.id.slice(0,100);
- for(const key of ['level','xp','money','potions','mpPotions','returnScrolls','gangnamScrolls','scrap','cores','kills','bossWins','typeAWins'])if(Number.isFinite(raw[key]))p[key]=Math.floor(clamp(raw[key],key==='level'?1:0,key==='level'?99:9999999));
+ for(const key of ['level','xp','money','potions','largePotions','mpPotions','returnScrolls','gangnamScrolls','scrap','cores','kills','bossWins','typeAWins'])if(Number.isFinite(raw[key]))p[key]=Math.floor(clamp(raw[key],key==='level'?1:0,key==='level'?99:9999999));
  if(Array.isArray(raw.quickSlots))p.quickSlots=Array.from({length:3},(_,i)=>validItem(raw.quickSlots[i])&&ITEMS[raw.quickSlots[i]].usable?raw.quickSlots[i]:null);
  p.uniform=Number.isFinite(raw.uniform)&&raw.uniform>0?1:0;p.uniformEquipped=p.uniform>0&&raw.uniformEquipped===true;
  p.job=p.level>=10&&Object.hasOwn(JOBS,raw.job)&&(p.classId===(JOBS[raw.job].classId||'wanderer'))?raw.job:null;
@@ -247,7 +248,7 @@ export function normalizeCharacter(raw){
 export function gainXp(p,amount){p.xp+=Math.max(0,amount);let gained=0;while(p.xp>=xpNeeded(p.level)&&p.level<99){p.xp-=xpNeeded(p.level);p.level++;gained++;p.hp=maxHp(p);p.mp=maxMp(p);}return gained;}
 export function respawn(p){p.map='town';p.x=530;p.y=648;p.hp=maxHp(p);p.mp=maxMp(p);p.powerTime=0;p.respectTime=0;p.hp=maxHp(p);p.mpPotionCooldown=0;return p;}
 export function buyPotion(p){return buyItem(p,'potions');}
-export function usePotion(p){if(p.potions<=0)return {ok:false,message:'물약이 없어요. 마을의 물약 상인을 찾아보세요.'};if(p.hp>=maxHp(p))return {ok:false,message:'체력이 이미 가득 찼어요.'};p.potions--;p.hp=Math.min(maxHp(p),p.hp+60);return {ok:true,message:'체력이 60 회복되었어요.'};}
+export function usePotion(p,id='potions'){const amount=validItem(id)?ITEMS[id].hpRestore:0;if(!amount||!(p[id]>0))return {ok:false,message:'물약이 없어요. 마을의 물약 상인을 찾아보세요.'};if(p.hp>=maxHp(p))return {ok:false,message:'체력이 이미 가득 찼어요.'};const restored=Math.min(amount,maxHp(p)-p.hp);p[id]--;p.hp+=restored;return {ok:true,message:`체력이 ${Math.round(restored)} 회복되었어요.`};}
 export function canUseSkill(p,key,cooldown=p.cooldowns?.[key]??0){
  const s=effectiveSkill(p,key);if(!s)return {ok:false,message:'알 수 없는 스킬이에요.'};
  if(p.level<s.level)return {ok:false,message:`${s.name}은 Lv. ${s.level}에 배울 수 있어요.`};
