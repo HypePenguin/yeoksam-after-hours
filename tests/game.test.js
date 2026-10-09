@@ -31,7 +31,7 @@ function harness(){
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),hidden:false,activeElement:el('#game')};
  const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;this.complete=true;this.naturalWidth=1500;this.naturalHeight=1000;this.onload?.();}},Promise,Math,Date,Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
- vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
+ vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,catAreaHit,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
  return {api:context.gameTest,persistence,draws,labels,strokes,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
 }
 function advance(h,seconds){for(let t=0;t<seconds;t+=1/60)h.api.update(1/60);}
@@ -55,7 +55,7 @@ test('ballot ultimate hits within the doubled radius and leaves targets beyond i
  const [near,far]=h.api.get().monsters;h.api.cast('r');const box=h.api.get().catBallot;
  Object.assign(near,{x:box.x+480,y:box.y,speed:0,hp:10000,maxHp:10000,home:box.x+480});
  Object.assign(far,{x:box.x+510,y:box.y,speed:0,hp:10000,maxHp:10000,home:box.x+510});
- advance(h,.1);assert.ok(near.hp<10000);assert.equal(far.hp,10000);
+ advance(h,.1);assert.ok(near.hp<10000);assert.equal(far.hp,10000);assert.equal(near.x,box.x+460);
 });
 
 test('only advanced cats use the integrated ribbon artwork in portraits and movement',()=>{
@@ -1750,4 +1750,29 @@ test('hacker E aim advances twice as fast while keeping the maximum reach',()=>{
 });
 test('hacker ultimate returns to normal player camera while channeling, retaining its damage and protection',()=>{
  const {h,p}=chickFixture();h.api.cast('r');advance(h,.5);assert.ok(h.api.get().cameraZoom<.8);h.api.confirmHack();advance(h,1.2);const state=h.api.get();assert.equal(state.hackerUlt.phase,'channeling');assert.equal(state.cameraZoom,1);assert.equal(h.api.playerDamage(100),20);assert.ok(state.monsters.some(m=>m.hack));assert.ok(Math.abs(state.camera-core.clamp(p.x-state.screenWidth*.45,0,core.MAPS[p.map].width-state.screenWidth))<2);
+});
+
+
+test('cat basic attack expands by 30 percent in both directions and W has no evasion text',()=>{
+ for(const job of [null,'protester'])for(const dir of [-1,1]){
+  const h=harness(),p=core.createCharacter('고양이 범위','cat');Object.assign(p,{level:15,job,map:'alley',x:1000,y:650});p.mp=core.maxMp(p);h.api.start(p);
+  h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');h.api.update(.01);h.api.keys.clear();const [inside,wideOutside,tallOutside]=h.api.get().monsters;
+  for(const m of [inside,wideOutside,tallOutside])Object.assign(m,{hp:10000,maxHp:10000,speed:0});Object.assign(inside,{x:p.x+dir*166,y:p.y+97});Object.assign(wideOutside,{x:p.x+dir*167,y:p.y});Object.assign(tallOutside,{x:p.x+dir*100,y:p.y+98});
+  h.api.attack();assert.equal(inside.hp,10000-core.attackPower(p));assert.equal(wideOutside.hp,10000);assert.equal(tallOutside.hp,10000);h.api.cast('w');render(h);assert.ok(!h.labels.some(l=>l.text==='회피!'));assert.ok(h.api.get().invincible>=.7);
+ }
+});
+test('each ballot damage tick pulls living targets toward its center without outward knockback or overshoot',()=>{
+ const h=harness(),p=core.createCharacter('끌어당기기','cat');Object.assign(p,{level:15,job:'protester',map:'alley',x:1000,y:650});p.mp=core.maxMp(p);h.api.start(p);h.api.cast('r');const b=h.api.get().catBallot,group=h.api.get().monsters;
+ const offsets=[[300,0],[-300,0],[0,60],[0,-60],[5,0],[510,0]];
+ group.forEach((m,i)=>Object.assign(m,{x:b.x+offsets[i][0],y:b.y+offsets[i][1],hp:10000,maxHp:10000,speed:0}));
+ for(let tick=0;tick<3;tick++){
+  const before=group.map(m=>({hp:m.hp,d:Math.hypot(m.x-b.x,m.y-b.y)}));h.api.catAreaHit(b.x,b.y,b.skill.range,b.skill.damage,b.skill.pull);
+  group.forEach((m,i)=>{if(i===5){assert.equal(m.hp,before[i].hp);assert.equal(Math.hypot(m.x-b.x,m.y-b.y),before[i].d);}else{assert.equal(before[i].hp-m.hp,Math.round(core.attackPower(p)*.9));assert.ok(Math.abs(Math.hypot(m.x-b.x,m.y-b.y)-Math.max(0,before[i].d-20))<1e-8);}});
+ }
+});
+test('ballot cannot pull a boss when damage is blocked or reflected',()=>{
+ for(const map of ['pocha','hangar']){
+  const h=harness(),p=core.createCharacter('보스 판정','cat');Object.assign(p,{level:35,job:'protester',map,x:1000,y:650});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);h.api.startBossFight();const b=h.api.get().boss;Object.assign(b,{x:1200,y:650,phase:map==='pocha'?'counter':'safety',elapsed:1});
+  const x=b.x,y=b.y,hp=b.hp;h.api.catAreaHit(1000,650,490,.9,20);assert.equal(b.hp,hp);assert.equal(b.x,x);assert.equal(b.y,y);
+ }
 });
