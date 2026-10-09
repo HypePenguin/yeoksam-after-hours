@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=67';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=67';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=67';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=68';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=68';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=68';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={};let assetsReady=false,assetFailed=false;
@@ -147,12 +147,12 @@ function refreshItemSlots(){
 function inventory(selected=inventorySelection,focusSelector=null){
  if(scene!=='playing'||!player)return;
  inventorySelection=Object.hasOwn(ITEMS,selected)?selected:'potions';const item=ITEMS[inventorySelection];
- showModal('inventory','인벤토리',`<div class="bag-summary"><span>${jobName(player)} · 장비 <strong>${equipmentName(player)}</strong>${player.uniformEquipped?' · 군복 착용 (+20%)':''}</span><span>${player.money.toLocaleString()}원</span></div>${JOBS[player.job]?`<p>직업 특성 · ${JOBS[player.job].passive}</p>`:''}<div class="bag-items">${Object.entries(ITEMS).map(([id,item])=>`<button class="bag-item ${id===inventorySelection?'selected':''}" data-bag-item="${id}" aria-pressed="${id===inventorySelection}"><span class="item-icon">${item.icon}</span><strong>${item.name}</strong><small>${player[id]}개 · ${item.equippable?(player.uniformEquipped?'착용 중':'방어구'):item.usable?'소모품':'수집 재료'}</small></button>`).join('')}</div><div class="item-detail"><div><strong>${item.name}</strong><p>${item.description}</p>${itemCooldown(inventorySelection)>0?`<p>재사용 ${Math.ceil(itemCooldown(inventorySelection))}초 · 가방을 닫으면 시간이 흘러요.</p>`:''}</div><button class="secondary" id="bag-use" ${(!item.usable&&!item.equippable)||player[inventorySelection]===0?'disabled':''}>${item.equippable?(player.uniformEquipped?'벗기':'장착하기'):'사용하기'}</button></div><h3 class="bag-slots-title">아이템 단축키</h3><p class="bag-instruction">아이템을 고른 뒤 아래 슬롯이나 숫자키를 누르면 등록돼요.</p><div class="bag-slots">${player.quickSlots.map((id,i)=>`<div><button class="slot-assign" data-assign-slot="${i}" aria-label="${i+1}번에 ${item.name} 등록" ${!item.usable||player[inventorySelection]===0?'disabled':''}><kbd>${i+1}</kbd><span>${ITEMS[id]?.name??'빈 슬롯'}</span></button><button class="slot-clear" data-clear-slot="${i}" aria-label="${i+1}번 슬롯 비우기" ${id?'':'disabled'}>비우기</button></div>`).join('')}</div><p class="bag-footnote">등록은 저장됩니다. 가방을 닫고 1 · 2 · 3으로 사용하세요. 닫기 I / Esc</p>`,focusSelector||`[data-bag-item="${inventorySelection}"]`);
+ showModal('inventory','인벤토리',`<div class="bag-summary"><span>${jobName(player)} · 장비 <strong>${equipmentName(player)}</strong>${player.uniformEquipped?' · 군복 착용 (+20%)':''}${hasTypeATitle(player)?' · A형 칭호 (공격력 +5%)':''}</span><span>${player.money.toLocaleString()}원</span></div>${JOBS[player.job]?`<p>직업 특성 · ${JOBS[player.job].passive}</p>`:''}<div class="bag-items">${Object.entries(ITEMS).map(([id,item])=>`<button class="bag-item ${id===inventorySelection?'selected':''}" data-bag-item="${id}" aria-pressed="${id===inventorySelection}"><span class="item-icon">${item.icon}</span><strong>${item.name}</strong><small>${player[id]}개 · ${item.equippable?(itemEquipped(player,id)?'장착 중':item.equipmentType||'방어구'):item.usable?'소모품':'수집 재료'}</small></button>`).join('')}</div><div class="item-detail"><div><strong>${item.name}</strong><p>${item.description}</p>${itemCooldown(inventorySelection)>0?`<p>재사용 ${Math.ceil(itemCooldown(inventorySelection))}초 · 가방을 닫으면 시간이 흘러요.</p>`:''}</div><button class="secondary" id="bag-use" ${(!item.usable&&!item.equippable)||player[inventorySelection]===0?'disabled':''}>${item.equippable?(itemEquipped(player,inventorySelection)?'해제하기':'장착하기'):'사용하기'}</button></div><h3 class="bag-slots-title">아이템 단축키</h3><p class="bag-instruction">아이템을 고른 뒤 아래 슬롯이나 숫자키를 누르면 등록돼요.</p><div class="bag-slots">${player.quickSlots.map((id,i)=>`<div><button class="slot-assign" data-assign-slot="${i}" aria-label="${i+1}번에 ${item.name} 등록" ${!item.usable||player[inventorySelection]===0?'disabled':''}><kbd>${i+1}</kbd><span>${ITEMS[id]?.name??'빈 슬롯'}</span></button><button class="slot-clear" data-clear-slot="${i}" aria-label="${i+1}번 슬롯 비우기" ${id?'':'disabled'}>비우기</button></div>`).join('')}</div><p class="bag-footnote">등록은 저장됩니다. 가방을 닫고 1 · 2 · 3으로 사용하세요. 닫기 I / Esc</p>`,focusSelector||`[data-bag-item="${inventorySelection}"]`);
  $('.modal').classList.add('inventory-modal');
  document.querySelectorAll('[data-bag-item]').forEach(b=>b.onclick=()=>{inventory(b.dataset.bagItem);});
  document.querySelectorAll('[data-assign-slot]').forEach(b=>b.onclick=()=>registerInventorySlot(Number(b.dataset.assignSlot)));
  document.querySelectorAll('[data-clear-slot]').forEach(b=>b.onclick=()=>registerInventorySlot(Number(b.dataset.clearSlot),null));
- $('#bag-use').onclick=()=>{if(item.equippable){const result=equipUniform(player);toast(result.message);if(result.ok){save();inventory(inventorySelection,'#bag-use');refreshHUD();}}else useInventoryItem(inventorySelection,true);};
+ $('#bag-use').onclick=()=>{if(item.equippable){const result=inventorySelection==='typeATitle'?equipTypeATitle(player):equipUniform(player);toast(result.message);if(result.ok){save();inventory(inventorySelection,'#bag-use');refreshHUD();}}else useInventoryItem(inventorySelection,true);};
 }
 function registerInventorySlot(index,id=inventorySelection){
  if(modal!=='inventory')return;const result=assignQuickSlot(player,index,id);
@@ -423,14 +423,14 @@ function updateBossFight(dt){
  }
 }
 function typeATalk(){
- showModal('boss-talk','Lv.35 A형 · 가동 대기',`<div class="boss-intro"><span class="boss-eyebrow">수료조건 · 전투 로봇</span><h3>침입자 감지. 전투 프로토콜 준비.</h3><p>전방 칼날, 기관총 연사, 붉은 충전 후 돌진, 0.5초 간격 4연속 표적 폭격을 사용합니다. 모든 타격에 내 최대 HP의 10%만큼 추가 피해가 적용됩니다.</p><ul><li>HP 40%: ${TYPE_A.safety.duration}초간 무적. 파란 안전지대 밖은 즉사합니다. 무적기나 막기로 회피할 수 있습니다.</li><li>HP 20%: 광폭화. 이동과 패턴이 빨라지고 4초 회전 칼날, 넓은 원형 자기장 흡인이 추가됩니다.</li><li>체력 ${TYPE_A.hp.toLocaleString()} · 물약 재사용 10초</li></ul><p class="boss-reward">EXP 12,000 · 6,000원 · 에너지 코어 15개</p><button class="primary" id="challenge-boss">${boss.dead?'A형 다시 가동':'A형 가동 · 전투 시작'}</button></div>`,'#challenge-boss');
+ showModal('boss-talk','Lv.35 A형 · 가동 대기',`<div class="boss-intro"><span class="boss-eyebrow">수료조건 · 전투 로봇</span><h3>침입자 감지. 전투 프로토콜 준비.</h3><p>전방 칼날, 기관총 연사, 붉은 충전 후 돌진, 0.5초 간격 4연속 표적 폭격을 사용합니다. 모든 타격에 내 최대 HP의 10%만큼 추가 피해가 적용됩니다.</p><ul><li>HP 40%: ${TYPE_A.safety.duration}초간 무적. 파란 안전지대 밖은 즉사합니다. 무적기나 막기로 회피할 수 있습니다.</li><li>HP 20%: 광폭화. 이동과 패턴이 빨라지고 4초 회전 칼날, 넓은 원형 자기장 흡인이 추가됩니다.</li><li>체력 ${TYPE_A.hp.toLocaleString()} · 물약 재사용 10초</li></ul><p class="boss-reward">EXP 12,000 · 6,000원 · 에너지 코어 15개 · A형 칭호</p><button class="primary" id="challenge-boss">${boss.dead?'A형 다시 가동':'A형 가동 · 전투 시작'}</button></div>`,'#challenge-boss');
  $('#challenge-boss').onclick=startBossFight;
 }
 function winTypeA(){
  if(!defeatTypeA(boss))return;
  cancelSword();cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;potionCooldown=0;player.typeAWins=(player.typeAWins||0)+1;player.kills++;
- player.money+=TYPE_A.money;player.cores+=TYPE_A.cores;gainXp(player,TYPE_A.xp);save();refreshHUD();
- showModal('boss-victory','A형 격파',`<div class="boss-intro"><h3>전투 프로토콜 종료.</h3><p>${player.typeAWins}번째 A형 격파! 역삼역주변거리로 가는 포탈이 열렸어요.</p><p class="boss-reward">EXP +12,000 · 6,000원 · 에너지 코어 15개</p><button class="primary" id="type-a-reward-close">모험 계속하기</button></div>`,'#type-a-reward-close');
+ player.typeATitle=1;player.money+=TYPE_A.money;player.cores+=TYPE_A.cores;gainXp(player,TYPE_A.xp);save();refreshHUD();
+ showModal('boss-victory','A형 격파',`<div class="boss-intro"><h3>전투 프로토콜 종료.</h3><p>${player.typeAWins}번째 A형 격파! 역삼역주변거리로 가는 포탈이 열렸어요.</p><p class="boss-reward">EXP +12,000 · 6,000원 · 에너지 코어 15개 · A형 칭호</p><p>I 키로 가방을 열어 A형 칭호를 장착하면 공격력이 5% 증가합니다.</p><button class="primary" id="type-a-reward-close">모험 계속하기</button></div>`,'#type-a-reward-close');
  $('#type-a-reward-close').onclick=closeModal;
 }
 function updateTypeAFight(dt){
@@ -724,7 +724,7 @@ function drawRabbitPlayer(x,y){
  if(walking&&pz===0)ctx.translate(0,-Math.abs(Math.sin(walkPhase*Math.PI*4))*2);
  ctx.globalAlpha=hurtTime<=0&&invincible>0&&Math.floor(invincible*13)%2===0?.55:1;
  ctx.drawImage(img,(frame%4)*cw,Math.floor(frame/4)*ch,cw,ch,-height/2,-height,height,height);ctx.restore();
- label(player.name,x,y-pz-height-8,'#ead9ff',14);
+ drawPlayerName(player.name,x,y-pz-height-8,'#ead9ff');
 }
 function drawRabbitEffects(){
  for(const orb of rabbitOrbs){const x=orb.x-camera,y=orb.y-60-orb.z;ctx.save();ctx.shadowColor='#a765ff';ctx.shadowBlur=20;ctx.fillStyle='#eee1ff';ctx.beginPath();ctx.arc(x,y,11,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#ad7bff';ctx.lineWidth=5;ctx.stroke();ctx.globalAlpha=.5;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x-orb.dir*40,y);ctx.lineTo(x-orb.dir*13,y);ctx.stroke();ctx.restore();}
@@ -1127,7 +1127,11 @@ function drawCatPlayer(x,y){
  ctx.globalAlpha=alpha;ctx.filter=hurtTime>0?'brightness(1.35)':'none';
  if(!pose||!drawCatPose(pose,height))sprite(catAsset('cat'),0,0,height*.835,height,{flip:true});
  ctx.filter='none';
- ctx.restore();label(player.name,x,y-pz-height-15,'#e5f3ff',14);
+ ctx.restore();drawPlayerName(player.name,x,y-pz-height-15,'#e5f3ff');
+}
+function drawPlayerName(name,x,y,color){
+ if(hasTypeATitle(player))label('A형',x,y-30,'#d5d9e1',14);
+ label(name,x,y,color,14);
 }
 function drawPlayer(){
  if(player.classId==='rabbit'){drawRabbitPlayer(combatDisplayX()-camera,player.y);return;}
@@ -1149,7 +1153,7 @@ function drawPlayer(){
  if(!drawnCombat)drawEquipment(powered,drawnWalk,height,width,alpha,jumpPose);
  if(powered)drawPowerSteam(0,0,true);
  ctx.restore();
- label(powered?`${player.name} · 근육 각성`:player.name,x,y-pz-height-14,powered?'#e1f7ff':'#e5f3ff',14);
+ drawPlayerName(powered?`${player.name} · 근육 각성`:player.name,x,y-pz-height-14,powered?'#e1f7ff':'#e5f3ff');
 }
 function drawDrop(drop){const x=drop.x-camera,y=drop.y+Math.sin(worldTime*4+drop.x)*4;ctx.save();ctx.shadowColor=drop.type==='money'?'#ffd678':'#86fbe8';ctx.shadowBlur=12;ctx.fillStyle=drop.type==='money'?'#ffcb72':drop.type==='potions'?'#ff9393':'#8de7da';ctx.translate(x,y);if(drop.type==='money'){ctx.beginPath();ctx.ellipse(0,0,8,10,0,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#9c6a34';ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.fillText('₩',0,4);}else{ctx.rotate(Math.PI/4);ctx.fillRect(-6,-6,12,12);}ctx.restore();}
 function drawDashTrail(e){

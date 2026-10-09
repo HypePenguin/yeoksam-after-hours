@@ -20,12 +20,16 @@ export const ITEMS = {
  returnScrolls:{name:'역삼역 1번 출구 귀환 주문서',icon:'역',description:'역삼역 1번 출구로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'town',x:530,y:648}},
  gangnamScrolls:{name:'강남역 귀환 주문서',icon:'강',description:'강남역 마을로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'gangnam',x:650,y:648}},
  scrap:{name:'로봇 부품',icon:'⚙',description:'로봇에게서 얻은 수집 재료입니다.',usable:false},
+ typeATitle:{name:'A형',icon:'✧',description:'A형 처치 보상 칭호. 장착하면 닉네임 위에 은색으로 표시되고 공격력이 5% 증가합니다. 군복과 함께 장착할 수 있어요.',usable:false,equippable:true,equipmentType:'칭호'},
  uniform:{name:'군복',icon:'▣',description:'군인 승현의 결투 보상. 장착하면 위장 군복을 입고, 걷기와 공중 이동 속도가 20% 증가합니다.',usable:false,equippable:true},
  cores:{name:'에너지 코어',icon:'◇',description:'강한 로봇에게서 얻은 수집 재료입니다.',usable:false}
 };
 export const equipmentName=p=>p?.job==='bodybuilder'?'핑크 덤벨':p?.job==='swordsman'?'일본도':'없음';
 export const jumpHeightMultiplier=p=>p?.classId==='cat'&&p?.job==='protester'?1.2:1;
 // Derive passives from the saved job so old characters benefit without accumulating bonuses.
+export const hasTypeATitle=p=>!!(p?.typeATitle>0&&p.typeATitleEquipped);
+export const itemEquipped=(p,id)=>id==='typeATitle'?hasTypeATitle(p):id==='uniform'&&p.uniform>0&&p.uniformEquipped;
+export function equipTypeATitle(p){if(!(p.typeATitle>0))return {ok:false,message:'먼저 A형을 처치해 칭호를 얻으세요.'};p.typeATitleEquipped=!p.typeATitleEquipped;return {ok:true,message:p.typeATitleEquipped?'A형 칭호 장착 · 공격력 +5%':'A형 칭호를 해제했어요.'};}
 export const movementMultiplier=p=>(p?.job==='swordsman'?1.1:1)*(p?.uniform>0&&p.uniformEquipped?1.2:1)*(p?.respectTime>0?1.2:1);
 export const incomingDamage=(p,damage,multiplier=1)=>Math.max(0,Math.round(damage*(p?.job==='bodybuilder'?0.9:1)*(p?.respectTime>0?.8:1)*multiplier));
 export function equipUniform(p){if(!p.uniform)return {ok:false,message:'먼저 군인 승현을 처치해 군복을 얻으세요.'};p.uniformEquipped=!p.uniformEquipped;return {ok:true,message:p.uniformEquipped?'군복 장착 · 이동속도 +20%':'군복을 벗었어요.'};}
@@ -175,7 +179,7 @@ const classFor=p=>CLASSES.find(c=>c.id===p.classId)||CLASSES[0];
 // Round the rabbit's 70% base HP before applying temporary max-HP buffs.
 export const maxHp=p=>Math.round(Math.round((classFor(p).hp+(p.level-1)*20)*(p.classId==='rabbit'?7:10)/10)*(p.respectTime>0?1.2:1));
 export const maxMp=p=>classFor(p).mp+(p.level-1)*10;
-export const attackPower=p=>(classFor(p).attack+(p.level-1)*5)*(p.respectTime>0?1.2:1);
+export const attackPower=p=>(classFor(p).attack+(p.level-1)*5)*(p.respectTime>0?1.2:1)*(hasTypeATitle(p)?1.05:1);
 export const isPowered=p=>p?.job==='bodybuilder'&&p.powerTime>0;
 export const basicAttackPower=p=>Math.round(attackPower(p)*(isPowered(p)?1.8:1));
 export function effectiveSkill(p,key){
@@ -221,7 +225,7 @@ export function createCharacter(name,classId='wanderer'){
  const clean=String(name).trim();
  if(!/^[\p{L}\p{N}_ ]{1,12}$/u.test(clean))throw new Error('이름은 한글·영문·숫자 1~12자로 입력해 주세요.');
  const stats=CLASSES.find(c=>c.id===classId);if(!stats)throw new Error('선택할 수 없는 캐릭터입니다.');
- return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:maxHp({classId,level:1}),mp:stats.mp,money:500,potions:3,largePotions:0,mpPotions:classId==='rabbit'?1:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,quickSlots:['potions',classId==='rabbit'?'mpPotions':null,null],uniform:0,uniformEquipped:false,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],respectTime:0,powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
+ return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:maxHp({classId,level:1}),mp:stats.mp,money:500,potions:3,largePotions:0,mpPotions:classId==='rabbit'?1:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,quickSlots:['potions',classId==='rabbit'?'mpPotions':null,null],uniform:0,uniformEquipped:false,typeATitle:0,typeATitleEquipped:false,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],respectTime:0,powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
 }
 export function normalizeCharacter(raw){
  if(!raw||typeof raw.id!=='string'||typeof raw.name!=='string')return null;
@@ -232,6 +236,8 @@ export function normalizeCharacter(raw){
  for(const key of ['level','xp','money','potions','largePotions','mpPotions','returnScrolls','gangnamScrolls','scrap','cores','kills','bossWins','typeAWins'])if(Number.isFinite(raw[key]))p[key]=Math.floor(clamp(raw[key],key==='level'?1:0,key==='level'?99:9999999));
  if(Array.isArray(raw.quickSlots))p.quickSlots=Array.from({length:3},(_,i)=>validItem(raw.quickSlots[i])&&ITEMS[raw.quickSlots[i]].usable?raw.quickSlots[i]:null);
  p.uniform=Number.isFinite(raw.uniform)&&raw.uniform>0?1:0;p.uniformEquipped=p.uniform>0&&raw.uniformEquipped===true;
+ // Existing victories also unlock the new reward; equipping remains the player's choice.
+ p.typeATitle=p.typeAWins>0||(Number.isFinite(raw.typeATitle)&&raw.typeATitle>0)?1:0;p.typeATitleEquipped=p.typeATitle>0&&raw.typeATitleEquipped===true;
  p.job=p.level>=10&&Object.hasOwn(JOBS,raw.job)&&(p.classId===(JOBS[raw.job].classId||'wanderer'))?raw.job:null;
  p.map=MAPS[raw.map]?raw.map:'town';p.x=Number.isFinite(raw.x)?clamp(raw.x,45,MAPS[p.map].width-45):530;p.y=Number.isFinite(raw.y)?clamp(raw.y,580,720):648;
  p.mpPotionCooldown=MAPS[p.map]?.boss&&Number.isFinite(raw.mpPotionCooldown)?clamp(raw.mpPotionCooldown,0,10):0;

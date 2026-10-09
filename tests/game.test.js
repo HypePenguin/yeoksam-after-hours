@@ -1513,3 +1513,26 @@ test('large HP potions share boss cooldown with regular HP potions in both direc
  h.api.useQuickSlot(1);assert.equal(p.potions,20);h.api.inventory('largePotions');h.api.useInventoryItem('largePotions',true);assert.equal(p.largePotions,2);h.api.closeModal();
  const b=h.api.get().boss;b.phase='recover';b.elapsed=-30;advance(h,10.1);h.api.useQuickSlot(1);assert.equal(p.hp,310);assert.equal(p.potions,19);h.api.useQuickSlot(2);assert.equal(p.largePotions,2);
 });
+
+test('Type A victory grants one unequipped title; inventory toggles title independently from uniform',()=>{
+ const h=harness(),p=core.createCharacter('칭호보상');Object.assign(p,{level:35,map:'hangar',uniform:1,uniformEquipped:true});h.api.start(p);h.api.startBossFight();
+ const b=h.api.get().boss;b.safetyUsed=true;b.hp=1;h.api.hitMonster(b,2);assert.equal(p.typeATitle,1);assert.equal(p.typeATitleEquipped,false);assert.match(h.el('#modal-root').innerHTML,/A형 칭호/);
+ h.api.closeModal();h.api.inventory('typeATitle');const base=core.attackPower(p);h.el('#bag-use').onclick();assert.equal(p.typeATitleEquipped,true);assert.equal(p.uniformEquipped,true);assert.equal(core.attackPower(p),base*1.05);
+ assert.match(h.el('#modal-root').innerHTML,/해제하기/);const saved=JSON.parse(h.storage.get(core.SAVE_KEY)).characters[0];assert.equal(core.normalizeCharacter(saved).typeATitleEquipped,true);
+ h.el('#bag-use').onclick();assert.equal(core.attackPower(p),base);assert.equal(p.typeATitle,1);assert.equal(p.uniformEquipped,true);
+ h.api.closeModal();h.api.startBossFight();const again=h.api.get().boss;again.safetyUsed=true;again.hp=1;h.api.hitMonster(again,2);assert.equal(p.typeAWins,2);assert.equal(p.typeATitle,1);
+});
+test('silver title is above nickname for each character and muscle form only while equipped',()=>{
+ for(const classId of ['wanderer','cat','rabbit'])for(const powered of [false,true]){
+ const h=harness(),p=core.createCharacter('칭호확인',classId);Object.assign(p,{level:35,typeATitle:1,typeATitleEquipped:true,job:classId==='wanderer'?'bodybuilder':null,powerTime:powered?12:0});h.api.start(p);render(h);
+ const name=h.labels.find(l=>l.text.startsWith('칭호확인')),title=h.labels.find(l=>l.text==='A형');assert.ok(title);assert.equal(title.color,'#d5d9e1');assert.equal(title.x,name.x);assert.ok(title.y<name.y);
+ core.equipTypeATitle(p);render(h);assert.ok(!h.labels.some(l=>l.text==='A형'));
+ }
+});
+test('title migration, ownership checks and attack bonus remain stable across jobs, buffs and reload',()=>{
+ const p=core.createCharacter('기존격파');assert.equal(core.equipTypeATitle(p).ok,false);p.typeATitleEquipped=true;assert.equal(core.hasTypeATitle(p),false);
+ const legacy={...p,typeAWins:1};delete legacy.typeATitle;delete legacy.typeATitleEquipped;const migrated=core.normalizeCharacter(legacy);assert.equal(migrated.typeATitle,1);assert.equal(migrated.typeATitleEquipped,false);
+ for(const [classId,job] of [['wanderer','swordsman'],['wanderer','bodybuilder'],['cat','protester'],['rabbit','mage']]){
+ const c=core.createCharacter('공격칭호',classId);Object.assign(c,{level:35,job,typeATitle:1,respectTime:10,powerTime:12});const base=core.attackPower(c);core.equipTypeATitle(c);assert.equal(core.attackPower(c),base*1.05);assert.equal(core.basicAttackPower(c),Math.round(base*1.05*(job==='bodybuilder'?1.8:1)));core.equipTypeATitle(c);assert.equal(core.attackPower(c),base);
+ }
+});
