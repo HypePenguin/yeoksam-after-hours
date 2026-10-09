@@ -500,10 +500,10 @@ test('invulnerability and guard do not trigger hurt; travel and death clear the 
  p.map='alley';h.api.start(p);h.api.get().monsters.forEach(m=>{m.dead=true;m.respawnIn=100;});advance(h,2.1);p.hp=1;Object.assign(h.api.get().monsters[0],{dead:false,x:p.x,y:p.y,speed:0});h.api.update(.01);
  assert.equal(h.api.get().scene,'dead');assert.equal(h.api.get().hurtTime,0);
 });
-test('saved level seven characters can immediately use W, while level six stays locked',async()=>{
- for(const level of [6,7]){
+test('saved level six characters can immediately use W, while level five stays locked',async()=>{
+ for(const level of [5,6]){
   const h=harness(),p=core.createCharacter('질주');p.level=level;h.api.start(p);h.api.save();h.api.selectCharacters();const pending=h.api.enterWorld(p.id);await h.flush();await pending;
-  const restored=h.api.get().player,x=restored.x,mp=restored.mp;h.api.cast('w');assert.equal(restored.x-x,level===7?230:0);assert.equal(restored.mp,mp-(level===7?12:0));
+  const restored=h.api.get().player,x=restored.x,mp=restored.mp;h.api.cast('w');assert.equal(restored.x-x,level===6?230:0);assert.equal(restored.mp,mp-(level===6?12:0));
  }
 });
 

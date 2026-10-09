@@ -63,7 +63,7 @@ export function useItem(p,id){
 }
 export const SKILLS = [
  {key:'q',name:'펭귄 펀치',icon:'✦',level:3,mp:8,cooldown:2.2,damage:2.1,range:210,description:'전방의 적을 힘껏 공격해요.',enhanced:'피해 2배 · 범위 1.5배 · 재사용 시간 절반'},
- {key:'w',name:'배치기 돌진',icon:'»',level:7,mp:12,cooldown:4,damage:2.7,range:270,dash:230,description:'앞으로 미끄러지며 경로의 적을 공격해요.',enhanced:'피해 2배 · 돌진 1.6배 · 재사용 시간 절반'},
+ {key:'w',name:'배치기 돌진',icon:'»',level:6,mp:12,cooldown:4,damage:2.7,range:270,dash:230,description:'앞으로 미끄러지며 경로의 적을 공격해요.',enhanced:'피해 2배 · 돌진 1.6배 · 재사용 시간 절반'},
  {key:'e',name:'한 번 더!',icon:'✚',level:10,requiresJob:true,mp:18,cooldown:9,damage:0,range:0,heal:.4,recovery:1.5,reduction:.5,moveSpeed:.6,description:'팔을 X자로 막아 1.5초간 받는 피해를 50% 줄이고 HP를 최대치의 40%만큼 서서히 회복해요. 회복 중 이동속도는 평소의 60%이며 일반 공격과 다른 스킬은 사용할 수 없어요.',enhanced:'HP 70% 지속 회복 · 피해 50% 감소 · 재사용 시간 절반'},
  {key:'r',name:'근육은 못 참지',icon:'◆',level:15,requiresJob:true,mp:30,cooldown:30,damage:6,range:400,description:'충격파와 함께 12초간 거대한 근육 펭귄으로 변신해요.',enhanced:'변신 중 기본 공격 1.8배 · Q/W/E 전부 강화'}
 ];

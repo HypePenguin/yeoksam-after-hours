@@ -37,11 +37,11 @@ test('purchase and use cannot duplicate money or consume a potion at full HP',()
  p.hp=30;assert.equal(usePotion(p).ok,true);assert.equal(p.hp,90);assert.equal(p.potions,12);
  p.hp=90;usePotion(p);assert.equal(p.hp,100);
 });
-test('early XP requirements are 60 percent until level 10 and Q/W still unlock at levels 3/7',()=>{
+test('early XP requirements are 60 percent until level 10 and Q/W still unlock at levels 3/6',()=>{
  for(let level=1;level<10;level++)assert.equal(xpNeeded(level),48*level);
  for(const level of [10,15,50,99])assert.equal(xpNeeded(level),80*level);
  const p=createCharacter('하루');p.hp=1;p.mp=0;assert.equal(gainXp(p,480),4);assert.equal(p.level,5);assert.equal(p.xp,0);assert.equal(p.hp,maxHp(p));assert.equal(p.mp,maxMp(p));
- for(const [level,q,w] of [[2,false,false],[3,true,false],[6,true,false],[7,true,true]]){p.level=level;p.mp=100;assert.equal(canUseSkill(p,'q').ok,q);assert.equal(canUseSkill(p,'w').ok,w);}
+ for(const [level,q,w] of [[2,false,false],[3,true,false],[5,true,false],[6,true,true]]){p.level=level;p.mp=100;assert.equal(canUseSkill(p,'q').ok,q);assert.equal(canUseSkill(p,'w').ok,w);}
  assert.equal(canUseSkill(p,'q',1).ok,false);p.mp=0;assert.equal(canUseSkill(p,'q').ok,false);
 });
 
@@ -215,4 +215,11 @@ test('new rabbits receive one MP potion in slot two without replenishing saved c
  const used=normalizeCharacter(p);assert.equal(used.mpPotions,0);assert.deepEqual(used.quickSlots,p.quickSlots);
  delete p.mpPotions;delete p.quickSlots;const legacy=normalizeCharacter(p);assert.equal(legacy.mpPotions,0);assert.deepEqual(legacy.quickSlots,['potions',null,null]);
  for(const id of ['wanderer','cat']){const other=createCharacter('다른캐릭터',id);assert.equal(other.mpPotions,0);assert.equal(other.quickSlots[1],null);}
+});
+
+test('all character classes unlock W at level six, including restored saves',()=>{
+ for(const classId of ['wanderer','cat','rabbit']){
+  const p=createCharacter('해금확인',classId);p.level=5;assert.equal(canUseSkill(p,'w').ok,false);
+  p.level=6;const restored=normalizeCharacter(p);assert.equal(effectiveSkill(restored,'w').level,6);assert.equal(canUseSkill(restored,'w').ok,true);
+ }
 });
