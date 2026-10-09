@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=86';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=86';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=86';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=87';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=87';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=87';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={};let assetsReady=false,assetFailed=false;
@@ -13,13 +13,15 @@ function characterImage(asset,p=player){
 }
 const catAsset=(asset,p=player)=>p?.job==='protester'?asset.replace('cat','cat-protester'):asset;
 const rabbitPortraits={};
+const otterAsset=(p=player)=>p?.job==='idol'?'otter-idol-motion':'otter-motion';
 const rabbitAsset=(p=player)=>p?.job==='mage'?'rabbit-motion':'rabbit-novice-motion';
-const characterPortrait=(p,powered=false)=>p?.classId==='chick'?(rabbitPortraits[p.job==='hacker'?'chick-hacker':'chick-motion']||'assets/chick-motion.png'):p?.classId==='rabbit'?(rabbitPortraits[rabbitAsset(p)]||`assets/${rabbitAsset(p)}.png`):p?.classId==='cat'?`assets/${catAsset('cat',p)}.png`:`assets/${characterAsset(powered?'penguin-power-poses':'penguin',p)}.png`;
-const loadAssets=Promise.all(['chick-actions','chick-typing','chick-motion','npc-hyupro','maple-hideout','rabbit-novice-motion','rabbit-motion','type-a','endgame-dungeons','combat-brawler','combat-swordsman','combat-power','soldier-boss','soldier-counter','soldier-walk','gangnam','hansabal-pocha','city','crossroads','station-six','player','robot','penguin','penguin-power','penguin-hurt','penguin-power-poses','districts','high-dungeons','dojo','penguin-walk','penguin-power-walk','penguin-jump','penguin-power-jump','cat','cat-motion','cat-skills','cat-protester','cat-protester-motion','cat-protester-skills','npc-redfox','olympic-park','npc-hyuntori-white','npc-maguri-large-crate','npc-emperor-coach','npc-tiger-master','job-equipment','sword-guard-walk','builder-recovery-walk','power-recovery-walk',...[...UNIFORM_ASSETS].map(name=>`uniform-${name}`)].map(name=>new Promise(resolve=>{const img=new Image();images[name]=img;img.onload=()=>resolve();img.onerror=()=>{assetFailed=true;resolve();};img.src=`assets/${name}.png`;}))).then(()=>{assetsReady=true;prepareRabbitPortrait();});
+const characterPortrait=(p,powered=false)=>p?.classId==='otter'?(rabbitPortraits[otterAsset(p)]||`assets/${otterAsset(p)}.png`):p?.classId==='chick'?(rabbitPortraits[p.job==='hacker'?'chick-hacker':'chick-motion']||'assets/chick-motion.png'):p?.classId==='rabbit'?(rabbitPortraits[rabbitAsset(p)]||`assets/${rabbitAsset(p)}.png`):p?.classId==='cat'?`assets/${catAsset('cat',p)}.png`:`assets/${characterAsset(powered?'penguin-power-poses':'penguin',p)}.png`;
+const loadAssets=Promise.all(['otter-motion','otter-idol-motion','chick-actions','chick-typing','chick-motion','npc-hyupro','maple-hideout','rabbit-novice-motion','rabbit-motion','type-a','endgame-dungeons','combat-brawler','combat-swordsman','combat-power','soldier-boss','soldier-counter','soldier-walk','gangnam','hansabal-pocha','city','crossroads','station-six','player','robot','penguin','penguin-power','penguin-hurt','penguin-power-poses','districts','high-dungeons','dojo','penguin-walk','penguin-power-walk','penguin-jump','penguin-power-jump','cat','cat-motion','cat-skills','cat-protester','cat-protester-motion','cat-protester-skills','npc-redfox','olympic-park','npc-hyuntori-white','npc-maguri-large-crate','npc-emperor-coach','npc-tiger-master','job-equipment','sword-guard-walk','builder-recovery-walk','power-recovery-walk',...[...UNIFORM_ASSETS].map(name=>`uniform-${name}`)].map(name=>new Promise(resolve=>{const img=new Image();images[name]=img;img.onload=()=>resolve();img.onerror=()=>{assetFailed=true;resolve();};img.src=`assets/${name}.png`;}))).then(()=>{assetsReady=true;prepareRabbitPortrait();});
 let records=[],storageBroken=false;
 try{const saved=localStorage.getItem(SAVE_KEY);if(saved){const parsed=JSON.parse(saved);if(!parsed||parsed.version!==1||!Array.isArray(parsed.characters))throw new Error('invalid save');records=parsed.characters.map(normalizeCharacter).filter(Boolean);}}catch{storageBroken=true;}
 let scene='title',player=null,selectedId=records[0]?.id??null,modal=null,returnFocus=null,keys=new Set(),monsters=[],drops=[],effects=[],texts=[],camera=0,worldTime=0,screenWidth=1440,prev=0,lastHud=0,saveClock=0,toastTimer=null,transitionId=0,lastSavedLabel='',walking=false,walkPhase=0,soundOn=false,audioContext=null;
 let rabbitOrbs=[],rabbitShield=null;
+let otterWave=null,otterShield=null,otterBubbles=null,otterConcert=null;
 let chickStealth=0,chickCharge=null,hackerUlt=null,chickCodes=[];
 let inventorySelection='potions',boss=null,potionCooldown=0,catCharge=null,catCastLock=0,catProjectiles=[],catFires=[],catBallot=null;
 const bossActive=()=>!!boss?.active;
@@ -36,13 +38,13 @@ const MAGURI_CROP=[94,25,1115,1157];
 // Match the previous frog's eye spacing; the larger silhouette comes from the crate.
 const MAGURI_WIDTH=64.3;
 const TRAINERS={
- maple:{id:'hyupro',job:'hacker',x:960,y:648,name:'휴프로',role:'해커 전직 · Lv. 10',asset:'npc-hyupro',height:240,width:206,icon:'E'},
+ maple:{id:'hyupro',job:'hacker',x:960,y:648,name:'휴프로',role:'해커 / 아이돌 전직 · Lv. 10',asset:'npc-hyupro',height:240,width:206,icon:'E'},
  gym:{id:'bodybuilder-coach',job:'bodybuilder',x:780,y:645,name:'근육 코치',role:'바디빌더 전직 · Lv. 10',asset:'npc-emperor-coach',height:280,crop:[34,35,957,1484],icon:'E'},
  dojo:{id:'sword-master',job:'swordsman',x:780,y:645,name:'검도 사범',role:'검사 전직 · Lv. 10',asset:'npc-tiger-master',height:193,crop:[37,16,968,1502],icon:'E'},
  olympic:{id:'park-organizer',job:'protester',x:940,y:648,name:'레드폭스',role:'시위대 전직 · Lv. 10',asset:'npc-redfox',height:184,crop:[63,10,909,1513],icon:'E'}
 };
 const GANGNAM_NPCS=[{...NPCS.find(n=>n.id==='shop'),x:1050,y:654}];
-const mapNPCs=()=>player?.map==='town'?NPCS:['gangnam','yeoksamStreet'].includes(player?.map)?GANGNAM_NPCS:TRAINERS[player?.map]?[TRAINERS[player.map]]:[];
+const mapNPCs=()=>player?.map==='town'?NPCS:['gangnam','yeoksamStreet'].includes(player?.map)?GANGNAM_NPCS:TRAINERS[player?.map]?[{...TRAINERS[player.map],...(player.map==='maple'&&player.classId==='otter'?{job:'idol'}:{})}]:[];
 const icon=(name)=>({map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5ZM9 3v16M15 5v16"/></svg>',bag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 8V6a5 5 0 0 1 10 0v2M5 8h14l1 13H4L5 8Z"/><path d="M9 13h6"/></svg>',save:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 3h13l4 4v14H3V3h1Z"/><path d="M7 3v6h9V3M7 21v-8h10v8"/></svg>',menu:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 6h14M5 12h14M5 18h14"/></svg>',sound:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m11 4-6 5H2v6h3l6 5V4ZM16 8a6 6 0 0 1 0 8M19 5a10 10 0 0 1 0 14"/></svg>'}[name]);
 const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function toast(message){$('#toast').textContent=message;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2700);}
@@ -52,11 +54,11 @@ function save(silent=true){
  try{localStorage.setItem(SAVE_KEY,JSON.stringify({version:1,characters:records}));storageBroken=false;lastSavedLabel='방금 저장됨';if(!silent)toast('현재 위치와 진행 상황을 저장했어요.');return true;}catch{storageBroken=true;if(!silent)toast('브라우저 저장 공간에 접근할 수 없어요. 진행 상황이 유지되지 않을 수 있습니다.');return false;}
 }
 function setScene(next){if(next!=='playing'){if(player){player.respectTime=0;player.hp=Math.min(player.hp,maxHp(player));}boss=null;potionCooldown=0;}cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;$('.game-shell').classList.remove('boss-fight');resetJump();resetGait();cancelSword();resetCombat();hurtTime=0;scene=next;keys.clear();ui.innerHTML='';$('#touch-controls').classList.toggle('playing',next==='playing');$('.game-shell').classList.toggle('is-playing',next==='playing');resize();}
-function title(){transitionId++;player=null;closeModal();setScene('title');screens.innerHTML=`<div class="title-screen"><div class="title-content"><div class="eyebrow"><span></span> 불이 꺼진 도시에서, 모험이 켜진다.</div><p class="english-title">YEOKSAM<br>AFTER HOURS</p><h1>역삼의 밤<span>夜</span></h1><p class="intro">익숙한 거리, 조금 다른 밤.<br>작은 용기를 챙겨 도시 밖으로 떠나보세요.</p><button class="primary start-button" id="start-button">시작하기 <span>ENTER ↵</span></button><div class="save-caption">진행 상황은 이 브라우저에 자동 저장됩니다.</div></div><div class="scene-caption"><span class="station-pill">2</span><div>역삼 Yeoksam<small>37.5006° N &nbsp; 127.0364° E</small></div></div></div>`;$('#start-button').onclick=selectCharacters;}
+function title(){transitionId++;resetOtter();player=null;closeModal();setScene('title');screens.innerHTML=`<div class="title-screen"><div class="title-content"><div class="eyebrow"><span></span> 불이 꺼진 도시에서, 모험이 켜진다.</div><p class="english-title">YEOKSAM<br>AFTER HOURS</p><h1>역삼의 밤<span>夜</span></h1><p class="intro">익숙한 거리, 조금 다른 밤.<br>작은 용기를 챙겨 도시 밖으로 떠나보세요.</p><button class="primary start-button" id="start-button">시작하기 <span>ENTER ↵</span></button><div class="save-caption">진행 상황은 이 브라우저에 자동 저장됩니다.</div></div><div class="scene-caption"><span class="station-pill">2</span><div>역삼 Yeoksam<small>37.5006° N &nbsp; 127.0364° E</small></div></div></div>`;$('#start-button').onclick=selectCharacters;}
 function selectCharacters(){
- if(player)save();player=null;closeModal();setScene('characters');
+ if(player){resetOtter();save();}player=null;closeModal();setScene('characters');
  if(!records.some(p=>p.id===selectedId))selectedId=records[0]?.id??null;
- screens.innerHTML=`<div class="screen-overlay"><div class="screen-top"><button class="text-button" id="back-title">‹ 시작 화면</button><span>YOUR LITTLE ADVENTURE</span></div><h2 class="screen-title">오늘은 누구의 이야기인가요?</h2><p class="screen-subtitle">캐릭터를 더블 클릭하거나 선택 후 모험을 시작하세요.</p><div class="characters">${records.map(p=>`<button class="character-card ${p.id===selectedId?'selected':''}" data-character="${escapeHtml(p.id)}" aria-pressed="${p.id===selectedId}"><span class="level">Lv. ${p.level}</span>${p.classId==='chick'?`<span class="rabbit-selection-portrait" role="img" aria-label="병아리 ${p.job==='hacker'?'해커':'모험가'} 기본 자세" style="background-image:url(assets/chick-motion.png);background-position:0 ${p.job==='hacker'?'66.6667%':'0'}"></span>`:p.classId==='rabbit'?`<span class="rabbit-selection-portrait" role="img" aria-label="${p.job==='mage'?'토끼 마법사':'토끼 모험가'} 기본 자세" style="background-image:url(assets/${rabbitAsset(p)}.png)"></span>`:`<img src="${characterPortrait(p)}" alt="${p.classId==='chick'?'병아리 모험가':p.classId==='cat'?'고양이 모험가':hasUniform(p)?'군복을 입은 펭귄 모험가':'펭귄 모험가'}">`}<h3>${escapeHtml(p.name)}</h3><small>${jobName(p)} · ${MAPS[p.map].name}</small></button>`).join('')}<button class="character-card new-card" id="new-character"><span>＋</span><strong>새 캐릭터 생성하기</strong><small style="margin-top:10px">새로운 이야기를 시작해요</small></button></div><div class="character-actions"><button class="primary" id="enter-world" ${selectedId?'':'disabled'}>모험 시작하기</button><button class="character-delete" id="delete-character" ${selectedId?'':'disabled'}>선택한 캐릭터 삭제</button></div>${records.length===0?'<p class="empty-copy">아직 캐릭터가 없어요. 첫 모험가를 만들어 보세요.</p>':''}<p class="save-caption">이 브라우저에 저장된 캐릭터 · ${records.length}명</p></div>`;
+ screens.innerHTML=`<div class="screen-overlay"><div class="screen-top"><button class="text-button" id="back-title">‹ 시작 화면</button><span>YOUR LITTLE ADVENTURE</span></div><h2 class="screen-title">오늘은 누구의 이야기인가요?</h2><p class="screen-subtitle">캐릭터를 더블 클릭하거나 선택 후 모험을 시작하세요.</p><div class="characters">${records.map(p=>`<button class="character-card ${p.id===selectedId?'selected':''}" data-character="${escapeHtml(p.id)}" aria-pressed="${p.id===selectedId}"><span class="level">Lv. ${p.level}</span>${p.classId==='otter'?`<span class="rabbit-selection-portrait" role="img" aria-label="수달 ${p.job==='idol'?'아이돌':'모험가'} 기본 자세" style="background-image:url(assets/${otterAsset(p)}.png)"></span>`:p.classId==='chick'?`<span class="rabbit-selection-portrait" role="img" aria-label="병아리 ${p.job==='hacker'?'해커':'모험가'} 기본 자세" style="background-image:url(assets/chick-motion.png);background-position:0 ${p.job==='hacker'?'66.6667%':'0'}"></span>`:p.classId==='rabbit'?`<span class="rabbit-selection-portrait" role="img" aria-label="${p.job==='mage'?'토끼 마법사':'토끼 모험가'} 기본 자세" style="background-image:url(assets/${rabbitAsset(p)}.png)"></span>`:`<img src="${characterPortrait(p)}" alt="${p.classId==='chick'?'병아리 모험가':p.classId==='cat'?'고양이 모험가':hasUniform(p)?'군복을 입은 펭귄 모험가':'펭귄 모험가'}">`}<h3>${escapeHtml(p.name)}</h3><small>${jobName(p)} · ${MAPS[p.map].name}</small></button>`).join('')}<button class="character-card new-card" id="new-character"><span>＋</span><strong>새 캐릭터 생성하기</strong><small style="margin-top:10px">새로운 이야기를 시작해요</small></button></div><div class="character-actions"><button class="primary" id="enter-world" ${selectedId?'':'disabled'}>모험 시작하기</button><button class="character-delete" id="delete-character" ${selectedId?'':'disabled'}>선택한 캐릭터 삭제</button></div>${records.length===0?'<p class="empty-copy">아직 캐릭터가 없어요. 첫 모험가를 만들어 보세요.</p>':''}<p class="save-caption">이 브라우저에 저장된 캐릭터 · ${records.length}명</p></div>`;
  $('#back-title').onclick=title;$('#new-character').onclick=createModal;$('#enter-world').onclick=()=>enterWorld(selectedId);$('#delete-character').onclick=()=>deleteCharacterModal(selectedId);
  document.querySelectorAll('[data-character]').forEach(el=>{el.onclick=()=>{selectedId=el.dataset.character;document.querySelectorAll('[data-character]').forEach(c=>{c.classList.toggle('selected',c===el);c.setAttribute('aria-pressed',String(c===el));});$('#enter-world').disabled=false;$('#delete-character').disabled=false;};el.ondblclick=()=>enterWorld(el.dataset.character);});
 }
@@ -94,7 +96,7 @@ function showModal(kind,heading,content,focusSelector=null){
 }
 function closeModal(){modal=null;modalRoot.innerHTML='';keys.clear();if(scene==='playing')canvas.focus({preventScroll:true});else if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});returnFocus=null;}
 function createModal(){
- showModal('create','새로운 모험가',`<form id="create-form"><div class="class-choices" role="radiogroup" aria-label="캐릭터 종류">${CLASSES.map((kind,i)=>`<label class="class-option"><input type="radio" name="class-id" value="${kind.id}" ${i===0?'checked':''}><img src="${characterPortrait({classId:kind.id})}" alt=""><span><strong>${kind.name}</strong><small>${kind.id==='chick'?'메이플아지트에서 해커 전직':kind.id==='rabbit'?'마구리에게 마법사 전직':kind.id==='cat'?'올림픽공원에서 시위대 전직':'헬스장·검도장에서 전직'}</small><small>HP ${maxHp({classId:kind.id,level:1})} · MP ${kind.mp}</small></span></label>`).join('')}</div><label for="character-name">모험가의 이름</label><input id="character-name" placeholder="이름을 지어주세요" maxlength="12" autocomplete="off" required><div class="error" id="name-error" role="alert"></div><p>Lv. 1 · 시작 지원금 500원 · 체력 물약 3개</p><button class="primary" type="submit">이 캐릭터로 시작하기</button></form>`);
+ showModal('create','새로운 모험가',`<form id="create-form"><div class="class-choices" role="radiogroup" aria-label="캐릭터 종류">${CLASSES.map((kind,i)=>`<label class="class-option"><input type="radio" name="class-id" value="${kind.id}" ${i===0?'checked':''}><img src="${characterPortrait({classId:kind.id})}" alt=""><span><strong>${kind.name}</strong><small>${kind.id==='otter'?'휴프로에게 아이돌 전직':kind.id==='chick'?'메이플아지트에서 해커 전직':kind.id==='rabbit'?'마구리에게 마법사 전직':kind.id==='cat'?'올림픽공원에서 시위대 전직':'헬스장·검도장에서 전직'}</small><small>HP ${maxHp({classId:kind.id,level:1})} · MP ${kind.mp}</small></span></label>`).join('')}</div><label for="character-name">모험가의 이름</label><input id="character-name" placeholder="이름을 지어주세요" maxlength="12" autocomplete="off" required><div class="error" id="name-error" role="alert"></div><p>Lv. 1 · 시작 지원금 500원 · 체력 물약 3개</p><button class="primary" type="submit">이 캐릭터로 시작하기</button></form>`);
  $('#create-form').onsubmit=e=>{e.preventDefault();try{if(records.length>=12)throw new Error('캐릭터는 최대 12명까지 만들 수 있어요.');const name=$('#character-name').value.trim();if(records.some(p=>p.name===name))throw new Error('이미 사용 중인 이름이에요.');const classId=document.querySelector('input[name="class-id"]:checked')?.value||'wanderer';const p=createCharacter(name,classId);records.push(p);selectedId=p.id;const stored=save();closeModal();selectCharacters();toast(stored?'모험가가 탄생했어요. 캐릭터를 더블 클릭해 보세요.':'캐릭터를 만들었지만 브라우저 저장에 실패했어요.');}catch(error){$('#name-error').textContent=error.message;}};
 }
 async function enterWorld(id){
@@ -113,7 +115,7 @@ function buildHUD(){ui.innerHTML=`<div class="game-screen"><div class="hud-top">
  $('#map-button').onclick=worldMap;$('#inventory-button').onclick=inventory;$('#save-button').onclick=()=>save(false);$('#menu-button').onclick=menu;document.querySelectorAll('[data-skill]').forEach(bindSkillButton);document.querySelectorAll('[data-item-slot]').forEach(b=>b.onclick=()=>{useQuickSlot(Number(b.dataset.itemSlot));canvas.focus();});refreshHUD();
 }
 function refreshHealthHUD(){
- const hp=Math.ceil(player.hp),shield=Math.ceil(rabbitShield?.hp||0),maximum=maxHp(player),scale=Math.max(maximum,player.hp+shield);
+ const hp=Math.ceil(player.hp),shield=Math.ceil((rabbitShield?.hp||0)+(otterShield?.hp||0)),maximum=maxHp(player),scale=Math.max(maximum,player.hp+shield);
  const text=$('#hp-text');text.textContent=shield?`${hp} + ${shield} / ${maximum}`:`${hp} / ${maximum}`;
  text.title=shield?`체력 ${hp} / ${maximum} · 보호막 ${shield} · 합계 ${hp+shield}`:`체력 ${hp} / ${maximum}`;
  text.setAttribute('aria-label',text.title);
@@ -124,10 +126,10 @@ function refreshHUD(){if(scene!=='playing'||!$('#hud-level'))return;$('#hud-name
  b.title=locked?`잠금 · Lv.${s.level} 해금${s.requiresJob?' · 전직 필요':''}`:`${s.name} · Lv.${s.level}${s.requiresJob?' · 전직 필요':''} · ${s.description}`;
  b.setAttribute('aria-label',locked?`${s.key.toUpperCase()} 키, 잠금, 레벨 ${s.level}에 해금${s.requiresJob?', 전직 필요':''}`:`${s.name}, ${s.key.toUpperCase()} 키, 레벨 ${s.level}${s.requiresJob?' 전직 후':''}, MP ${s.mp}`);
  b.setAttribute('aria-disabled',String(locked));b.classList.toggle('locked',locked);b.classList.toggle('cooldown',!locked&&cooldowns[s.key]>0);
- b.querySelector('.skill-symbol').textContent=locked?'🔒':cooldowns[s.key]>0?Math.ceil(cooldowns[s.key]):s.icon;
+ b.querySelector('.skill-symbol').textContent=locked?'🔒':player.classId==='otter'&&s.key==='w'&&otterWave&&!otterWave.riding&&otterWave.elapsed<=otterWave.skill.rideWindow?'↗':cooldowns[s.key]>0?Math.ceil(cooldowns[s.key]):s.icon;
  b.querySelector('.lock-level').textContent=locked?`Lv.${s.level}`:`${s.mp}`;
  });const powered=isPowered(player);$('.game-shell').classList.toggle('powered',powered);$('.game-shell').classList.toggle('sword-cinematic',!!swordUlt||cameraZoom<.99);$('#power-banner').hidden=!powered||!!recovery;$('#power-clock').textContent=`${Math.ceil(player.powerTime)}초`;$('#power-bar').style.width=`${player.powerTime/POWER_DURATION*100}%`;const avatar=$('.avatar'),avatarSrc=characterPortrait(player,powered);avatar.style.objectPosition=player.classId==='cat'?'center':powered?'9% center':'center';if(avatar.getAttribute('src')!==avatarSrc)avatar.setAttribute('src',avatarSrc);document.querySelectorAll('[data-skill]').forEach(b=>b.classList.toggle('empowered',powered&&['a','q','w','e'].includes(b.dataset.skill)));refreshCombatHUD();const hint=$('#context-hint');hint.classList.toggle('small-npc-hint',interactionTarget?.id==='shop');if(interactionTarget){hint.hidden=false;hint.innerHTML=`<kbd>F</kbd> ${interactionTarget.id?escapeHtml(interactionTarget.name)+'에게 말 걸기':escapeHtml(interactionTarget.label)+' 이동'}`;}else{hint.hidden=true;}}
-function help(){showModal('help','모험 안내',`<div class="help-grid"><span><kbd>← ↑ ↓ →</kbd></span><span>거리의 네 방향으로 이동</span><span><kbd>SPACE</kbd></span><span>점프 · 이동하면서 대각선 점프</span><span><kbd>A</kbd></span><span>기본 공격 · 누르고 있으면 연속 공격</span><span><kbd>Q W E R</kbd></span><span>Q Lv. 3 · W Lv. 6 · E 전직 Lv. 10 · R Lv. 15</span><span><kbd>M</kbd></span><span>지도 · 현재 지역과 포탈 연결 보기</span><span><kbd>F</kbd></span><span>가까운 NPC와 대화 / 포탈 이용</span><span><kbd>1 2 3</kbd></span><span>등록한 아이템 사용 · I에서 등록 변경</span><span><kbd>I</kbd> <kbd>ESC</kbd></span><span>인벤토리 / 메뉴 · 열면 일시정지</span></div><p class="help-note">펭귄은 Lv. 10부터 피치플레이헬스&amp;필라테스 역삼점에서 바디빌더, 강남성균검도관에서 검사로 전직해요. 고양이는 역삼역 1번 출구에서 올림픽공원으로 이동해 빨간 두건을 두르고 화염병을 든 여우 레드폭스에게 시위대로 전직할 수 있어요. 피치플레이는 1번 출구에서 바로 갈 수 있어요. 검도관은 1번 출구 → 역삼역사거리 → 6번 출구를 거쳐 이동해요. R은 Lv. 15에 배웁니다. 바디빌더는 12초간 근육 각성, 검사는 최대 5명을 조준해 연속 베기를 발동해요. 시위대는 E를 최대 1초간 눌러 화염병 사거리를 늘리고, R로 투표함을 5초간 설치해요.</p><p>쓰러진 로봇의 돈과 아이템은 가까이 가면 줍습니다. MP는 자연 회복되고, 마을에서는 HP도 회복돼요. 사망하면 아무것도 잃지 않고 마을에서 부활합니다.</p><p>진행 상황은 현재 브라우저에 저장됩니다. 브라우저 데이터를 지우거나 다른 기기를 쓰면 이어지지 않습니다.</p>`);}
+function help(){showModal('help','모험 안내',`<div class="help-grid"><span><kbd>← ↑ ↓ →</kbd></span><span>거리의 네 방향으로 이동</span><span><kbd>SPACE</kbd></span><span>점프 · 이동하면서 대각선 점프</span><span><kbd>A</kbd></span><span>기본 공격 · 누르고 있으면 연속 공격</span><span><kbd>Q W E R</kbd></span><span>Q Lv. 3 · W Lv. 6 · E 전직 Lv. 10 · R Lv. 15</span><span><kbd>M</kbd></span><span>지도 · 현재 지역과 포탈 연결 보기</span><span><kbd>F</kbd></span><span>가까운 NPC와 대화 / 포탈 이용</span><span><kbd>1 2 3</kbd></span><span>등록한 아이템 사용 · I에서 등록 변경</span><span><kbd>I</kbd> <kbd>ESC</kbd></span><span>인벤토리 / 메뉴 · 열면 일시정지</span></div><p class="help-note">펭귄은 Lv. 10부터 피치플레이헬스&amp;필라테스 역삼점에서 바디빌더, 강남성균검도관에서 검사로 전직해요. 고양이는 역삼역 1번 출구에서 올림픽공원으로 이동해 빨간 두건을 두르고 화염병을 든 여우 레드폭스에게 시위대로 전직할 수 있어요. 피치플레이는 1번 출구에서 바로 갈 수 있어요. 검도관은 1번 출구 → 역삼역사거리 → 6번 출구를 거쳐 이동해요. 수달은 메이플아지트에서 휴프로에게 아이돌로 전직합니다. 수달 W는 발사 후 0.6초 안에 다시 누르면 파도를 탑니다(무적 아님). 아이돌 E는 보호막과 물방울 3개, R은 5초 콘서트입니다. R은 Lv. 15에 배웁니다. 바디빌더는 12초간 근육 각성, 검사는 최대 5명을 조준해 연속 베기를 발동해요. 시위대는 E를 최대 1초간 눌러 화염병 사거리를 늘리고, R로 투표함을 5초간 설치해요.</p><p>쓰러진 로봇의 돈과 아이템은 가까이 가면 줍습니다. MP는 자연 회복되고, 마을에서는 HP도 회복돼요. 사망하면 아무것도 잃지 않고 마을에서 부활합니다.</p><p>진행 상황은 현재 브라우저에 저장됩니다. 브라우저 데이터를 지우거나 다른 기기를 쓰면 이어지지 않습니다.</p>`);}
 function refreshBossHUD(){
  const hud=$('#boss-hud');if(!hud)return;hud.hidden=!bossActive();$('.game-shell').classList.toggle('boss-fight',bossActive());
  const warning=$('#type-a-warning');warning.hidden=!bossActive()||!isTypeA(boss)||!['safety','enrage'].includes(boss.phase);if(!warning.hidden)warning.textContent=boss.phase==='safety'?`안전지대를 찾으세요! ${Math.max(0,TYPE_A.safety.duration-boss.elapsed).toFixed(1)}초 · 파란 영역 / 무적기로 회피`:'A형 광폭화 · 회전 칼날과 자기장 주의';
@@ -178,15 +180,15 @@ function useInventoryItem(id,fromInventory=false){
  if(modal==='inventory'&&fromInventory)inventory(inventorySelection,'#bag-use');refreshHUD();
 }
 function menu(){if(!player)return;showModal('menu','잠깐 쉬어 가기',`<p>${escapeHtml(player.name)} · Lv. ${player.level} · ${jobName(player)}<br>${MAPS[player.map].name}</p><button class="primary" id="resume">모험 계속하기</button>${bossActive()?'<button class="secondary menu-wide" id="abandon-boss">도전 포기 · 방 입구로</button>':''}<button class="secondary menu-wide" id="manual-save">현재 위치 저장하기</button><button class="secondary menu-wide" id="menu-map">지도 보기 · M</button><button class="secondary menu-wide" id="view-skills">스킬 보기</button><button class="secondary menu-wide" id="menu-help">조작법 보기</button><button class="secondary menu-wide" id="sound-toggle">효과음 ${soundOn?'끄기':'켜기'}</button><button class="text-button menu-wide" id="exit-game">저장하고 캐릭터 선택으로</button>`);$('#resume').onclick=closeModal;if(bossActive())$('#abandon-boss').onclick=abandonBoss;$('#manual-save').onclick=()=>save(false);$('#exit-game').onclick=selectCharacters;$('#sound-toggle').onclick=()=>{soundOn=!soundOn;beep(650);menu();};$('#menu-map').onclick=worldMap;$('#view-skills').onclick=skillBook;$('#menu-help').onclick=help;}
-function skillBook(){showModal('skills',`${jobName(player)}의 스킬`,`${skillsFor(player).map(s=>`<div class="skill-description"><kbd>${s.key.toUpperCase()}</kbd><div><strong>${s.name}</strong><small>Lv. ${s.level}${s.requiresJob?' · 전직 후':''} · MP ${s.mp} · 재사용 ${s.cooldown}초</small><p>${s.description}</p>${s.enhanced?`<p class="enhanced-copy">바디빌더 각성 중: ${s.enhanced}</p>`:''}</div><span>${skillUnlocked(player,s)?'습득':'잠김'}</span></div>`).join('')}<p>Lv. 10에 펭귄은 헬스장·검도장, 고양이는 올림픽공원, 토끼는 마구리, 병아리는 메이플아지트의 휴프로에게 전직해 E를 배웁니다. 전직 후 Lv. 15에 R을 배워요. 누르고 쓰는 스킬은 메뉴·지도·맵 이동 시 취소됩니다.</p>`);}
+function skillBook(){showModal('skills',`${jobName(player)}의 스킬`,`${skillsFor(player).map(s=>`<div class="skill-description"><kbd>${s.key.toUpperCase()}</kbd><div><strong>${s.name}</strong><small>Lv. ${s.level}${s.requiresJob?' · 전직 후':''} · MP ${s.mp} · 재사용 ${s.cooldown}초</small><p>${s.description}</p>${s.enhanced?`<p class="enhanced-copy">바디빌더 각성 중: ${s.enhanced}</p>`:''}</div><span>${skillUnlocked(player,s)?'습득':'잠김'}</span></div>`).join('')}<p>Lv. 10에 펭귄은 헬스장·검도장, 고양이는 올림픽공원, 토끼는 마구리, 병아리와 수달은 메이플아지트의 휴프로에게 전직해 E를 배웁니다. 전직 후 Lv. 15에 R을 배워요. 누르고 쓰는 스킬은 메뉴·지도·맵 이동 시 취소됩니다.</p>`);}
 function jobModal(job){
  const target=JOBS[job];if(!target)return;
  const current=player.job,ready=!current&&player.level>=10&&player.classId===(target.classId||'wanderer');
- showModal('job',`${job==='hacker'?'휴프로 · ':job==='mage'?'마구리 · ':job==='protester'?'레드폭스 · ':''}${target.name} 전직`, `<p>${job==='hacker'?'코드를 읽으면 적의 빈틈이 보여요. 메이플아지트에서 시작해 봅시다.':job==='mage'?'마법은 서로를 지키는 힘이기도 해요.':job==='protester'?'작은 목소리도 함께 모이면 멀리 퍼져요.':target.name==='바디빌더'?'꾸준한 훈련으로 강인한 몸을 만들어 보세요.':'마음을 가라앉히고 한 번의 베기에 집중하세요.'}</p><div class="job-choice"><strong>직업 특성 · ${target.passive}</strong><p>전직 후 항상 적용됩니다.</p><strong>Lv. 10 · E ${target.e}</strong><p>${job==='hacker'?'최대 1.5초 차징해 사각 범위에 강력한 피해와 2초 경직을 줍니다.':job==='mage'?'3초간 피해를 흡수하는 보호막과 주변 마력 방출.':job==='protester'?'최대 1초 차징해 화염병을 던집니다. 폭발 후 바닥에 불길이 남아요.':job==='bodybuilder'?'HP 40%를 1.5초간 회복하고 받는 피해를 50% 줄입니다.':'1초 동안 칼로 공격을 막습니다.'}</p><strong>Lv. 15 · R ${target.r}</strong><p>${job==='hacker'?'좌우로 대상을 선택하고 Enter로 확정합니다. 노트북을 두드리며 5초간 경직과 지속 피해를 주고 받는 피해가 80% 감소합니다.':job==='mage'?'아군을 선택해 10초간 강화하고 주변 적의 공격력을 3초간 30% 낮춥니다.':job==='protester'?'체력 1500의 투표함을 5초간 설치합니다. 주변 적을 도발하고 투표지로 지속 피해를 주며 중심으로 끌어당깁니다.':job==='bodybuilder'?'12초간 거대해지며 기본 공격과 Q·W·E가 강화됩니다.':'R을 누르면 가까운 적부터 최대 5명을 조준해 연속으로 벱니다.'}</p></div><p>${current?`현재 직업은 ${jobName(player)}입니다. 전직은 캐릭터당 한 번입니다.`:ready?'한 번 선택한 직업은 변경할 수 없습니다. 다른 직업은 새 캐릭터로 시작할 수 있어요.':`현재 Lv. ${player.level}. Lv. 10이 되면 전직할 수 있어요.`}</p>${ready?`<button class="primary" id="advance-job">${target.name}로 전직하기</button>`:''}`);
+ showModal('job',`${['hacker','idol'].includes(job)?'휴프로 · ':job==='mage'?'마구리 · ':job==='protester'?'레드폭스 · ':''}${target.name} 전직`, `<p>${job==='idol'?'물을 다루는 재능과 무대에서 빛나는 매력을 함께 키워 봅시다.':job==='hacker'?'코드를 읽으면 적의 빈틈이 보여요. 메이플아지트에서 시작해 봅시다.':job==='mage'?'마법은 서로를 지키는 힘이기도 해요.':job==='protester'?'작은 목소리도 함께 모이면 멀리 퍼져요.':target.name==='바디빌더'?'꾸준한 훈련으로 강인한 몸을 만들어 보세요.':'마음을 가라앉히고 한 번의 베기에 집중하세요.'}</p><div class="job-choice"><strong>직업 특성 · ${target.passive}</strong><p>전직 후 항상 적용됩니다.</p><strong>Lv. 10 · E ${target.e}</strong><p>${job==='idol'?'5초 보호막과 서로 독립적인 물방울 3개를 얻어요. 물방울은 적에게 닿으면 피해를 주고 하나씩 사라집니다.':job==='hacker'?'최대 1.5초 차징해 사각 범위에 강력한 피해와 2초 경직을 줍니다.':job==='mage'?'3초간 피해를 흡수하는 보호막과 주변 마력 방출.':job==='protester'?'최대 1초 차징해 화염병을 던집니다. 폭발 후 바닥에 불길이 남아요.':job==='bodybuilder'?'HP 40%를 1.5초간 회복하고 받는 피해를 50% 줄입니다.':'1초 동안 칼로 공격을 막습니다.'}</p><strong>Lv. 15 · R ${target.r}</strong><p>${job==='idol'?'스포트라이트 아래에서 5초간 춤을 춥니다. 화면 안 적들에게 지속 피해, 자신과 아군 공격·이동 +20%, 초당 HP 10% 회복, 받는 피해 50% 감소. 이동과 다른 공격은 불가해요.':job==='hacker'?'좌우로 대상을 선택하고 Enter로 확정합니다. 노트북을 두드리며 5초간 경직과 지속 피해를 주고 받는 피해가 80% 감소합니다.':job==='mage'?'아군을 선택해 10초간 강화하고 주변 적의 공격력을 3초간 30% 낮춥니다.':job==='protester'?'체력 1500의 투표함을 5초간 설치합니다. 주변 적을 도발하고 투표지로 지속 피해를 주며 중심으로 끌어당깁니다.':job==='bodybuilder'?'12초간 거대해지며 기본 공격과 Q·W·E가 강화됩니다.':'R을 누르면 가까운 적부터 최대 5명을 조준해 연속으로 벱니다.'}</p></div><p>${current?`현재 직업은 ${jobName(player)}입니다. 전직은 캐릭터당 한 번입니다.`:ready?'한 번 선택한 직업은 변경할 수 없습니다. 다른 직업은 새 캐릭터로 시작할 수 있어요.':`현재 Lv. ${player.level}. Lv. 10이 되면 전직할 수 있어요.`}</p>${ready?`<button class="primary" id="advance-job">${target.name}로 전직하기</button>`:''}`);
  if(ready)$('#advance-job').onclick=()=>{const result=advanceJob(player,job);if(result.ok){cancelSword();resetCombat();save();closeModal();buildHUD();}toast(result.message);};
 }
 
-function interact(){if(scene!=='playing'||modal)return;interactionTarget=findInteraction();if(!interactionTarget){toast('NPC나 포탈에 조금 더 가까이 가보세요.');return;}const t=interactionTarget;if(t.id==='soldier'){bossTalk();return;}if(t.job){jobModal(t.job);return;}if(!t.id){if((MAPS[t.to].danger||MAPS[t.to].boss)&&player.level<MAPS[t.to].minLevel){showModal('portal','더 깊은 거리로',`<p>${MAPS[t.to].name}에는 Lv. ${MAPS[t.to].minLevel}–${MAPS[t.to].maxLevel} ${MAPS[t.to].boss?'중간보스가':'로봇이'} 있어요.<br>현재 Lv. ${player.level}입니다. 도전을 이어가시겠어요?</p><button class="primary" id="portal-confirm">${MAPS[t.to].name} 이동</button>`);$('#portal-confirm').onclick=()=>travel(t);}else travel(t);return;}if(t.id==='shop'&&player.classId==='rabbit'&&!player.job&&player.level>=10){jobModal('mage');return;}if(t.id==='gm'){showModal('gm','운영자 현토리',`<p>역삼역에 온 걸 환영해요, <strong>${escapeHtml(player.name)}</strong>!<br>이곳은 안전한 마을이에요. 처음엔 오른쪽의 물약 상인 마구리에게 들러 보세요.</p><p>오른쪽 끝의 테헤란 뒷골목 포탈에서 <strong>F</strong>를 누르면 첫 사냥터로 이동할 수 있어요. 로봇은 귀엽지만 부딪히면 아프니 조심하세요!</p><details class="npc-details"><summary>아이템 · 전직 · 성장 안내</summary><p>I키로 인벤토리를 열고 아이템을 1·2·3번에 등록할 수 있어요. 마구리에게 귀환 주문서를 사 두면 멀리서도 마을로 돌아올 수 있죠. M키로 지도를 확인해 보세요. 피치플레이헬스&amp;필라테스 역삼점은 이곳 1번 출구에서 바로 갈 수 있어요. 강남성균검도관에 가려면 몬스터가 있는 역삼역사거리를 지나 6번 출구로 가세요. Q는 Lv. 3, W는 Lv. 6에 배워요. Lv. 10부터 펭귄은 헬스장·검도장, 고양이는 올림픽공원, 토끼는 마구리, 병아리는 메이플아지트의 휴프로에게 전직해 E를 배웁니다. 전직 후 Lv. 15에 R을 습득합니다! 쓰러져도 돈이나 아이템을 잃지 않으니 편하게 모험해 보세요.</p></details><button class="primary" id="gm-help">자세한 조작법 보기</button>`);$('#gm-help').onclick=help;}else shop();}
+function interact(){if(scene!=='playing'||modal)return;interactionTarget=findInteraction();if(!interactionTarget){toast('NPC나 포탈에 조금 더 가까이 가보세요.');return;}const t=interactionTarget;if(t.id==='soldier'){bossTalk();return;}if(t.job){jobModal(t.id==='hyupro'&&player.classId==='otter'?'idol':t.job);return;}if(!t.id){if((MAPS[t.to].danger||MAPS[t.to].boss)&&player.level<MAPS[t.to].minLevel){showModal('portal','더 깊은 거리로',`<p>${MAPS[t.to].name}에는 Lv. ${MAPS[t.to].minLevel}–${MAPS[t.to].maxLevel} ${MAPS[t.to].boss?'중간보스가':'로봇이'} 있어요.<br>현재 Lv. ${player.level}입니다. 도전을 이어가시겠어요?</p><button class="primary" id="portal-confirm">${MAPS[t.to].name} 이동</button>`);$('#portal-confirm').onclick=()=>travel(t);}else travel(t);return;}if(t.id==='shop'&&player.classId==='rabbit'&&!player.job&&player.level>=10){jobModal('mage');return;}if(t.id==='gm'){showModal('gm','운영자 현토리',`<p>역삼역에 온 걸 환영해요, <strong>${escapeHtml(player.name)}</strong>!<br>이곳은 안전한 마을이에요. 처음엔 오른쪽의 물약 상인 마구리에게 들러 보세요.</p><p>오른쪽 끝의 테헤란 뒷골목 포탈에서 <strong>F</strong>를 누르면 첫 사냥터로 이동할 수 있어요. 로봇은 귀엽지만 부딪히면 아프니 조심하세요!</p><details class="npc-details"><summary>아이템 · 전직 · 성장 안내</summary><p>I키로 인벤토리를 열고 아이템을 1·2·3번에 등록할 수 있어요. 마구리에게 귀환 주문서를 사 두면 멀리서도 마을로 돌아올 수 있죠. M키로 지도를 확인해 보세요. 피치플레이헬스&amp;필라테스 역삼점은 이곳 1번 출구에서 바로 갈 수 있어요. 강남성균검도관에 가려면 몬스터가 있는 역삼역사거리를 지나 6번 출구로 가세요. Q는 Lv. 3, W는 Lv. 6에 배워요. Lv. 10부터 펭귄은 헬스장·검도장, 고양이는 올림픽공원, 토끼는 마구리, 병아리와 수달은 메이플아지트의 휴프로에게 전직해 E를 배웁니다. 전직 후 Lv. 15에 R을 습득합니다! 쓰러져도 돈이나 아이템을 잃지 않으니 편하게 모험해 보세요.</p></details><button class="primary" id="gm-help">자세한 조작법 보기</button>`);$('#gm-help').onclick=help;}else shop();}
 const shopItemSummary=id=>`${ITEMS[id]?.hpRestore?`HP +${ITEMS[id].hpRestore}`:id==='mpPotions'?'MP +100':'즉시 귀환'} · 보유 ${player[id]}개`;
 function refreshShop(){
  // Keep the existing dialog nodes so buying preserves scroll, focus and expanded help.
@@ -357,13 +359,21 @@ function bindSkillButton(b){
 }
 function refreshCombatHUD(){
  const controls=$('#hack-controls');controls.hidden=hackerUlt?.phase!=='selecting';$('#hack-prev').onclick=()=>cycleHack(-1);$('#hack-next').onclick=()=>cycleHack(1);$('#hack-confirm').onclick=confirmHack;$('#hack-cancel').onclick=cancelChickAim;
- const banner=$('#combat-banner');banner.hidden=!hackerUlt&&!chickCharge&&chickStealth<=0&&!swordUlt&&guardTime<=0&&!recovery&&!catCharge&&!rabbitShield&&!(player?.respectTime>0);
+ const banner=$('#combat-banner');banner.classList.toggle('otter-status',player?.classId==='otter');banner.hidden=!hackerUlt&&!chickCharge&&chickStealth<=0&&!swordUlt&&guardTime<=0&&!recovery&&!catCharge&&!rabbitShield&&!otterShield&&!otterBubbles&&!otterConcert&&!otterWave&&!(player?.respectTime>0);
  if(player?.respectTime>0||rabbitShield){$('#combat-title').textContent=player.respectTime>0?'존경! · 아군 강화':'마력 방벽';$('#combat-clock').textContent=`${Math.ceil(player.respectTime||rabbitShield?.remaining||0)}초`;$('#combat-detail').textContent=player.respectTime>0?'이동·공격·최대 HP +20% / 피해 20% 감소':`남은 보호막 ${Math.ceil(rabbitShield.hp)}`;$('#combat-bar').style.width=`${(player.respectTime?player.respectTime/10:rabbitShield.remaining/3)*100}%`;}
  if(swordUlt){const charging=swordUlt.phase==='charging',alive=monsters.filter(m=>!m.dead&&swordUlt.targets.includes(m.id)).length,solo=charging?alive===1:swordUlt.damageMultiplier>1;$('#combat-title').textContent=charging?'섬광 연참 · 기 모으기':'섬광 연참';$('#combat-clock').textContent=charging?`${swordUlt.elapsed.toFixed(1)} / 3초`:'연속 베기';$('#combat-detail').textContent=charging?`${alive} / 5명 조준${solo?' · 단일 대상 2배':''} · 받는 피해 80% 감소 · 손을 떼면 발동`:`연속 베기${solo?' · 단일 대상 2배':''} · 받는 피해 80% 감소`;$('#combat-bar').style.width=`${swordUlt.elapsed/3*100}%`;}
  else if(guardTime>0){$('#combat-title').textContent='막기';$('#combat-clock').textContent=`${guardTime.toFixed(1)}초`;$('#combat-detail').textContent='공격 차단 · 공격/스킬 사용 불가';$('#combat-bar').style.width=`${guardTime*100}%`;}
  else if(recovery){$('#combat-title').textContent=isPowered(player)?'근육 각성 · 한 번 더!':'한 번 더!';$('#combat-clock').textContent=`${recovery.remaining.toFixed(1)}초`;$('#combat-detail').textContent='HP 회복 · 피해 50% 감소 · 이동 60% · 공격 불가';$('#combat-bar').style.width=`${recovery.remaining/recovery.duration*100}%`;}
  else if(catCharge){$('#combat-title').textContent='화염병 · 사거리 충전';$('#combat-clock').textContent=`${catCharge.elapsed.toFixed(1)} / 1초`;$('#combat-detail').textContent='차징·투척 중 이동 불가 · 1초에 자동 발동';$('#combat-bar').style.width=`${catCharge.elapsed*100}%`;}
  if(hackerUlt||chickCharge||chickStealth>0){const u=hackerUlt;$('#combat-title').textContent=u?'해킹':chickCharge?'시스템 정지 · 차징':'시크릿 모드';$('#combat-clock').textContent=u?`${Math.ceil(u.remaining)}초`:chickCharge?`${chickCharge.elapsed.toFixed(1)} / ${chickCharge.skill.charge}초`:`${chickStealth.toFixed(1)}초`;$('#combat-detail').textContent=u?(u.phase==='selecting'?'가까운 적 우선 · 피해 80% 감소':'해킹당함! · 5초 경직과 지속 피해 · 피해 80% 감소'):chickCharge?'E를 놓으면 발동 · 차징 중 은신 유지':'이동속도 +50% · 다음 공격 +20%';$('#combat-bar').style.width=`${(u?u.remaining/(u.phase==='selecting'?u.skill.selection:u.skill.duration):chickCharge?chickCharge.elapsed/chickCharge.skill.charge:chickStealth/5)*100}%`;}
+ if(player.classId==='otter'&&(otterConcert||otterShield||otterBubbles||otterWave)){
+  const c=otterConcert,w=otterWave,b=otterBubbles;
+  $('#combat-title').textContent=c?'콘서트 ♡':w?.riding?'파도 타기':w&&!w.riding&&w.elapsed<=w.skill.rideWindow?'W 다시 누르면 파도 타기':'물방울 가드';
+  $('#combat-clock').textContent=`${(c?.remaining??Math.max(otterShield?.remaining||0,b?.remaining||0,w?(w.remaining/w.skill.speed):0)).toFixed(1)}초`;
+  $('#combat-detail').textContent=c?'공격·이동 +20% · 초당 HP 10% · 피해 50% 감소':w?.riding?'무적 아님 · 파도가 끝나면 내립니다':`보호막 ${Math.ceil(otterShield?.hp||0)} · 물방울 ${b?.orbs.filter(o=>o.active).length||0}개${w?' · 0.6초 안에 W 재입력':''}`;
+  $('#combat-bar').style.width=`${(c?c.remaining/5:w?w.remaining/w.skill.range:Math.max(otterShield?.remaining||0,b?.remaining||0)/5)*100}%`;
+ }
+
 }
 function drawCombatIndicators(){
  if(guardTime>0||recovery){ctx.save();ctx.strokeStyle=recovery?'#baffb1':'#abe8ff';ctx.lineWidth=4;ctx.shadowColor=recovery?'#a6ed89':'#64cbff';ctx.shadowBlur=18;ctx.beginPath();ctx.ellipse(player.x-camera,player.y-(isPowered(player)?100:56)-pz,isPowered(player)?82:53,isPowered(player)?110:74,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
@@ -401,7 +411,7 @@ function abandonBoss(){
 function winBoss(){
  if(isTypeA(boss)){winTypeA();return;}
  if(!boss||!defeatSoldier(boss))return;
- const owned=player.uniform>0;cancelSword();potionCooldown=0;player.uniform=1;player.bossWins++;player.kills++;
+ const owned=player.uniform>0;resetOtter();cancelSword();potionCooldown=0;player.uniform=1;player.bossWins++;player.kills++;
  const gained=gainXp(player,SOLDIER.xp);save();refreshHUD();
  effects.push({type:'ring',x:boss.x,y:boss.y-30,life:1,max:1,color:'#ffe0a0',size:200});beep(850,.45);
  showModal('boss-victory','결투 승리',`<div class="boss-intro"><span class="boss-eyebrow">신원미상의 예비군 격파 · ${player.bossWins}회</span><h3>“좋은 실력이군. 이 군복을 받아라.”</h3><p class="boss-reward">EXP +${xpReward(player,SOLDIER.xp).toLocaleString()}${gained?` · Lv. ${player.level} 달성`:''}</p><div class="job-choice"><strong>▣ 군복 ${owned?'보유 중':'획득'}</strong><p>장착하면 이동속도가 20% 증가합니다.<br>${owned?'이미 가진 군복은 유지됩니다.':'인벤토리(I)에서 언제든 장착하거나 벗을 수 있어요.'}</p></div><button class="primary menu-wide" id="equip-reward">${player.uniformEquipped?'군복을 입고 계속하기':'군복 장착하고 계속하기'}</button><button class="text-button menu-wide" id="leave-reward">나중에 장착하기 · 닫기</button></div>`,'#equip-reward');
@@ -440,7 +450,7 @@ function typeATalk(){
 }
 function winTypeA(){
  if(!defeatTypeA(boss))return;
- cancelSword();cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;potionCooldown=0;player.typeAWins=(player.typeAWins||0)+1;player.kills++;
+ resetOtter();cancelSword();cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;potionCooldown=0;player.typeAWins=(player.typeAWins||0)+1;player.kills++;
  player.typeATitle=1;player.money+=TYPE_A.money;player.cores+=TYPE_A.cores;gainXp(player,TYPE_A.xp);save();refreshHUD();
  showModal('boss-victory','A형 격파',`<div class="boss-intro"><h3>전투 프로토콜 종료.</h3><p>${player.typeAWins}번째 A형 격파! A형 칭호를 장착하면 역삼역주변거리로 이동할 수 있어요.</p><p class="boss-reward">EXP +${xpReward(player,TYPE_A.xp).toLocaleString()} · 6,000원 · 에너지 코어 15개 · A형 칭호</p><p>I 키로 가방을 열어 A형 칭호를 장착하면 공격력이 5% 증가합니다.</p><button class="primary" id="type-a-reward-close">모험 계속하기</button></div>`,'#type-a-reward-close');
  $('#type-a-reward-close').onclick=closeModal;
@@ -622,7 +632,7 @@ function drawBossTelegraphs(){
 }
 function resetJump(){pz=0;pvz=0;jumpScale=1;jumpPrep=0;jumpLanding=0;}
 function jump(){
- if(hackerUlt||catCharge||catCastLock>0)return;
+ if(hackerUlt||otterConcert||otterWave?.riding||catCharge||catCastLock>0)return;
  if(scene!=='playing'||modal||swordUlt||pz>0||pvz!==0||jumpPrep>0)return;
  walking=false;jumpPrep=player?.classId==='cat' ? .11 : .065;jumpLanding=0;beep(isPowered(player)?190:310,.12,'triangle',.04);
 }
@@ -647,11 +657,12 @@ function jumpFrame(){
  return jumpLanding>0?5:-1;
 }
 function textAt(text,x,y,color='#ffe2a7'){texts.push({text,x,y,life:1.15,max:1.15,color});}
-function resetCombat(){catCastLock=0;chickStealth=0;chickCodes=[];cancelChickAim();for(const m of monsters){m.stunTime=0;m.hack=null;}rabbitOrbs=[];rabbitShield=null;guardTime=0;recovery=null;combatMotion=null;}
+function resetCombat(){resetOtter();catCastLock=0;chickStealth=0;chickCodes=[];cancelChickAim();for(const m of monsters){m.stunTime=0;m.hack=null;}rabbitOrbs=[];rabbitShield=null;guardTime=0;recovery=null;combatMotion=null;}
 function playerDamage(raw,source=null,kind='magic'){
  if(kind==='magic'&&raw>0)chickStealth=0;
- let damage=incomingDamage(player,raw*(source?.respectTime>0?.7:1),(hackerUlt?.skill?1-hackerUlt.skill.reduction:1)*(swordUlt?1-swordUlt.skill.reduction:1)*(recovery?1-recovery.reduction:1));
+ let damage=incomingDamage(player,raw*(source?.respectTime>0?.7:1),(hackerUlt?.skill?1-hackerUlt.skill.reduction:1)*(swordUlt?1-swordUlt.skill.reduction:1)*(recovery?1-recovery.reduction:1)*(otterConcert?1-otterConcert.skill.reduction:1));
  if(rabbitShield){const absorbed=Math.min(rabbitShield.hp,damage);rabbitShield.hp-=absorbed;damage-=absorbed;if(rabbitShield.hp<=0)rabbitShield=null;}
+ if(otterShield){const absorbed=Math.min(otterShield.hp,damage);otterShield.hp-=absorbed;damage-=absorbed;if(otterShield.hp<=0)otterShield=null;}
  return damage;
 }
 function playCombatMotion(kind,duration,extra={}){if(kind!=='chickType')walking=false;combatMotion={kind,duration,elapsed:0,dir:facing,...extra};}
@@ -662,6 +673,7 @@ const FX_PALETTES={
 const attackPalette=()=>FX_PALETTES[player?.job==='bodybuilder'?'builder':'electric'];
 function attackImpactAt(x,y,size=80,dir=facing){
  if(!player?.job)return null;
+ if(player.classId==='otter'){const effect={type:'ring',x,y,size,life:.24,max:.24,color:'#a6edff'};effects.push(effect);return effect;}
  if(player.job==='hacker'){const effect={type:'ring',x,y,size,life:.22,max:.22,color:'#a7ffe2'};effects.push(effect);return effect;}
  if(player.job!=='bodybuilder')return lightningAt(x,y,size,dir);
  const effect={type:'impact',x,y,size,dir,life:.24,max:.24,...FX_PALETTES.builder};effects.push(effect);return effect;
@@ -672,6 +684,144 @@ function updateCombat(dt){
  if(combatMotion){combatMotion.elapsed+=dt;if(combatMotion.elapsed>=combatMotion.duration)combatMotion=null;}
  if(recovery){const r=recovery,step=Math.min(dt,r.remaining),before=player.hp;player.hp=Math.min(maxHp(player),player.hp+r.healTotal*step/r.duration);r.healed+=player.hp-before;r.remaining=Math.max(0,r.remaining-step);if(r.remaining<=1e-8){recovery=null;textAt(`+${Math.round(r.healed)} HP`,player.x,player.y-140,'#baffb1');save();}}
 }
+// Otter spells and summons are local encounter state; none survive a reload or map change.
+function resetOtter(){otterWave=null;otterShield=null;otterBubbles=null;otterConcert=null;if(player)player.concertTime=0;}
+const inConcert=(p,c=otterConcert)=>!!c&&p.x>=c.bounds.left&&p.x<=c.bounds.right&&p.y>=c.bounds.top&&p.y<=c.bounds.bottom;
+function concertCanHit(m,c){
+ const half=m.isBoss?90:30,height=m.isBoss?300:100;
+ return canTarget(m)&&m.x+half>=c.bounds.left&&m.x-half<=c.bounds.right&&m.y>=c.bounds.top&&m.y-height<=c.bounds.bottom;
+}
+function otterAttack(){
+ if(otterConcert)return;
+ attackTimer=.34;playCombatMotion('otterPunch',attackTimer);
+ effects.push({type:'ring',x:player.x+facing*58,y:player.y-60-pz,life:.18,max:.18,color:'#e6f5ef',size:42});
+ for(const m of [...monsters])if(canTarget(m)&&Math.abs(m.y-player.y)<72&&(m.x-player.x)*facing>=-25&&(m.x-player.x)*facing<=138&&pz<110){hitMonster(m,basicAttackPower(player));if(scene!=='playing'||modal)break;}
+ beep(290,.07);save();
+}
+function castOtter(key){
+ if(otterConcert)return;
+ // A second deliberate press rides the already-paid wave even while W is cooling down.
+ if(key==='w'&&otterWave&&!otterWave.riding&&otterWave.elapsed<=otterWave.skill.rideWindow&&otterWave.remaining>0){
+  otterWave.riding=true;player.x=otterWave.x;player.y=otterWave.y;facing=otterWave.dir;resetJump();resetGait();combatMotion=null;
+  textAt('파도 타기',player.x,player.y-150,'#b6f0ff');beep(650,.13);refreshHUD();return;
+ }
+ const check=canUseSkill(player,key,cooldowns[key]);if(!check.ok){toast(check.message);return;}
+ const s=check.skill;player.mp-=s.mp;cooldowns[key]=s.cooldown;
+ if(key==='q'){
+  const target=monsters.filter(m=>canTarget(m)&&(m.x-player.x)*facing>=0&&(m.x-player.x)*facing<=s.range&&Math.abs(m.y-player.y)<=s.halfLane&&pz<120).sort((a,b)=>Math.hypot(a.x-player.x,a.y-player.y)-Math.hypot(b.x-player.x,b.y-player.y))[0];
+  attackTimer=Math.max(attackTimer,.42);playCombatMotion('otterWater',.42);
+  effects.push({type:'otterJet',x:player.x+facing*30,y:player.y-108-pz,toX:target?.x??clamp(player.x+facing*s.range,45,MAPS[player.map].width-45),toY:target?target.y-(target.isBoss?160:48):player.y-92-pz,dir:facing,life:.38,max:.38,color:'#bcf5ff'});
+  if(target)hitMonster(target,Math.round(attackPower(player)*s.damage));beep(600,.16);
+ }else if(key==='w'){
+  const x=clamp(player.x+facing*35,45,MAPS[player.map].width-45);
+  otterWave={x,y:player.y,dir:facing,elapsed:0,remaining:Math.min(s.range,facing>0?MAPS[player.map].width-45-x:x-45),skill:s,hit:new Set(),riding:false,damage:Math.round(attackPower(player)*s.damage)};
+  playCombatMotion('otterWave',.35);beep(480,.22);
+ }else if(key==='e'){
+  otterShield={hp:Math.round(maxHp(player)*s.shield),remaining:s.duration};
+  otterBubbles={remaining:s.duration,elapsed:0,skill:s,orbs:[0,1,2].map(i=>({index:i,active:true,previous:null}))};
+  playCombatMotion('otterGuard',.5);effects.push({type:'ring',x:player.x,y:player.y-50,life:.5,max:.5,color:'#9de9ff',size:110});beep(820,.2);
+ }else if(key==='r'){
+  if(otterWave?.riding)otterWave.riding=false;
+  resetJump();resetGait();combatMotion=null;walking=false;
+  otterConcert={x:player.x,y:player.y,elapsed:0,remaining:s.duration,tick:s.tick,skill:s,bounds:{left:camera,right:camera+viewWidth(),top:-viewOffsetY()/cameraZoom,bottom:(810-viewOffsetY())/cameraZoom}};
+  player.concertTime=s.duration;attackTimer=0;textAt('콘서트 ♡',player.x,player.y-175,'#ffd0e8');beep(950,.35);
+ }
+ if(scene==='playing'){refreshHUD();save();}
+}
+function otterOrbPoint(b,i){const a=b.elapsed*2.8+i*Math.PI*2/3;return {x:player.x+Math.cos(a)*b.skill.orbit,y:clamp(player.y+Math.sin(a)*48,550,750)};}
+function sweptOrbDistance(m,from,to){
+ const dx=to.x-from.x,dy=(to.y-from.y)*1.5,length=dx*dx+dy*dy,t=length?clamp(((m.x-from.x)*dx+(m.y-from.y)*1.5*dy)/length,0,1):0;
+ return Math.hypot(m.x-from.x-t*dx,(m.y-from.y)*1.5-t*dy);
+}
+function updateOtterCombat(dt){
+ if(otterWave){
+  const w=otterWave,from=w.x,step=Math.min(w.remaining,w.skill.speed*dt);w.elapsed+=dt;w.x=clamp(w.x+w.dir*step,45,MAPS[player.map].width-45);w.remaining=Math.max(0,w.remaining-step);
+  if(w.riding){player.x=w.x;player.y=w.y;facing=w.dir;walking=false;}
+  for(const m of [...monsters])if(canTarget(m)&&!w.hit.has(m.id)&&Math.abs(m.y-w.y)<=w.skill.halfLane&&m.x>=Math.min(from,w.x)-45&&m.x<=Math.max(from,w.x)+45){w.hit.add(m.id);hitMonster(m,w.damage);if(scene!=='playing'||modal)return;}
+  if(otterWave===w&&w.remaining<=1e-8)otterWave=null;
+ }
+ if(otterShield){otterShield.remaining=Math.max(0,otterShield.remaining-dt);if(!otterShield.remaining)otterShield=null;}
+ if(otterBubbles){
+  const b=otterBubbles,step=Math.min(dt,b.remaining);b.elapsed+=step;b.remaining=Math.max(0,b.remaining-step);
+  for(const orb of b.orbs){if(!orb.active)continue;const to=otterOrbPoint(b,orb.index),from=orb.previous||to;orb.previous=to;
+   const target=monsters.filter(m=>canTarget(m)&&pz<120&&sweptOrbDistance(m,from,to)<(m.isBoss?80:38)).sort((a,c)=>Math.hypot(a.x-to.x,a.y-to.y)-Math.hypot(c.x-to.x,c.y-to.y))[0];
+   if(target){orb.active=false;effects.push({type:'ring',x:to.x,y:to.y-55-pz,life:.3,max:.3,color:'#b8f2ff',size:50});hitMonster(target,Math.round(attackPower(player)*b.skill.damage));if(scene!=='playing'||modal)return;}
+  }
+  if(otterBubbles===b&&b.remaining<=1e-8)otterBubbles=null;
+ }
+ if(otterConcert){
+  const c=otterConcert,step=Math.min(dt,c.remaining);c.elapsed+=step;c.remaining=Math.max(0,c.remaining-step);c.tick-=step;
+  // Single-player ally list; apply support only to allies standing inside this stage.
+  for(const ally of [player]){
+   ally.concertTime=inConcert(ally,c)?Math.max(c.remaining,1e-8):0;
+   if(ally.concertTime)ally.hp=Math.min(maxHp(ally),ally.hp+maxHp(ally)*c.skill.heal*step);
+  }
+  while(c.tick<=1e-8){c.tick+=c.skill.tick;
+   for(const m of [...monsters])if(concertCanHit(m,c)){hitMonster(m,Math.round(attackPower(player)*c.skill.damage),0);if(scene!=='playing'||modal||otterConcert!==c)return;}
+  }
+  if(otterConcert===c&&c.remaining<=1e-8){otterConcert=null;player.concertTime=0;save();}
+ }
+}
+function otterFrame(){
+ if(otterConcert)return Math.floor(otterConcert.elapsed*5)%2?14:13;
+ if(otterWave?.riding)return 11;
+ if(hurtTime>0)return 15;
+ const jump=jumpFrame();if(jump>=0)return [4,5,5,5,5,6][jump];
+ const motion=combatMotion,t=motion?motion.elapsed/motion.duration:0;
+ if(motion?.kind==='otterPunch')return t<.3?7:8;
+ if(motion?.kind==='otterWater')return 9;
+ if(motion?.kind==='otterWave')return 10;
+ if(motion?.kind==='otterGuard')return 12;
+ return walking?[1,2,3,2][Math.floor(walkPhase*4)%4]:0;
+}
+// Generated poses share a scale, but their row boundaries and planted feet need individual anchors.
+// Row 4 starts above the mathematical quarter; crop bands prevent its heads leaking into Q/W.
+const OTTER_ROWS=[[0,320],[320,640],[640,930],[930,1295]];
+const OTTER_FEET={
+ normal:[308,307,309,308,616,586,616,616,904,906,907,915,1219,1219,1219,1219],
+ idol:[312,310,312,311,620,578,619,620,915,917,918,914,1240,1239,1238,1241]
+};
+function drawOtterPlayer(){
+ const img=images[otterAsset()];if(!img?.complete||!img.naturalWidth)return;
+ const frame=otterFrame(),cw=img.naturalWidth/4,x=player.x-camera,scale=178/(img.naturalHeight/4),[top,bottom]=OTTER_ROWS[Math.floor(frame/4)],foot=OTTER_FEET[player.job==='idol'?'idol':'normal'][frame],column=frame%4,sourceX=Math.max(column*cw,({9:340,10:650,11:916})[frame]||0),sourceWidth=(column+1)*cw-sourceX;
+ ctx.save();ctx.fillStyle='#03162560';ctx.beginPath();ctx.ellipse(x,player.y+3,27,7,0,0,Math.PI*2);ctx.fill();ctx.translate(x,player.y-pz);
+ const dir=otterWave?.riding?otterWave.dir:otterConcert?facing:(combatMotion?.dir??facing);ctx.scale(dir,1);
+ if(walking&&pz===0)ctx.translate(0,-Math.abs(Math.sin(walkPhase*Math.PI*4))*2);
+ if(otterConcert){ctx.translate(Math.sin(otterConcert.elapsed*7)*3,-Math.abs(Math.sin(otterConcert.elapsed*7))*3);ctx.rotate(Math.sin(otterConcert.elapsed*5)*.035);}
+ ctx.globalAlpha=hurtTime<=0&&invincible>0&&Math.floor(invincible*13)%2===0?.55:1;ctx.imageSmoothingEnabled=true;
+ ctx.drawImage(img,sourceX,top,sourceWidth,bottom-top,(sourceX-(column+.5)*cw)*scale,(top-foot)*scale,sourceWidth*scale,(bottom-top)*scale);ctx.restore();
+ drawPlayerName(player.name,x,player.y-pz-160,player.job==='idol'?'#ffd0e8':'#d6efe7');
+}
+function waterBubble(x,y,r=15,alpha=1){
+ ctx.save();ctx.globalAlpha=alpha;const g=ctx.createRadialGradient(x-r*.35,y-r*.4,1,x,y,r);g.addColorStop(0,'#eeffff');g.addColorStop(.35,'#98e9ff88');g.addColorStop(1,'#238bcad9');ctx.fillStyle=g;ctx.strokeStyle='#bcf6ff';ctx.lineWidth=2;ctx.shadowColor='#72daff';ctx.shadowBlur=8;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle='#ffffffdd';ctx.beginPath();ctx.ellipse(x-r*.35,y-r*.4,r*.22,r*.12,-.6,0,Math.PI*2);ctx.fill();ctx.restore();
+}
+function otterHeart(x,y,size,alpha=1){
+ ctx.save();ctx.translate(x,y);ctx.scale(size,size);ctx.globalAlpha=alpha;ctx.fillStyle='#ff8ec8';ctx.strokeStyle='#fff2fb';ctx.lineWidth=.12;ctx.shadowColor='#ffa2d4';ctx.shadowBlur=8;
+ ctx.beginPath();ctx.moveTo(0,.85);ctx.bezierCurveTo(-1.25,.1,-1.15,-.65,-.55,-.7);ctx.bezierCurveTo(-.2,-.72,0,-.4,0,-.3);ctx.bezierCurveTo(.15,-.8,1.05,-.95,1.05,-.25);ctx.bezierCurveTo(1.05,.2,.45,.65,0,.85);ctx.fill();ctx.stroke();ctx.restore();
+}
+function drawOtterEffects(){
+ for(const e of effects)if(e.type==='otterJet'){
+  ctx.save();ctx.globalAlpha=e.life/e.max;ctx.strokeStyle='#4cb7e3aa';ctx.lineWidth=18;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(e.x-camera,e.y);ctx.quadraticCurveTo((e.x+e.toX)/2-camera,e.y-15,e.toX-camera,e.toY);ctx.stroke();ctx.strokeStyle='#cefbff';ctx.lineWidth=6;ctx.stroke();
+  for(let i=1;i<=5;i++){const t=i/5;waterBubble(e.x+(e.toX-e.x)*t-camera,e.y+(e.toY-e.y)*t+Math.sin(i*2+worldTime*25)*5,4+2*t,e.life/e.max);}ctx.restore();
+ }
+ if(otterWave){const w=otterWave,x=w.x-camera,y=w.y;ctx.save();ctx.translate(x,y);ctx.scale(w.dir,1);ctx.shadowColor='#5ddbff';ctx.shadowBlur=12;
+  const g=ctx.createLinearGradient(0,-80,0,10);g.addColorStop(0,'#defaff');g.addColorStop(.35,'#5bcff5');g.addColorStop(1,'#126b9c88');ctx.fillStyle=g;ctx.strokeStyle='#d4faff';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(-80,4);ctx.bezierCurveTo(-55,-15,-23,-7,-2,-49);ctx.bezierCurveTo(25,-108,74,-78,50,-44);ctx.bezierCurveTo(50,-70,19,-66,16,-35);ctx.bezierCurveTo(13,-10,56,-15,77,1);ctx.closePath();ctx.fill();ctx.stroke();
+  for(let i=0;i<6;i++)waterBubble(-68+i*26,3+Math.sin(worldTime*10+i)*4,3+i%3,.75);ctx.restore();
+ }
+ if(otterShield){ctx.save();ctx.strokeStyle='#b6f4ff';ctx.lineWidth=3;ctx.fillStyle='#8bdfff18';ctx.shadowColor='#9ae8ff';ctx.shadowBlur=12;ctx.beginPath();ctx.ellipse(player.x-camera,player.y-64-pz,57,77,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore();}
+ if(otterBubbles){const b=otterBubbles;for(const orb of b.orbs)if(orb.active){const p=otterOrbPoint(b,orb.index);waterBubble(p.x-camera,p.y-55-pz,17,Math.min(1,b.remaining));}}
+ if(otterConcert){
+  const c=otterConcert,x=player.x-camera,y=player.y,fade=Math.min(1,c.elapsed*4,c.remaining*2);ctx.save();ctx.globalAlpha=fade;
+  const g=ctx.createLinearGradient(x,30,x,y);g.addColorStop(0,'#fff0fa66');g.addColorStop(1,'#ffabdb0a');ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(x-16,0);ctx.lineTo(x+16,0);ctx.lineTo(x+155,y+8);ctx.lineTo(x-155,y+8);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#e8a5d9';ctx.fillStyle='#ffc5e52b';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y+4,157,34,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+  for(let i=0;i<16;i++){const a=i*2.4+c.elapsed*1.3,r=65+(i%5)*24,px=x+Math.cos(a)*r,py=y-50-(c.elapsed*45+i*27)%185;otterHeart(px,py,6+(i%3)*3,fade*.85);}
+  for(let i=0;i<10;i++){const a=i*2.9+c.elapsed*2;waterBubble(x+Math.cos(a)*(70+i%4*28),y-20-Math.abs(Math.sin(a))*70,5+i%4,fade*.65);}
+  // Subtle edge markers communicate that the concert covers the visible stage, not the entire map.
+  ctx.strokeStyle='#b8e9ff88';ctx.setLineDash([6,12]);ctx.lineWidth=2;ctx.strokeRect(c.bounds.left-camera+2,c.bounds.top+2,c.bounds.right-c.bounds.left-4,c.bounds.bottom-c.bounds.top-4);ctx.setLineDash([]);label('콘서트 ♡',x,y-205,'#ffd5ed',15);ctx.restore();
+ }
+}
+
 // Rabbit spells are local combat state; saved characters retain only skill cooldowns.
 function rabbitAttack(){
  if(player.mp<2){attackTimer=.25;toast('MP가 부족해요. 마법 구체는 MP 2가 필요해요.');return;}
@@ -726,7 +876,7 @@ function updateRabbit(dt){
  rabbitOrbs=rabbitOrbs.filter(o=>o.remaining>0);
 }
 function prepareRabbitPortrait(){
- for(const [name,row] of [['chick-motion',0],['chick-hacker',2]])try{const img=images['chick-motion'],c=document.createElement('canvas');c.width=256;c.height=256;c.getContext('2d').drawImage(img,0,row*img.naturalHeight/4,img.naturalWidth/4,img.naturalHeight/4,0,0,256,256);rabbitPortraits[name]=c.toDataURL('image/png');}catch{}
+ for(const [name,row] of [['otter-motion',0],['otter-idol-motion',0],['chick-motion',0],['chick-hacker',2]])try{const img=images[name.startsWith('otter')?name:'chick-motion'],c=document.createElement('canvas');c.width=256;c.height=256;c.getContext('2d').drawImage(img,0,row*img.naturalHeight/4,img.naturalWidth/4,img.naturalHeight/4,0,0,256,256);rabbitPortraits[name]=c.toDataURL('image/png');}catch{}
  for(const name of ['rabbit-novice-motion','rabbit-motion'])try{const img=images[name],c=document.createElement('canvas');c.width=256;c.height=256;c.getContext('2d').drawImage(img,0,0,img.naturalWidth/4,img.naturalHeight/4,0,0,256,256);rabbitPortraits[name]=c.toDataURL('image/png');}catch{}
 }
 function rabbitFrame(){
@@ -995,10 +1145,11 @@ function drawChickEffects(){
 }
 
 function attack(){
- if(chickCharge||hackerUlt)return;
+ if(chickCharge||hackerUlt||otterConcert)return;
  if(scene!=='playing'||modal||swordUlt||guardTime>0||recovery||attackTimer>0)return;
  if(catCharge||catCastLock>0)return;
  if(player.classId==='chick'){if(player.job==='hacker')chickCodeAttack();else chickPunch(false);return;}
+ if(player.classId==='otter'){otterAttack();return;}
  if(player.classId==='rabbit'){rabbitAttack();return;}
  if(player.classId==='cat'){
   attackTimer=.31;playCombatMotion('catPunch',.31);effects.push({type:'claw',x:player.x+facing*62.4,y:player.y-67-pz,size:62.4,dir:facing,life:.18,max:.18,color:'#f8e9e7'});
@@ -1010,9 +1161,10 @@ function attack(){
  monsters.filter(m=>!m.dead&&Math.abs(m.y-player.y)<(powered?105:sword?86.4:72)&&Math.abs(m.x-player.x)<(powered?195:sword?156:130)&&(m.x-player.x)*facing>-25&&pz<110).forEach(m=>hitMonster(m,basicAttackPower(player)));
 }
 function cast(key){
- if(hackerUlt||chickCharge)return;
+ if(hackerUlt||chickCharge||otterConcert)return;
  if(scene!=='playing'||modal||swordUlt||guardTime>0||recovery)return;
  if(player.classId==='chick'){castChick(key);return;}
+ if(player.classId==='otter'){castOtter(key);return;}
  if(player.classId==='rabbit'){castRabbit(key);return;}
  if(player.classId==='cat'){
   if(catCharge||catCastLock>0)return;
@@ -1083,7 +1235,7 @@ function reflectBossAttack(b,rawDamage){
  if(player.hp<=0){die();return;}
  refreshHUD();save();
 }
-function hitMonster(m,damage,knockback=14){if(scene!=='playing'||!canTarget(m))return;if(m.isBoss){if(m!==boss)return;if(isTypeA(m)){const dealt=damageTypeA(m,damage,player);textAt(String(dealt),m.x,m.y-300,'#ffbdad');if(m.hp<=0)winBoss();return;}const reflected=chickStunned(m)?0:counterDamage(m,damage);if(reflected){reflectBossAttack(m,reflected);return;}m.hp=Math.max(0,m.hp-damage);m.hit=.16;textAt(String(damage),m.x,m.y-180,!player.job?'#e0e5e8':player.job==='bodybuilder'?FX_PALETTES.builder.color:undefined);if(m.hp<=0)winBoss();return;}m.hp-=damage;m.hit=.28;m.hitDir=facing;if(!chickStunned(m))m.x=clamp(m.x+facing*knockback,60,MAPS[player.map].width-60);textAt(String(damage),m.x,m.y-90,!player.job?'#e0e5e8':player.job==='bodybuilder'?FX_PALETTES.builder.color:undefined);if(player.classId==='rabbit')effects.push({type:'ring',x:m.x,y:m.y-45,life:.22,max:.22,color:'#d5a6ff',size:48});else attackImpactAt(m.x,m.y-38,42);shake=Math.max(shake,isPowered(player)?5:2.5);if(player.job)effects.push({type:'spark',x:m.x,y:m.y-38,life:.2,max:.2,color:player.job==='hacker'?'#a7ffe2':player.job==='mage'?'#d8baff':player.job==='bodybuilder'?FX_PALETTES.builder.accent:'#ffd79a',size:25});if(m.hp>0)return;m.dead=true;m.deathFx=.28;m.respawnIn=12;player.kills++;drops.push({x:m.x-17,y:m.y+6,type:'money',amount:14+m.level*8,life:60},{x:m.x+20,y:m.y-3,type:m.level>=4?'cores':'scrap',amount:1,life:60});if(Math.random()<.22)drops.push({x:m.x+4,y:m.y+23,type:'potions',amount:1,life:60});const gained=gainXp(player,12+m.level*7);if(gained){textAt(`LEVEL UP · ${player.level}`,player.x,player.y-155,'#b8ffe3');const unlocked=skillsFor(player).filter(s=>skillUnlocked(player,s)&&s.level>player.level-gained);toast(`Lv. ${player.level} 달성! HP·MP 완전 회복${unlocked.length?' · '+unlocked.map(s=>s.key.toUpperCase()+' '+s.name).join(', ')+' 습득':''}${!player.job&&player.level>=10&&player.level-gained<10?(player.classId==='chick'?' · 메이플아지트에서 전직 가능':player.classId==='rabbit'?' · 마구리에게 전직 가능':player.classId==='cat'?' · 올림픽공원에서 전직 가능':' · 헬스장/검도장에서 전직 가능'):''}`);effects.push({type:'ring',x:player.x,y:player.y-40,life:1,max:1,color:'#ffe6a6',size:160});beep(900,.45);}save();}
+function hitMonster(m,damage,knockback=14){if(scene!=='playing'||!canTarget(m))return;if(m.isBoss){if(m!==boss)return;if(isTypeA(m)){const dealt=damageTypeA(m,damage,player);textAt(String(dealt),m.x,m.y-300,'#ffbdad');if(m.hp<=0)winBoss();return;}const reflected=chickStunned(m)?0:counterDamage(m,damage);if(reflected){reflectBossAttack(m,reflected);return;}m.hp=Math.max(0,m.hp-damage);m.hit=.16;textAt(String(damage),m.x,m.y-180,!player.job?'#e0e5e8':player.job==='bodybuilder'?FX_PALETTES.builder.color:undefined);if(m.hp<=0)winBoss();return;}m.hp-=damage;m.hit=.28;m.hitDir=facing;if(!chickStunned(m))m.x=clamp(m.x+facing*knockback,60,MAPS[player.map].width-60);textAt(String(damage),m.x,m.y-90,!player.job?'#e0e5e8':player.job==='bodybuilder'?FX_PALETTES.builder.color:undefined);if(player.classId==='rabbit')effects.push({type:'ring',x:m.x,y:m.y-45,life:.22,max:.22,color:'#d5a6ff',size:48});else attackImpactAt(m.x,m.y-38,42);shake=Math.max(shake,isPowered(player)?5:2.5);if(player.job)effects.push({type:'spark',x:m.x,y:m.y-38,life:.2,max:.2,color:player.job==='hacker'?'#a7ffe2':player.job==='mage'?'#d8baff':player.job==='bodybuilder'?FX_PALETTES.builder.accent:'#ffd79a',size:25});if(m.hp>0)return;m.dead=true;m.deathFx=.28;m.respawnIn=12;player.kills++;drops.push({x:m.x-17,y:m.y+6,type:'money',amount:14+m.level*8,life:60},{x:m.x+20,y:m.y-3,type:m.level>=4?'cores':'scrap',amount:1,life:60});if(Math.random()<.22)drops.push({x:m.x+4,y:m.y+23,type:'potions',amount:1,life:60});const gained=gainXp(player,12+m.level*7);if(gained){textAt(`LEVEL UP · ${player.level}`,player.x,player.y-155,'#b8ffe3');const unlocked=skillsFor(player).filter(s=>skillUnlocked(player,s)&&s.level>player.level-gained);toast(`Lv. ${player.level} 달성! HP·MP 완전 회복${unlocked.length?' · '+unlocked.map(s=>s.key.toUpperCase()+' '+s.name).join(', ')+' 습득':''}${!player.job&&player.level>=10&&player.level-gained<10?(['chick','otter'].includes(player.classId)?' · 메이플아지트에서 전직 가능':player.classId==='rabbit'?' · 마구리에게 전직 가능':player.classId==='cat'?' · 올림픽공원에서 전직 가능':' · 헬스장/검도장에서 전직 가능'):''}`);effects.push({type:'ring',x:player.x,y:player.y-40,life:1,max:1,color:'#ffe6a6',size:160});beep(900,.45);}save();}
 function die(){if(scene!=='playing')return;closeModal();setScene('dead');beep(130,.5,'triangle');screens.innerHTML=`<div class="screen-overlay"><div class="death-symbol">☾</div><h2 class="screen-title">잠시, 숨을 고를 시간</h2><p class="screen-subtitle">괜찮아요. 돈과 아이템은 그대로입니다.<br>마을에서 다시 모험을 시작해 보세요.</p><button class="primary" id="revive">마을에서 부활하기</button></div>`;respawn(player);save();$('#revive').onclick=()=>{resetWorld();setScene('playing');screens.innerHTML='';buildHUD();canvas.focus();toast('체력과 MP가 모두 회복되었어요. 다시 출발해 볼까요?');};}
 function update(dt){
  walking=false;worldTime+=dt;if(scene!=='playing'||modal||document.hidden)return;
@@ -1094,7 +1246,7 @@ function update(dt){
  if(bossActive())potionCooldown=Math.max(0,potionCooldown-dt);
  guardTime=Math.max(0,guardTime-dt);updateCombat(dt);hurtTime=Math.max(0,hurtTime-dt);updateSword(dt);if(modal||scene!=='playing')return;
  if(invincible>0)invincible-=dt;if(attackTimer>0)attackTimer-=dt;for(const k in cooldowns)cooldowns[k]=Math.max(0,cooldowns[k]-dt);if(player.powerTime>0){player.powerTime=Math.max(0,player.powerTime-dt);if(player.powerTime===0){toast('평범한 펭귄으로 돌아왔어요.');save();}}shake=Math.max(0,shake-dt*20);if(swordUlt?.phase==='charging')shake=Math.max(shake,2+swordUlt.elapsed*.9);
- let dx=(keys.has('ArrowRight')?1:0)-(keys.has('ArrowLeft')?1:0),dy=(keys.has('ArrowDown')?1:0)-(keys.has('ArrowUp')?1:0);if(swordUlt||combatMotion?.fromX!==undefined){dx=0;dy=0;}if(hackerUlt){dx=0;dy=0;}if(dx)facing=dx;const norm=Math.hypot(dx,dy)||1;
+ let dx=(keys.has('ArrowRight')?1:0)-(keys.has('ArrowLeft')?1:0),dy=(keys.has('ArrowDown')?1:0)-(keys.has('ArrowUp')?1:0);if(swordUlt||combatMotion?.fromX!==undefined){dx=0;dy=0;}if(hackerUlt||otterConcert||otterWave?.riding){dx=0;dy=0;}if(dx)facing=dx;const norm=Math.hypot(dx,dy)||1;
  const stepX=player.x,stepY=player.y,wasGrounded=pz===0&&pvz===0;
  player.x=clamp(player.x+dx/norm*285*movementMultiplier(player)*(chickStealth>0?1.5:1)*moveDt,45,MAPS[player.map].width-45);player.y=clamp(player.y+dy/norm*175*movementMultiplier(player)*(chickStealth>0?1.5:1)*moveDt,580,720);
  updateJump(dt);
@@ -1106,6 +1258,7 @@ function update(dt){
  const townRegen=['town','gangnam','yeoksamStreet'].includes(player.map)?2:1;
  player.mp=Math.min(maxMp(player),player.mp+dt*(player.map==='gym'?6:2.2)*townRegen);if(!MAPS[player.map].danger&&!bossActive())player.hp=Math.min(maxHp(player),player.hp+dt*(player.map==='gym'?12:6)*townRegen);
  updateRabbit(dt);if(scene!=='playing'||modal)return;
+ updateOtterCombat(dt);if(scene!=='playing'||modal)return;
  updateCatCombat(dt);if(scene!=='playing')return;
  updateChickCombat(dt);if(scene!=='playing'||modal)return;
  updateBossFight(dt);if(scene!=='playing'||modal)return;
@@ -1372,6 +1525,7 @@ function drawPlayerName(name,x,y,color){
  label(name,x,y,color,14);
 }
 function drawPlayer(){
+ if(player.classId==='otter'){drawOtterPlayer();return;}
  if(player.classId==='chick'){drawChickPlayer();return;}
  if(player.classId==='rabbit'){drawRabbitPlayer(combatDisplayX()-camera,player.y);return;}
  if(player.classId==='cat'){drawCatPlayer(combatDisplayX()-camera,player.y);return;}
@@ -1469,7 +1623,7 @@ function draw(){
    {y:player.y,draw:drawPlayer}
   ];
   entities.sort((a,b)=>a.y-b.y).forEach(e=>e.draw());drawCatFields();
-  drawCombatIndicators();drawEffects();drawRabbitEffects();drawChickEffects();
+  drawCombatIndicators();drawEffects();drawRabbitEffects();drawChickEffects();drawOtterEffects();
   if(MAPS[player.map].danger>=2){
    for(let i=0;i<20;i++){const x=(i*163+worldTime*13)%screenWidth,y=120+(i*97)%520;ctx.fillStyle=`rgba(190,163,243,${.15+Math.sin(worldTime+i)*.1})`;ctx.fillRect(x,y,3,3);}
   }

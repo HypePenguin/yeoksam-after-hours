@@ -193,3 +193,6 @@ main{width:100%;max-width:1512px;min-height:100svh;margin:0 auto;padding:24px;di
 .game-screen:has(.hack-controls:not([hidden])) .game-bottom-right{visibility:hidden}
 @media(max-width:650px){.hack-controls{right:auto;left:50%;transform:translateX(-50%);bottom:8px}.game-screen:has(.hack-controls:not([hidden])) .hotbar{visibility:hidden}}
 @media(pointer:coarse){.hack-controls button{min-width:40px;height:40px}}
+
+/* Keep the otter stage visible on narrow screens; full skill details remain in the skill tooltip. */
+@media(max-width:650px){.combat-banner.otter-status{top:174px;width:174px;padding:6px 8px;gap:2px 6px;}.combat-banner.otter-status small{display:none;}.combat-banner.otter-status .power-track{margin-top:2px;}.boss-fight .combat-banner.otter-status{top:243px;}}

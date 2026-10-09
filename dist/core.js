@@ -4,10 +4,12 @@ export const CLASSES = [
  {id:'wanderer',name:'펭귄 모험가',description:'평소에는 동글동글, 결정적인 순간에는 누구보다 든든하게.',hp:100,mp:60,attack:18},
  {id:'rabbit',name:'토끼 모험가',description:'동그란 안경 너머로 빛나는 마법. 마구리에게 마법사의 길을 배워요.',hp:85,mp:90,attack:16},
  {id:'chick',name:'병아리 모험가',description:'작은 날개와 빠른 두뇌. 메이플아지트에서 해커의 길을 배워요.',hp:95,mp:80,attack:17},
+ {id:'otter',name:'수달 모험가',description:'주먹과 물결로 시작해, 메이플아지트의 휴프로에게 아이돌의 길을 배워요.',hp:100,mp:80,attack:17},
  {id:'cat',name:'고양이 모험가',description:'민첩한 발과 날카로운 발톱. 올림픽공원에서 새로운 길을 찾아요.',hp:90,mp:70,attack:17}
 ];
 export const POWER_DURATION = 12;
 export const JOBS = {
+ idol:{id:'idol',name:'아이돌',classId:'otter',map:'maple',e:'물방울 가드',r:'콘서트',passive:'콘서트로 자신과 아군 지원'},
  hacker:{id:'hacker',name:'해커',classId:'chick',map:'maple',e:'시스템 정지',r:'해킹',passive:'경험치 획득량 +30%'},
  mage:{id:'mage',name:'마법사',classId:'rabbit',map:'town',maps:['town','gangnam','yeoksamStreet'],e:'마력 방벽',r:'존경!',passive:'W가 순간 이동으로 변경'},
  bodybuilder:{id:'bodybuilder',name:'바디빌더',map:'gym',e:'회복',r:'근육 각성',passive:'받는 피해 10% 감소'},
@@ -33,7 +35,7 @@ export const jumpHeightMultiplier=p=>p?.classId==='cat'&&p?.job==='protester'?1.
 export const hasTypeATitle=p=>!!(p?.typeATitle>0&&p.typeATitleEquipped);
 export const itemEquipped=(p,id)=>id==='typeATitle'?hasTypeATitle(p):id==='uniform'&&p.uniform>0&&p.uniformEquipped;
 export function equipTypeATitle(p){if(!(p.typeATitle>0))return {ok:false,message:'먼저 A형을 처치해 칭호를 얻으세요.'};p.typeATitleEquipped=!p.typeATitleEquipped;return {ok:true,message:p.typeATitleEquipped?'A형 칭호 장착 · 공격력 +5%':'A형 칭호를 해제했어요.'};}
-export const movementMultiplier=p=>(p?.job==='swordsman'?1.1:1)*(p?.uniform>0&&p.uniformEquipped?1.2:1)*(p?.respectTime>0?1.2:1);
+export const movementMultiplier=p=>(p?.job==='swordsman'?1.1:1)*(p?.uniform>0&&p.uniformEquipped?1.2:1)*(p?.respectTime>0?1.2:1)*(p?.concertTime>0?1.2:1);
 export const incomingDamage=(p,damage,multiplier=1)=>Math.max(0,Math.round(damage*(p?.job==='bodybuilder'?0.9:1)*(p?.respectTime>0?.8:1)*multiplier));
 export function equipUniform(p){if(!p.uniform)return {ok:false,message:'먼저 신원미상의 예비군을 처치해 군복을 얻으세요.'};p.uniformEquipped=!p.uniformEquipped;return {ok:true,message:p.uniformEquipped?'군복 장착 · 이동속도 +20%':'군복을 벗었어요.'};}
 export const validItem=id=>Object.hasOwn(ITEMS,id);
@@ -78,7 +80,7 @@ export const SKILLS = [
 ];
 
 export const MAPS = {
- maple:{id:'maple',name:'메이플아지트',subtitle:'PC방 · 해커 전직 Lv. 10',en:'MAPLE HIDEOUT',description:'역삼역 1번 출구에서 이어지는 PC방. 컴퓨터 앞에 앉아 작업 중인 휴프로에게 Lv.10 병아리가 해커로 전직할 수 있어요.',width:1800,danger:0,minLevel:1,maxLevel:1,color:'#9fe8cf',background:'maple-hideout',portals:[]},
+ maple:{id:'maple',name:'메이플아지트',subtitle:'PC방 · 해커 / 아이돌 전직 Lv. 10',en:'MAPLE HIDEOUT',description:'역삼역 1번 출구에서 이어지는 PC방. 컴퓨터 앞에 앉아 작업 중인 휴프로에게 Lv.10 병아리는 해커, 수달은 아이돌로 전직할 수 있어요.',width:1800,danger:0,minLevel:1,maxLevel:1,color:'#9fe8cf',background:'maple-hideout',portals:[]},
  town:{id:'town',name:'역삼역 1번 출구',subtitle:'마을 · 안전 구역',en:'YEOKSAM STATION',description:'모험이 시작되는 역삼역. 안내를 듣고 물약을 챙겨요.',width:2600,danger:0,minLevel:1,maxLevel:1,position:[12,20],color:'#8bdbc2',portals:[]},
  olympic:{id:'olympic',name:'올림픽공원',subtitle:'시위대 전직 · Lv. 10',en:'OLYMPIC PARK',description:'역삼역 1번 출구와 연결된 공원. 빨간 두건을 두르고 화염병을 든 여우 레드폭스에게 Lv. 10 고양이가 시위대 전직을 배울 수 있어요.',width:2200,danger:0,minLevel:1,maxLevel:1,color:'#f6b09d',background:'olympic-park',portals:[]},
  crossroads:{id:'crossroads',name:'역삼역사거리',subtitle:'사냥터 · Lv. 1–3',en:'YEOKSAM CROSSROADS',description:'역삼역 1번 출구와 6번 출구를 잇는 사거리. 신호 로봇을 조심하세요.',width:2400,danger:1,minLevel:1,maxLevel:3,position:[38,20],color:'#f1c477',background:'crossroads',monster:'신호 로봇',robotTint:'hue-rotate(25deg)',portals:[]},
@@ -134,7 +136,7 @@ connect('hangar',1640,'yeoksamStreet',100);
 
 // Route lists describe actual adjacent portals; the map never implies a shortcut.
 export const MAP_ROUTES = [
- {id:'maple-route',tab:'town',title:'병아리 · 해커 전직',hint:'Lv.10 · 메이플아지트의 휴프로',maps:['town','maple']},
+ {id:'maple-route',tab:'town',title:'해커 · 아이돌 전직',hint:'Lv.10 · 메이플아지트의 휴프로',maps:['town','maple']},
  {id:'backstreet',tab:'hunt',title:'골목 사냥길',hint:'Lv. 1–9 · 공사장을 지나 승강장으로',maps:['town','alley','depths','subway']},
  {id:'parkway',tab:'hunt',title:'공원 사냥길',hint:'Lv. 3–9 · 승강장으로 가는 짧은 길',maps:['town','park','subway']},
  {id:'deep-route',tab:'advanced',title:'도시의 깊은 밤',hint:'Lv. 10–30 · 아래로 갈수록 강한 몬스터',maps:['rooftop','relay','canal','foundry','nexus']},
@@ -187,11 +189,18 @@ const classFor=p=>CLASSES.find(c=>c.id===p.classId)||CLASSES[0];
 // Round the rabbit's 70% base HP before applying temporary max-HP buffs.
 export const maxHp=p=>Math.round(Math.round((classFor(p).hp+(p.level-1)*20)*(p.classId==='rabbit'?7:10)/10)*(p.respectTime>0?1.2:1));
 export const maxMp=p=>classFor(p).mp+(p.level-1)*10;
-export const attackPower=p=>(classFor(p).attack+(p.level-1)*5)*(p.respectTime>0?1.2:1)*(hasTypeATitle(p)?1.05:1);
+export const attackPower=p=>(classFor(p).attack+(p.level-1)*5)*(p.respectTime>0?1.2:1)*(hasTypeATitle(p)?1.05:1)*(p.concertTime>0?1.2:1);
 export const isPowered=p=>p?.job==='bodybuilder'&&p.powerTime>0;
 export const basicAttackPower=p=>Math.round(attackPower(p)*(isPowered(p)?1.8:1));
 export function effectiveSkill(p,key){
  const base=SKILLS.find(s=>s.key===key);if(!base)return null;let skill={...base};
+ if(p?.classId==='otter'){
+  const clean={...skill,heal:0,recovery:0,reduction:0,enhanced:''};
+  if(key==='q')return {...clean,name:'물 뿜기',icon:'💦',mp:10,cooldown:3,damage:2.4,range:420,halfLane:60,description:'입에서 물을 뿜어 전방 사거리 안의 가장 가까운 적 하나를 공격합니다.'};
+  if(key==='w')return {...clean,name:'작은 파도',icon:'≈',mp:14,cooldown:6,damage:1.6,range:560,speed:560,halfLane:64,rideWindow:.6,description:'앞으로 파도를 보냅니다. 0.6초 안에 W를 다시 누르면 남은 거리를 파도에 타고 이동합니다. 추가 MP 소모는 없고 무적은 아닙니다.'};
+  if(key==='e')return {...clean,name:'물방울 가드',icon:'◉',mp:22,cooldown:10,damage:1.8,shield:.3,duration:5,orbit:100,description:'최대 HP의 30% 보호막과 3개의 물방울을 5초간 얻습니다. 각 물방울은 적 하나에게 닿으면 피해를 주고 따로 사라집니다. 보호막이 깨져도 남은 물방울은 유지됩니다.'};
+  if(key==='r')return {...clean,name:'콘서트',icon:'♡',mp:40,cooldown:40,damage:1,tick:.5,duration:5,buff:.2,heal:.1,reduction:.5,description:'5초간 제자리에서 춤을 춥니다. 시전할 때 화면에 보이는 적들에게 지속 피해를 주고, 해당 무대 안의 자신과 아군은 공격력·이동속도 +20%, 초당 최대 HP 10% 회복. 춤추는 동안 받는 피해 50% 감소. 다른 공격·점프는 사용할 수 없습니다.'};
+ }
  if(p?.classId==='chick'){
   const clean={...skill,heal:0,recovery:0,reduction:0,enhanced:''};
   if(key==='q')return {...clean,name:p.job==='hacker'?'코드 침투':'할퀴기',icon:'✦',mp:8,cooldown:2.4,damage:2.1,range:p.job==='hacker'?520:175,description:p.job==='hacker'?'사거리 안에서 가장 가까운 적 하나를 해킹해 푸른 폭발과 함께 피해를 줍니다.':'앞쪽의 적을 발톱으로 긁습니다.'};
@@ -240,7 +249,7 @@ export function createCharacter(name,classId='wanderer'){
  const clean=String(name).trim();
  if(!/^[\p{L}\p{N}_ ]{1,12}$/u.test(clean))throw new Error('이름은 한글·영문·숫자 1~12자로 입력해 주세요.');
  const stats=CLASSES.find(c=>c.id===classId);if(!stats)throw new Error('선택할 수 없는 캐릭터입니다.');
- return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:maxHp({classId,level:1}),mp:stats.mp,money:500,potions:3,largePotions:0,mpPotions:classId==='rabbit'?1:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,yeoksamStreetScrolls:0,quickSlots:['potions',classId==='rabbit'?'mpPotions':null,null],uniform:0,uniformEquipped:false,typeATitle:0,typeATitleEquipped:false,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],respectTime:0,powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
+ return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:maxHp({classId,level:1}),mp:stats.mp,money:500,potions:3,largePotions:0,mpPotions:classId==='rabbit'?1:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,yeoksamStreetScrolls:0,quickSlots:['potions',classId==='rabbit'?'mpPotions':null,null],uniform:0,uniformEquipped:false,typeATitle:0,typeATitleEquipped:false,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],respectTime:0,concertTime:0,powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
 }
 export function normalizeCharacter(raw){
  if(!raw||typeof raw.id!=='string'||typeof raw.name!=='string')return null;
@@ -268,13 +277,13 @@ export function normalizeCharacter(raw){
 }
 export const xpReward=(p,amount)=>Math.round(Math.max(0,amount)*(p.classId==='chick'&&p.job==='hacker'?1.3:1));
 export function gainXp(p,amount){p.xp+=xpReward(p,amount);let gained=0;while(p.xp>=xpNeeded(p.level)&&p.level<99){p.xp-=xpNeeded(p.level);p.level++;gained++;p.hp=maxHp(p);p.mp=maxMp(p);}return gained;}
-export function respawn(p){p.map='town';p.x=530;p.y=648;p.hp=maxHp(p);p.mp=maxMp(p);p.powerTime=0;p.respectTime=0;p.hp=maxHp(p);p.mpPotionCooldown=0;return p;}
+export function respawn(p){p.map='town';p.x=530;p.y=648;p.hp=maxHp(p);p.mp=maxMp(p);p.powerTime=0;p.respectTime=0;p.concertTime=0;p.hp=maxHp(p);p.mpPotionCooldown=0;return p;}
 export function buyPotion(p){return buyItem(p,'potions');}
 export function usePotion(p,id='potions'){const amount=validItem(id)?ITEMS[id].hpRestore:0;if(!amount||!(p[id]>0))return {ok:false,message:'물약이 없어요. 마을의 물약 상인을 찾아보세요.'};if(p.hp>=maxHp(p))return {ok:false,message:'체력이 이미 가득 찼어요.'};const restored=Math.min(amount,maxHp(p)-p.hp);p[id]--;p.hp+=restored;return {ok:true,message:`체력이 ${Math.round(restored)} 회복되었어요.`};}
 export function canUseSkill(p,key,cooldown=p.cooldowns?.[key]??0){
  const s=effectiveSkill(p,key);if(!s)return {ok:false,message:'알 수 없는 스킬이에요.'};
  if(p.level<s.level)return {ok:false,message:`${s.name}은 Lv. ${s.level}에 배울 수 있어요.`};
- if(s.requiresJob&&!JOBS[p.job])return {ok:false,message:p.classId==='chick'?'메이플아지트의 휴프로에게 먼저 전직해 주세요.':p.classId==='rabbit'?'마구리에게 먼저 전직해 주세요.':p.classId==='cat'?'올림픽공원에서 먼저 전직해 주세요.':'헬스장이나 검도장에서 먼저 전직해 주세요.'};
+ if(s.requiresJob&&!JOBS[p.job])return {ok:false,message:['chick','otter'].includes(p.classId)?'메이플아지트의 휴프로에게 먼저 전직해 주세요.':p.classId==='rabbit'?'마구리에게 먼저 전직해 주세요.':p.classId==='cat'?'올림픽공원에서 먼저 전직해 주세요.':'헬스장이나 검도장에서 먼저 전직해 주세요.'};
  if(key==='r'&&isPowered(p))return {ok:false,message:'이미 근육 펭귄으로 변신 중이에요.'};
  if(cooldown>0)return {ok:false,message:'스킬이 아직 준비되지 않았어요.'};
  if(p.mp<s.mp)return {ok:false,message:'MP가 부족해요. 잠시 기다리면 회복됩니다.'};

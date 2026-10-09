@@ -29,9 +29,9 @@ function harness(){
  },{get:(obj,key)=>key in obj?obj[key]:()=>{}});
  function el(selector){if(elements.has(selector))return elements.get(selector);const obj={parentElement:{},style:{},dataset:{},classList:{add(){},remove(){},toggle(){}},textContent:'',innerHTML:'',hidden:false,isConnected:true,disabled:false,onclick:null,listeners:new Map(),setPointerCapture(){},focus(){},setAttribute(k,v){this[k]=v;},getAttribute(k){return this[k]??null;},getBoundingClientRect(){return {width:1448,height:818};},addEventListener(n,f){this.listeners.set(n,f);},querySelector:child=>el(`${selector} ${child}`),querySelectorAll:()=>[],getContext:()=>drawing};elements.set(selector,obj);return obj;}
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),hidden:false,activeElement:el('#game')};
- const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;this.complete=true;this.naturalWidth=1500;this.naturalHeight=1000;this.onload?.();}},Promise,Math,Date,Number,String,Set});
+ const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;this.complete=true;this.naturalWidth=v.includes('otter-')?1215:1500;this.naturalHeight=v.includes('otter-')?1295:1000;this.onload?.();}},Promise,Math,Date,Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
- vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
+ vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,refreshHealthHUD,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
  return {api:context.gameTest,persistence,draws,labels,strokes,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
 }
 function advance(h,seconds){for(let t=0;t<seconds;t+=1/60)h.api.update(1/60);}
@@ -1825,4 +1825,110 @@ test('A-type projectiles hit the box and its targeted bombs follow the taunted t
 test('A-type safety placement uses the actual player position even while taunted',()=>{
  const {h,p,box}=ballotFixture('hangar'),b=h.api.get().boss;Object.assign(b,{x:box.x,y:box.y,phase:'recover',elapsed:0});p.x=45;
  b.hp=b.maxHp*.4;h.api.update(.01);assert.equal(b.phase,'safety');assert.ok(Math.abs(b.safeZone.x-p.x)<=420);
+});
+function otterFixture(map='alley',job='idol',level=15){
+ const h=harness(),p=core.createCharacter('물수달','otter');Object.assign(p,{map,job,level,x:1000,y:650});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);h.api.get().monsters.forEach(m=>m.dead=true);return {h,p};
+}
+function placeOtterEnemy(h,index,x,y,hp=10000){const m=h.api.get().monsters[index];Object.assign(m,{dead:false,x,y,home:x,hp,maxHp:hp,speed:0,attack:0});return m;}
+test('otter creation, unlock levels and idol advancement are compatible with saved characters',()=>{
+ const p=core.createCharacter('현구','otter');assert.equal(p.hp,100);assert.equal(p.mp,80);assert.equal(p.money,500);
+ assert.equal(core.canUseSkill(p,'q').ok,false);p.level=3;assert.equal(core.canUseSkill(p,'q').ok,true);assert.equal(core.canUseSkill(p,'w').ok,false);
+ p.level=6;assert.equal(core.canUseSkill(p,'w').ok,true);p.level=10;assert.equal(core.canUseSkill(p,'e').ok,false);
+ assert.equal(core.advanceJob(p,'hacker').ok,false);assert.equal(core.advanceJob(p,'idol').ok,false);p.map='maple';assert.equal(core.advanceJob(p,'idol').ok,true);
+ assert.equal(core.canUseSkill(p,'e').ok,true);assert.equal(core.canUseSkill(p,'r').ok,false);p.level=15;assert.equal(core.canUseSkill(p,'r').ok,true);
+ p.concertTime=5;const loaded=core.normalizeCharacter(p);assert.equal(loaded.classId,'otter');assert.equal(loaded.job,'idol');assert.equal(loaded.concertTime,0);
+ const chick=core.createCharacter('해커','chick');Object.assign(chick,{map:'maple',level:10});assert.equal(core.advanceJob(chick,'idol').ok,false);assert.equal(core.advanceJob(chick,'hacker').ok,true);
+});
+test('Hyupro offers idol advancement to otters and keeps hacker advancement for chicks',()=>{
+ for(const [classId,job] of [['otter','idol'],['chick','hacker']]){
+  const h=harness(),p=core.createCharacter('전직',classId);Object.assign(p,{level:10,map:'maple',x:960,y:648});h.api.start(p);h.api.interact();
+  assert.equal(h.api.get().modal,'job');assert.ok(h.el('#modal-root').innerHTML.includes(core.JOBS[job].name+'로 전직하기'));h.el('#advance-job').onclick();assert.equal(p.job,job);assert.equal(h.api.get().modal,null);
+ }
+});
+test('otter punches with no MP cost and water Q only damages the nearest valid front target',()=>{
+ const {h,p}=otterFixture('alley',null),near=placeOtterEnemy(h,0,p.x+110,p.y),far=placeOtterEnemy(h,1,p.x+300,p.y),behind=placeOtterEnemy(h,2,p.x-60,p.y),offLane=placeOtterEnemy(h,3,p.x+50,p.y+85);
+ const mp=p.mp;h.api.attack();assert.equal(p.mp,mp);assert.equal(near.hp,10000-core.basicAttackPower(p));assert.equal(far.hp,10000);assert.equal(behind.hp,10000);
+ advance(h,.4);const hp=near.hp;h.api.cast('q');assert.equal(p.mp,mp-core.effectiveSkill(p,'q').mp);assert.equal(near.hp,hp-Math.round(core.attackPower(p)*2.4));assert.equal(far.hp,10000);assert.equal(behind.hp,10000);assert.equal(offLane.hp,10000);assert.equal(h.api.otterFrame(),9);
+ h.api.cast('q');assert.equal(near.hp,hp-Math.round(core.attackPower(p)*2.4),'cooldown prevents a duplicate shot');
+});
+test('water Q and wave aim left after moving left instead of following the original artwork direction',()=>{
+ const {h,p}=otterFixture();h.api.keys.add('ArrowLeft');h.api.update(.01);h.api.keys.clear();const m=placeOtterEnemy(h,0,p.x-150,p.y);
+ h.api.cast('q');assert.ok(m.hp<10000);const jet=h.api.get().effects.find(e=>e.type==='otterJet');assert.ok(jet.toX<jet.x);h.api.cast('w');assert.equal(h.api.get().otterWave.dir,-1);
+});
+test('small wave crosses multiple enemies, hits each once and has a bounded travel distance',()=>{
+ const {h,p}=otterFixture(),a=placeOtterEnemy(h,0,p.x+180,p.y),b=placeOtterEnemy(h,1,p.x+480,p.y),outside=placeOtterEnemy(h,2,p.x+780,p.y);const hp=p.hp,x=p.x;
+ h.api.cast('w');const w=h.api.get().otterWave,damage=w.damage;advance(h,1.2);
+ assert.equal(h.api.get().otterWave,null);assert.equal(a.hp,10000-damage);assert.equal(b.hp,10000-damage);assert.equal(outside.hp,10000);assert.equal(p.x,x,'first press sends a wave without moving the caster');assert.equal(p.hp,hp);
+});
+test('quick W repress rides without an extra cost and does not grant invulnerability or block contact damage',()=>{
+ const {h,p}=otterFixture();advance(h,2.1);h.api.cast('w');advance(h,.2);const mp=p.mp,wait=h.api.get().cooldowns.w,inv=h.api.get().invincible;
+ h.api.cast('w');const w=h.api.get().otterWave;assert.ok(w.riding);assert.equal(p.mp,mp);assert.equal(h.api.get().cooldowns.w,wait);assert.equal(h.api.get().invincible,inv);assert.equal(h.api.otterFrame(),11);
+ const m=placeOtterEnemy(h,0,p.x,p.y);m.attack=20;const hp=p.hp,x=p.x;h.api.keys.add('ArrowLeft');h.api.update(.02);assert.ok(w.x>x,'wave progresses despite opposite keyboard input; a hit can still knock the player back');assert.equal(p.hp,hp-20);
+ h.api.jump();assert.equal(h.api.get().jumpPrep,0);h.api.keys.clear();advance(h,1.1);assert.equal(h.api.get().otterWave,null);
+});
+test('late W repress does not ride, spend MP twice or reset its cooldown',()=>{
+ const {h,p}=otterFixture();h.api.cast('w');advance(h,.7);const w=h.api.get().otterWave,mp=p.mp,wait=h.api.get().cooldowns.w;h.api.cast('w');assert.equal(w.riding,false);assert.equal(p.mp,mp);assert.equal(h.api.get().cooldowns.w,wait);
+});
+test('three orbiting bubbles pop independently and survive the shield breaking',()=>{
+ const {h,p}=otterFixture();h.api.cast('e');const b=h.api.get().otterBubbles,shield=h.api.get().otterShield;assert.equal(b.orbs.length,3);assert.equal(shield.hp,Math.round(core.maxHp(p)*.3));
+ b.elapsed=.01;const point=h.api.otterOrbPoint(b,0);b.elapsed=0;const m=placeOtterEnemy(h,0,point.x,point.y);h.api.update(.01);
+ assert.equal(b.orbs[0].active,false);assert.equal(b.orbs.filter(o=>o.active).length,2);assert.equal(m.hp,10000-Math.round(core.attackPower(p)*1.8));
+ assert.equal(h.api.playerDamage(shield.hp+50),50);assert.equal(h.api.get().otterShield,null);assert.equal(b.orbs.filter(o=>o.active).length,2);
+ m.dead=true;advance(h,5.1);assert.equal(h.api.get().otterBubbles,null);
+});
+test('all three bubbles can damage separate targets in one frame and shield remains until five seconds',()=>{
+ const {h,p}=otterFixture();h.api.cast('e');const b=h.api.get().otterBubbles;const hp=core.maxHp(p),shield=h.api.get().otterShield;
+ b.elapsed=.01;const points=[0,1,2].map(i=>h.api.otterOrbPoint(b,i));b.elapsed=0;points.forEach((pt,i)=>placeOtterEnemy(h,i,pt.x,pt.y));h.api.update(.01);
+ assert.equal(b.orbs.filter(o=>o.active).length,0);for(const m of h.api.get().monsters.slice(0,3))assert.equal(m.hp,10000-Math.round(core.attackPower(p)*1.8));
+ h.api.get().monsters.forEach(m=>m.dead=true);assert.equal(h.api.get().otterShield,shield);assert.equal(p.hp,hp);advance(h,4.8);assert.ok(h.api.get().otterShield);advance(h,.3);assert.equal(h.api.get().otterShield,null);assert.equal(h.api.get().otterBubbles,null);
+});
+test('otter shield is added to the HP display and absorbs reduced damage before health',()=>{
+ const {h,p}=otterFixture();h.api.cast('e');h.api.refreshHealthHUD();const shield=h.api.get().otterShield.hp;assert.equal(h.el('#hp-text').textContent,`${p.hp} + ${shield} / ${core.maxHp(p)}`);assert.equal(h.api.playerDamage(50),0);assert.equal(h.api.get().otterShield.hp,shield-50);
+});
+test('concert damages only visible enemies for ten ticks, heals 10 percent HP per second and removes its 20 percent buffs at five seconds',()=>{
+ const {h,p}=otterFixture();p.hp=10;const base=core.attackPower(p),speed=core.movementMultiplier(p);h.api.cast('r');const c=h.api.get().otterConcert;
+ const a=placeOtterEnemy(h,0,c.bounds.left+250,p.y),b=placeOtterEnemy(h,1,c.bounds.right-100,p.y),outside=placeOtterEnemy(h,2,c.bounds.right+200,p.y);
+ assert.equal(core.attackPower(p),base*1.2);assert.equal(core.movementMultiplier(p),speed*1.2);h.api.update(.49);assert.equal(a.hp,10000);h.api.update(.02);assert.equal(a.hp,10000-Math.round(base*1.2));
+ advance(h,4.51);assert.equal(h.api.get().otterConcert,null);assert.equal(a.hp,10000-10*Math.round(base*1.2));assert.equal(b.hp,a.hp);assert.equal(outside.hp,10000);assert.ok(Math.abs(p.hp-(10+core.maxHp(p)*.5))<1e-8);assert.equal(core.attackPower(p),base);assert.equal(core.movementMultiplier(p),speed);
+});
+test('concert prevents movement, jump and other attacks while reducing incoming damage by 50 percent',()=>{
+ const {h,p}=otterFixture();advance(h,2.1);h.api.cast('r');const x=p.x,y=p.y,mp=p.mp;assert.equal(h.api.playerDamage(100),50);assert.ok(h.api.get().invincible<=0);
+ h.api.keys.add('ArrowRight');h.api.keys.add('ArrowUp');h.api.keys.add('KeyA');h.api.jump();for(const key of ['q','w','e','r'])h.api.cast(key);assert.equal(p.mp,mp);assert.equal(h.api.get().jumpPrep,0);
+ advance(h,.7);assert.equal(p.x,x);assert.equal(p.y,y);assert.equal(h.api.get().otterWave,null);assert.equal(h.api.get().otterShield,null);assert.ok([13,14].includes(h.api.otterFrame()));
+ h.api.keys.clear();advance(h,4.4);h.api.keys.add('ArrowRight');h.api.update(.1);assert.ok(p.x>x);assert.equal(h.api.playerDamage(100),100);
+});
+test('concert support is limited to the stage, and leaving it removes healing and ally buffs',()=>{
+ const {h,p}=otterFixture();h.api.cast('r');const c=h.api.get().otterConcert;p.x=c.bounds.right+100;p.hp=10;h.api.update(.1);assert.equal(p.hp,10);assert.equal(p.concertTime,0);assert.equal(h.api.playerDamage(100),50,'caster reduction persists while dancing');
+ p.x=c.x;h.api.update(.1);assert.ok(p.hp>10);assert.ok(p.concertTime>0);
+});
+test('concert ticks and orbit durations pause with menus, and leaving clears all temporary state',()=>{
+ const {h,p}=otterFixture();h.api.cast('e');h.api.cast('r');const c=h.api.get().otterConcert,b=h.api.get().otterBubbles;h.api.inventory();advance(h,1);assert.equal(c.remaining,5);assert.equal(b.remaining,5);h.api.closeModal();h.api.update(.1);assert.ok(c.remaining<5);
+ h.api.save();const loaded=core.normalizeCharacter(JSON.parse(h.storage.get(core.SAVE_KEY)).characters[0]);assert.equal(loaded.concertTime,0);
+ h.api.selectCharacters();for(const key of ['otterConcert','otterShield','otterBubbles','otterWave'])assert.equal(h.api.get()[key],null);assert.equal(p.concertTime,0);
+});
+test('concert can finish either boss safely without accessing a cleared concert',()=>{
+ for(const map of ['pocha','hangar']){
+  const {h,p}=otterFixture(map);h.api.startBossFight();const b=h.api.get().boss;Object.assign(b,{hp:1,x:p.x+200,y:p.y,phase:'recover',elapsed:0,safetyUsed:true,enraged:true});h.api.cast('r');assert.doesNotThrow(()=>h.api.update(.5));assert.equal(b.dead,true);assert.equal(h.api.get().modal,'boss-victory');assert.equal(h.api.get().otterConcert,null);assert.equal(p.concertTime,0);
+ }
+});
+test('otter walk, jump, punch, water, wave, shield and dance use directionally consistent dedicated poses',()=>{
+ for(const job of [null,'idol']){
+  const {h,p}=otterFixture('town',job);const asset=job?'assets/otter-idol-motion.png':'assets/otter-motion.png';render(h);assert.ok(h.draws.some(d=>d.asset===asset));assert.equal(h.api.otterFrame(),0);
+  h.api.keys.add('ArrowLeft');const seen=new Set();for(let i=0;i<48;i++){h.api.update(1/60);seen.add(h.api.otterFrame());}assert.deepEqual([...seen].sort(),[1,2,3]);render(h);assert.ok(h.draws.find(d=>d.asset===asset).matrix[0]<0);
+  h.api.keys.clear();h.api.jump();assert.equal(h.api.otterFrame(),4);advance(h,.18);assert.equal(h.api.otterFrame(),5);advance(h,1);h.api.attack();assert.equal(h.api.otterFrame(),7);advance(h,.15);assert.equal(h.api.otterFrame(),8);advance(h,.4);
+  h.api.cast('q');assert.equal(h.api.otterFrame(),9);h.api.cast('w');assert.equal(h.api.otterFrame(),10);h.api.cast('w');assert.equal(h.api.otterFrame(),11);advance(h,1.1);
+  if(job){h.api.cast('e');assert.equal(h.api.otterFrame(),12);h.api.cast('r');const dance=new Set();for(let i=0;i<50;i++){h.api.update(1/60);dance.add(h.api.otterFrame());}assert.deepEqual([...dance].sort(),[13,14]);render(h);assert.ok(h.labels.some(l=>l.text==='콘서트 ♡'));}
+ }
+});
+test('otter selection portraits use the idle tile and both atlases have equal geometry',()=>{
+ const h=harness();for(const job of [null,'idol']){const p=core.createCharacter('선택','otter');Object.assign(p,{job,level:15});h.api.characters([p],p.id);const html=h.el('#screens').innerHTML;assert.ok(html.includes('수달 '+(job?'아이돌':'모험가')+' 기본 자세'));assert.ok(html.includes(`assets/${job?'otter-idol-motion':'otter-motion'}.png`));}
+ const a=fs.readFileSync(new URL('../dist/assets/otter-motion.png',import.meta.url)),b=fs.readFileSync(new URL('../dist/assets/otter-idol-motion.png',import.meta.url));assert.deepEqual(a.subarray(16,24),b.subarray(16,24));assert.equal(a[25],6,'RGBA retains transparency');assert.equal(b[25],6);
+});
+test('otter Q/W exclude the next row artwork while concert keeps the full head at the same scale',()=>{
+ for(const job of [null,'idol']){
+  const {h}=otterFixture('town',job),asset=job?'assets/otter-idol-motion.png':'assets/otter-motion.png';
+  h.api.cast('q');render(h);const q=h.draws.find(d=>d.asset===asset);assert.ok(q.source[1]<=650);assert.ok(q.source[1]+q.source[3]<939,'Q cannot include row 4 head pixels');
+  const scale=q.height/q.source[3];advance(h,.5);h.api.cast('w');render(h);const w=h.draws.find(d=>d.asset===asset);assert.ok(w.source[1]+w.source[3]<939);
+  if(job){advance(h,.5);h.api.cast('r');render(h);const r=h.draws.find(d=>d.asset===asset);assert.ok(r.source[1]<=939,'dance includes top of head');assert.ok(Math.abs(r.height/r.source[3]-scale)<.01,'poses keep the same artwork scale');}
+ }
 });
