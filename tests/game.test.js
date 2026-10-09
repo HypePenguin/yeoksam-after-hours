@@ -1415,10 +1415,10 @@ test('rabbit movement, jumps and every skill render distinct frames with directi
 
 test('rabbit promotion extends Q hit range; basic orb requires and spends exactly two MP',()=>{
  for(const job of [null,'mage']){
-  const {h,p,mobs}=rabbitHarness(job);mobs[0].x=mobs[0].home=1450;h.api.cast('q');assert.equal(mobs[0].hp<10000,job==='mage');assert.equal(p.mp,core.maxMp(p)-13);
+  const {h,p,mobs}=rabbitHarness(job);mobs[0].x=mobs[0].home=1450;h.api.cast('q');assert.equal(mobs[0].hp<10000,job==='mage');assert.equal(p.mp,core.maxMp(p)-20);
  }
  const {h,p}=rabbitHarness();p.mp=1.99;h.api.attack();assert.equal(h.api.get().rabbitOrbs.length,0);assert.equal(p.mp,1.99);advance(h,.3);p.mp=2;h.api.attack();assert.equal(h.api.get().rabbitOrbs.length,1);assert.equal(p.mp,0);assert.equal(h.el('#mp-text').textContent,`0 / ${core.maxMp(p)}`);
- assert.deepEqual(core.skillsFor(p).map(s=>s.mp),[13,8,29,46]);
+ assert.deepEqual(core.skillsFor(p).map(s=>s.mp),[20,8,29,46]);
 });
 test('E shield is added to HP display and its bar tracks absorption then disappears on expiry',()=>{
  const {h,p,mobs}=rabbitHarness();for(const m of mobs)m.x=m.home=2300;p.hp=200;h.api.cast('e');const pool=Math.round(core.maxHp(p)*.3);
@@ -1439,4 +1439,16 @@ test('Maguri offers rabbit promotion at level ten in either town, then returns t
 test('Hyuntori remains a guide for rabbits and other characters keep Maguri shop access',()=>{
  const {h,p}=rabbitHarness(null);Object.assign(p,{map:'town',x:650,y:621,level:15});h.api.start(p);h.api.interact();assert.equal(h.api.get().modal,'gm');assert.match(h.el('#modal-root').innerHTML,/운영자 현토리/);
  for(const classId of ['cat','wanderer']){const other=harness(),c=core.createCharacter('상점',classId);Object.assign(c,{level:15,map:'town',x:1050,y:650});other.api.start(c);other.api.interact();assert.equal(other.api.get().modal,'shop');}
+});
+
+test('rabbit Q requires twenty MP and spends it once for novice and mage',()=>{
+ for(const job of [null,'mage']){
+  const {h,p}=rabbitHarness(job);p.mp=19;h.api.cast('q');assert.equal(p.mp,19);assert.equal(h.api.get().cooldowns.q,0);
+  p.mp=20;h.api.cast('q');assert.equal(p.mp,0);assert.ok(h.api.get().cooldowns.q>0);
+ }
+});
+
+test('new rabbit can use the automatically registered MP potion with slot two',()=>{
+ const h=harness(),p=core.createCharacter('첫포션','rabbit');h.api.start(p);p.mp=0;h.api.useQuickSlot(1);
+ assert.equal(p.mp,50);assert.equal(p.mpPotions,0);assert.equal(p.quickSlots[1],'mpPotions');
 });

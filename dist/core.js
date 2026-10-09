@@ -178,7 +178,7 @@ export function effectiveSkill(p,key){
  const base=SKILLS.find(s=>s.key===key);if(!base)return null;let skill={...base};
  if(p?.classId==='rabbit'){
   const clean={...skill,heal:0,recovery:0,reduction:0,enhanced:''};
-  if(key==='q')return {...clean,name:'보랏빛 번개',icon:'ϟ',mp:13,cooldown:2.8,damage:2.4,range:p.job==='mage'?540:360,description:p.job==='mage'?'전방으로 보라색 번개를 쏘아 경로의 적을 공격해요. 전직으로 사거리가 50% 늘어납니다.':'전방으로 보라색 번개를 쏘아 경로의 적을 공격해요.'};
+  if(key==='q')return {...clean,name:'보랏빛 번개',icon:'ϟ',mp:20,cooldown:2.8,damage:2.4,range:p.job==='mage'?540:360,description:p.job==='mage'?'전방으로 보라색 번개를 쏘아 경로의 적을 공격해요. 전직으로 사거리가 50% 늘어납니다.':'전방으로 보라색 번개를 쏘아 경로의 적을 공격해요.'};
   if(key==='w')return {...clean,name:p.job==='mage'?'순간 이동':'앞구르기',icon:'↠',mp:8,cooldown:2,damage:0,range:0,dash:p.job==='mage'?260:180,description:p.job==='mage'?'전방으로 순간 이동해요. 피해는 없으며 재사용은 2초예요.':'앞으로 빠르게 굴러요. 피해는 없으며 재사용은 2초예요.'};
   if(key==='e')return {...clean,name:'마력 방벽',icon:'◈',mp:29,cooldown:9,damage:2.6,range:240,shield:.3,duration:3,description:'3초간 최대 HP의 30%를 흡수하는 보호막을 얻고 주변에 마력을 방출해요.'};
   if(key==='r')return {...clean,name:'존경!',icon:'敬',mp:46,cooldown:35,damage:0,range:360,duration:10,description:'대상을 선택하고 경례합니다. 10초간 이동속도·공격력·최대 HP +20%, 받는 피해 20% 감소. 주변 적은 3초간 존경 상태로 공격력이 30% 감소해요.'};
@@ -217,11 +217,13 @@ export function createCharacter(name,classId='wanderer'){
  const clean=String(name).trim();
  if(!/^[\p{L}\p{N}_ ]{1,12}$/u.test(clean))throw new Error('이름은 한글·영문·숫자 1~12자로 입력해 주세요.');
  const stats=CLASSES.find(c=>c.id===classId);if(!stats)throw new Error('선택할 수 없는 캐릭터입니다.');
- return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:maxHp({classId,level:1}),mp:stats.mp,money:500,potions:3,mpPotions:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,quickSlots:['potions',null,null],uniform:0,uniformEquipped:false,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],respectTime:0,powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
+ return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:maxHp({classId,level:1}),mp:stats.mp,money:500,potions:3,mpPotions:classId==='rabbit'?1:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,quickSlots:['potions',classId==='rabbit'?'mpPotions':null,null],uniform:0,uniformEquipped:false,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],respectTime:0,powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
 }
 export function normalizeCharacter(raw){
  if(!raw||typeof raw.id!=='string'||typeof raw.name!=='string')return null;
  let p;try{p=createCharacter(raw.name,CLASSES.some(c=>c.id===raw.classId)?raw.classId:'wanderer');}catch{return null;}
+ // Starter supplies are only granted on creation, never while loading older saves.
+ p.mpPotions=0;p.quickSlots=['potions',null,null];
  p.id=raw.id.slice(0,100);
  for(const key of ['level','xp','money','potions','mpPotions','returnScrolls','gangnamScrolls','scrap','cores','kills','bossWins','typeAWins'])if(Number.isFinite(raw[key]))p[key]=Math.floor(clamp(raw[key],key==='level'?1:0,key==='level'?99:9999999));
  if(Array.isArray(raw.quickSlots))p.quickSlots=Array.from({length:3},(_,i)=>validItem(raw.quickSlots[i])&&ITEMS[raw.quickSlots[i]].usable?raw.quickSlots[i]:null);

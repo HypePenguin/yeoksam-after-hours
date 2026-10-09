@@ -207,3 +207,12 @@ test('overview roads neither cross unrelated roads nor pass through unrelated re
   }
  }
 });
+
+test('new rabbits receive one MP potion in slot two without replenishing saved characters',()=>{
+ const p=createCharacter('첫마법','rabbit');assert.equal(p.mpPotions,1);assert.deepEqual(p.quickSlots,['potions','mpPotions',null]);
+ const restored=normalizeCharacter(p);assert.equal(restored.mpPotions,1);assert.deepEqual(restored.quickSlots,p.quickSlots);
+ p.mpPotions=0;p.quickSlots=['potions','returnScrolls',null];
+ const used=normalizeCharacter(p);assert.equal(used.mpPotions,0);assert.deepEqual(used.quickSlots,p.quickSlots);
+ delete p.mpPotions;delete p.quickSlots;const legacy=normalizeCharacter(p);assert.equal(legacy.mpPotions,0);assert.deepEqual(legacy.quickSlots,['potions',null,null]);
+ for(const id of ['wanderer','cat']){const other=createCharacter('다른캐릭터',id);assert.equal(other.mpPotions,0);assert.equal(other.quickSlots[1],null);}
+});
