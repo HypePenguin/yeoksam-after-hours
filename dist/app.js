@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=81';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=81';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=81';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=82';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=82';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=82';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={};let assetsReady=false,assetFailed=false;
@@ -15,7 +15,7 @@ const catAsset=(asset,p=player)=>p?.job==='protester'?asset.replace('cat','cat-p
 const rabbitPortraits={};
 const rabbitAsset=(p=player)=>p?.job==='mage'?'rabbit-motion':'rabbit-novice-motion';
 const characterPortrait=(p,powered=false)=>p?.classId==='chick'?(rabbitPortraits[p.job==='hacker'?'chick-hacker':'chick-motion']||'assets/chick-motion.png'):p?.classId==='rabbit'?(rabbitPortraits[rabbitAsset(p)]||`assets/${rabbitAsset(p)}.png`):p?.classId==='cat'?`assets/${catAsset('cat',p)}.png`:`assets/${characterAsset(powered?'penguin-power-poses':'penguin',p)}.png`;
-const loadAssets=Promise.all(['chick-walk-rig','chick-actions','chick-typing','chick-motion','npc-hyupro','maple-hideout','rabbit-novice-motion','rabbit-motion','type-a','endgame-dungeons','combat-brawler','combat-swordsman','combat-power','soldier-boss','soldier-counter','soldier-walk','gangnam','hansabal-pocha','city','crossroads','station-six','player','robot','penguin','penguin-power','penguin-hurt','penguin-power-poses','districts','high-dungeons','dojo','penguin-walk','penguin-power-walk','penguin-jump','penguin-power-jump','cat','cat-motion','cat-skills','cat-protester','cat-protester-motion','cat-protester-skills','npc-redfox','olympic-park','npc-hyuntori-white','npc-maguri-large-crate','npc-emperor-coach','npc-tiger-master','job-equipment','sword-guard-walk','builder-recovery-walk','power-recovery-walk',...[...UNIFORM_ASSETS].map(name=>`uniform-${name}`)].map(name=>new Promise(resolve=>{const img=new Image();images[name]=img;img.onload=()=>resolve();img.onerror=()=>{assetFailed=true;resolve();};img.src=`assets/${name}.png`;}))).then(()=>{assetsReady=true;prepareRabbitPortrait();});
+const loadAssets=Promise.all(['chick-motion-feet','chick-typing-feet','chick-actions','chick-typing','chick-motion','npc-hyupro','maple-hideout','rabbit-novice-motion','rabbit-motion','type-a','endgame-dungeons','combat-brawler','combat-swordsman','combat-power','soldier-boss','soldier-counter','soldier-walk','gangnam','hansabal-pocha','city','crossroads','station-six','player','robot','penguin','penguin-power','penguin-hurt','penguin-power-poses','districts','high-dungeons','dojo','penguin-walk','penguin-power-walk','penguin-jump','penguin-power-jump','cat','cat-motion','cat-skills','cat-protester','cat-protester-motion','cat-protester-skills','npc-redfox','olympic-park','npc-hyuntori-white','npc-maguri-large-crate','npc-emperor-coach','npc-tiger-master','job-equipment','sword-guard-walk','builder-recovery-walk','power-recovery-walk',...[...UNIFORM_ASSETS].map(name=>`uniform-${name}`)].map(name=>new Promise(resolve=>{const img=new Image();images[name]=img;img.onload=()=>resolve();img.onerror=()=>{assetFailed=true;resolve();};img.src=`assets/${name}.png`;}))).then(()=>{assetsReady=true;prepareRabbitPortrait();});
 let records=[],storageBroken=false;
 try{const saved=localStorage.getItem(SAVE_KEY);if(saved){const parsed=JSON.parse(saved);if(!parsed||parsed.version!==1||!Array.isArray(parsed.characters))throw new Error('invalid save');records=parsed.characters.map(normalizeCharacter).filter(Boolean);}}catch{storageBroken=true;}
 let scene='title',player=null,selectedId=records[0]?.id??null,modal=null,returnFocus=null,keys=new Set(),monsters=[],drops=[],effects=[],texts=[],camera=0,worldTime=0,screenWidth=1440,prev=0,lastHud=0,saveClock=0,toastTimer=null,transitionId=0,lastSavedLabel='',walking=false,walkPhase=0,soundOn=false,audioContext=null;
@@ -895,39 +895,18 @@ function chickFrame(){
  if(chickCharge||combatMotion?.kind==='chickHack')return 11;
  if(hurtTime>0)return 15;
  if(['chickPunch','chickScratch'].includes(combatMotion?.kind))return (combatMotion.kind==='chickScratch'?34:32)+(combatMotion.elapsed/combatMotion.duration<.3?0:1);
- if(walking)return (player.job==='hacker'?40:36)+Math.floor(walkPhase*4)%4;
+ if(walking)return player.job==='hacker'?[9,8,10,8][Math.floor(walkPhase*4)%4]:[1,2,3,2][Math.floor(walkPhase*4)%4];
  return player.job==='hacker'?8:0;
 }
-// A 60% stance phase ensures one foot always supports the body. Toes never reverse.
-function chickStep(phase){
- const u=((phase%1)+1)%1;
- if(u<.6)return {x:24-48*u/.6,y:0,angle:Math.max(0,(u-.4)/.2)*.24,planted:true};
- const t=(u-.6)/.4;return {x:-24+48*t,y:-Math.sin(t*Math.PI)*9,angle:-Math.sin(t*Math.PI)*.1,planted:false};
-}
-function drawChickGait(img,pose){
- const row=pose<24?2:pose>=40?1:0,col=Math.floor(walkPhase*4)%4,scale=.405;
- const feet=[chickStep(walkPhase+.5),chickStep(walkPhase)];
- for(let i=0;i<2;i++){
-  const foot=feet[i],hipX=i?3:-5,kneeX=(hipX+foot.x)/2+3;
-  ctx.save();if(i===0)ctx.filter='brightness(.82)';
-  ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(hipX,-22);ctx.lineTo(kneeX,-13+foot.y*.4);ctx.lineTo(foot.x,-5+foot.y);
-  ctx.strokeStyle='#463328';ctx.lineWidth=8;ctx.stroke();ctx.strokeStyle='#f3a237';ctx.lineWidth=5;ctx.stroke();
-  ctx.translate(foot.x,foot.y);ctx.rotate(foot.angle);
-  // Reuse the forward-facing flat foot; do not rotate the old hooked rear-foot art.
-  ctx.drawImage(img,196,321,76,33,-9,-9,29,13);ctx.restore();
- }
- const top=[20,373,726][row],bottom=[305,661,1016][row],bob=Math.abs(Math.sin(walkPhase*Math.PI*2))*1.5;
- ctx.drawImage(img,col*362+42,top,306,bottom-top,(42-181)*scale,-(bottom-top)*scale-18-bob,306*scale,(bottom-top)*scale);
-}
 function drawChickPlayer(){
- const pose=chickFrame(),gait=pose>=36||(pose>=20&&pose<24),action=pose>=24&&pose<36,typing=pose>=16&&pose<24,img=images[gait?'chick-walk-rig':action?'chick-actions':typing?'chick-typing':'chick-motion'];if(!img?.complete||!img.naturalWidth)return;
+ const pose=chickFrame(),action=pose>=24,typing=pose>=16&&pose<24,walkArt=walking&&!action&&(typing||[1,2,3,8,9,10].includes(pose)),img=images[action?'chick-actions':typing?(walkArt?'chick-typing-feet':'chick-typing'):(walkArt?'chick-motion-feet':'chick-motion')];if(!img?.complete||!img.naturalWidth)return;
  const frame=typing?pose-16:pose,cw=img.naturalWidth/4,ch=img.naturalHeight/(typing?2:4),height=138,x=combatDisplayX()-camera,y=player.y;
- ctx.save();ctx.fillStyle='#03162560';ctx.beginPath();ctx.ellipse(x,y+3,28,7,0,0,Math.PI*2);ctx.fill();ctx.translate(x,y-pz);ctx.scale(gait?facing:combatMotion?.dir??chickCharge?.dir??facing,1);
+ ctx.save();ctx.fillStyle='#03162560';ctx.beginPath();ctx.ellipse(x,y+3,28,7,0,0,Math.PI*2);ctx.fill();ctx.translate(x,y-pz);ctx.scale(typing&&walking?facing:combatMotion?.dir??chickCharge?.dir??facing,1);
  ctx.globalAlpha=chickStealth>0?.38:invincible>0&&Math.floor(invincible*13)%2===0?.6:1;
  if(chickStealth>0){ctx.shadowColor='#9affe2';ctx.shadowBlur=10;}
  const furious=hackerUlt?.phase==='channeling';
  const bob=furious?Math.sin(worldTime*45)*1.6:walking?Math.abs(Math.sin(walkPhase*Math.PI*4))*2:0;
- if(gait)drawChickGait(img,pose);else if(action){const [sx,sy,sw,sh,anchorX,feetY]=CHICK_ACTION_FRAMES[pose-24],scale=146/362;ctx.drawImage(img,sx,sy,sw,sh,(sx-anchorX)*scale,(sy-feetY)*scale-bob,sw*scale,sh*scale);}else ctx.drawImage(img,frame%4*cw,Math.floor(frame/4)*ch,cw,ch,-height/2,-height+5-bob,height,height);
+ if(action){const [sx,sy,sw,sh,anchorX,feetY]=CHICK_ACTION_FRAMES[pose-24],scale=146/362;ctx.drawImage(img,sx,sy,sw,sh,(sx-anchorX)*scale,(sy-feetY)*scale-bob,sw*scale,sh*scale);}else ctx.drawImage(img,frame%4*cw,Math.floor(frame/4)*ch,cw,ch,-height/2,-height+5-bob,height,height);
  if(furious){
   ctx.fillStyle='#8bdcff';ctx.strokeStyle='#e0fbff';ctx.lineWidth=2;
   for(let i=0;i<4;i++){const t=(worldTime*2.5+i*.23)%1,sx=(i%2?1:-1)*(32+t*15),sy=-107+t*32;ctx.beginPath();ctx.moveTo(sx,sy-7);ctx.quadraticCurveTo(sx+6,sy+5,sx,sy+5);ctx.quadraticCurveTo(sx-6,sy+5,sx,sy-7);ctx.fill();}
@@ -1085,7 +1064,7 @@ function update(dt){
  // Count only clamped keyboard movement, before dash, knockback or teleport effects.
  const stepDistance=Math.hypot(player.x-stepX,player.y-stepY);
  walking=wasGrounded&&jumpFrame()<0&&stepDistance>.001&&!swordUlt;
- if(walking)walkPhase=(walkPhase+stepDistance/(player.classId==='chick'?80:isPowered(player)?220:165))%1;
+ if(walking)walkPhase=(walkPhase+stepDistance/(isPowered(player)?220:165))%1;
  if(keys.has('KeyA')&&!swordUlt)attack();if(modal||scene!=='playing')return;
  const townRegen=['town','gangnam','yeoksamStreet'].includes(player.map)?2:1;
  player.mp=Math.min(maxMp(player),player.mp+dt*(player.map==='gym'?6:2.2)*townRegen);if(!MAPS[player.map].danger&&!bossActive())player.hp=Math.min(maxHp(player),player.hp+dt*(player.map==='gym'?12:6)*townRegen);

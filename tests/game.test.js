@@ -31,7 +31,7 @@ function harness(){
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),hidden:false,activeElement:el('#game')};
  const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;this.complete=true;this.naturalWidth=1500;this.naturalHeight=1000;this.onload?.();}},Promise,Math,Date,Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
- vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,chickStep,confirmHack,cycleHack,cancelChickAim,get:()=>({chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
+ vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
  return {api:context.gameTest,persistence,draws,labels,strokes,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
 }
 function advance(h,seconds){for(let t=0;t<seconds;t+=1/60)h.api.update(1/60);}
@@ -1707,7 +1707,7 @@ test('hacker types standing still and keeps a full walking cycle during held bas
  const x=p.x,frames=new Set();h.api.keys.add('ArrowRight');h.api.keys.add('KeyA');
  for(let i=0;i<50;i++){h.api.update(1/60);assert.equal(h.api.get().walking,true);frames.add(h.api.chickFrame());}
  assert.ok(p.x>x+200);assert.deepEqual([...frames].sort(),[20,21,22,23]);
- h.api.keys.delete('ArrowRight');h.api.keys.add('ArrowLeft');h.api.update(1/60);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-walk-rig.png'&&d.matrix[0]<0));
+ h.api.keys.delete('ArrowRight');h.api.keys.add('ArrowLeft');h.api.update(1/60);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-typing-feet.png'&&d.matrix[0]<0));
  h.api.keys.delete('ArrowLeft');h.api.update(1/60);assert.ok(h.api.chickFrame()>=16&&h.api.chickFrame()<20);
  h.api.keys.clear();advance(h,.4);assert.equal(h.api.chickFrame(),8);
 });
@@ -1732,18 +1732,12 @@ test('hacker keeps the laptop jump pose when attacking in midair',()=>{
  const {h,p}=chickFixture('maple');h.api.jump();advance(h,.2);h.api.attack();assert.equal(h.api.chickFrame(),29);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-actions.png'));assert.ok(!h.draws.some(d=>d.asset==='assets/chick-typing.png'));
 });
 
-test('chick gait alternates supporting legs and keeps toes pointing forward',()=>{
- const gait=harness().api;for(let i=0;i<100;i++){const phase=i/100,a=gait.chickStep(phase),b=gait.chickStep(phase+.5);assert.ok(a.planted||b.planted);assert.ok(a.angle>=-.11&&a.angle<=.25);assert.ok(a.y<=0);if(a.planted)assert.equal(a.y,0);}
- const h=harness();assert.ok(h.api.chickStep(.05).x>0);assert.ok(h.api.chickStep(.55).x<0);assert.ok(h.api.chickStep(.8).y<-8);
+test('chick restores the original chunky walk sequences with corrected foot artwork',()=>{
+ for(const job of [null,'hacker']){const {h,p}=chickFixture('maple',job);h.api.keys.add('ArrowRight');const seen=new Set();for(let i=0;i<40;i++){h.api.update(.01);const phase=h.api.get().walkPhase;assert.equal(h.api.chickFrame(),(job?[9,8,10,8]:[1,2,3,2])[Math.floor(phase*4)%4]);seen.add(h.api.chickFrame());}assert.ok(seen.size>=2);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion-feet.png'));h.api.keys.clear();h.api.update(.02);assert.equal(h.api.chickFrame(),job?8:0);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion.png'));}
 });
-test('novice and laptop carrying walks share the new alternating gait',()=>{
- for(const job of [null,'hacker']){const {h,p}=chickFixture('maple',job);h.api.keys.add('ArrowRight');advance(h,.12);assert.ok(h.api.chickFrame()>=(job?40:36));render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-walk-rig.png'));h.api.keys.clear();h.api.update(.02);assert.equal(h.api.chickFrame(),job?8:0);}
+test('chick walk cadence uses the original 165-unit cycle instead of the rushed 80-unit rig',()=>{
+ const {h,p}=chickFixture('maple',null);const x=p.x;h.api.keys.add('ArrowRight');h.api.update(.1);assert.ok(Math.abs(h.api.get().walkPhase-(p.x-x)/165)<1e-9);
 });
-
-test('a chick planted foot counter-moves at ground speed during its stance',()=>{
- const h=harness(),a=h.api.chickStep(.1),b=h.api.chickStep(.2);assert.ok(Math.abs((b.x-a.x)+80*.1)<1e-9);
-});
-
 
 test('hacker E shares the preview and impact area and remains centered at both lane edges',()=>{
  for(const y of [580,720]){const {h,p}=chickFixture();p.y=y;h.api.startChickCharge('test');const a=h.api.chickArea();assert.equal(a.y,650);assert.ok(a.y-a.height/2<=580&&a.y+a.height/2>=720);h.api.releaseChickCharge('test');const impact=h.api.get().effects.find(e=>e.type==='hackZone');for(const key of ['x','y','width','height'])assert.equal(impact[key],a[key]);}

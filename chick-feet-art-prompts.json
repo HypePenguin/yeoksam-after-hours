@@ -1,0 +1,10 @@
+{
+  "mode": "built-in image_gen",
+  "prompt": "Use case: precise-object-edit. Edit target: provided transparent chick sprite atlas. Change ONLY the orange REAR FOOT shapes in WALKING poses: the left/back foot currently curls backwards like a hook or vertical paddle. Correct it to a small, natural orange bird foot with toes pointing FORWARD (towards the RIGHT, same as the face), connected anatomically to the existing short leg. Preserve the existing lifted/grounded placement for each pose, and preserve the chunky cute stomping waddle. Absolutely preserve every head, hoodie, laptop, hand, body position, facial expression, pose, frame position, scale and grid layout. Do NOT redesign or replace the character, do NOT make long legs, do NOT add new frames or re-space them. Leave standing, seated, jump and attack frames unchanged. The complete output must remain the same atlas composition on true transparent background. Original pixel canvas proportions MUST stay unchanged. Only the few malformed rear feet in walking poses change.",
+  "typingRefinement": "Precise object edit of the attached 4-column 2-row sprite atlas. ONLY edit the rear (left) orange foot in BOTTOM ROW COLUMN 2 and BOTTOM ROW COLUMN 4. These two feet still hang down vertically and look like a backward hook. Make both feet compact, horizontally oriented with toes pointing RIGHT like the rear feet in bottom row columns 1 and 3. The short legs stay at their current positions; tuck the lifted heel slightly, toes forward. No vertical paddle feet. Keep all other pixels, hoodie, laptop, bodies, positions, grid spacing, and all other frames unchanged. Keep same dimensions and real transparent background.",
+  "assets": [
+    "dist/assets/chick-motion-feet.png",
+    "dist/assets/chick-typing-feet.png"
+  ],
+  "integration": "Only walking poses use the corrected atlases. Restore pre-v80 frame sequences, bob, scale and 165-unit cadence; retain original non-walking assets."
+}
