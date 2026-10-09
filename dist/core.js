@@ -22,7 +22,7 @@ export const ITEMS = {
  yeoksamStreetScrolls:{name:'역삼역 주변 거리 귀환 주문서',icon:'거',description:'역삼역주변거리로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'yeoksamStreet',x:850,y:648}},
  scrap:{name:'로봇 부품',icon:'⚙',description:'로봇에게서 얻은 수집 재료입니다.',usable:false},
  typeATitle:{name:'A형',icon:'✧',description:'A형 처치 보상 칭호. 장착하면 닉네임 위에 은색으로 표시되고 공격력이 5% 증가합니다. 군복과 함께 장착할 수 있어요.',usable:false,equippable:true,equipmentType:'칭호'},
- uniform:{name:'군복',icon:'▣',description:'군인 승현의 결투 보상. 장착하면 위장 군복을 입고, 걷기와 공중 이동 속도가 20% 증가합니다.',usable:false,equippable:true},
+ uniform:{name:'군복',icon:'▣',description:'신원미상의 예비군의 결투 보상. 장착하면 위장 군복을 입고, 걷기와 공중 이동 속도가 20% 증가합니다.',usable:false,equippable:true},
  cores:{name:'에너지 코어',icon:'◇',description:'강한 로봇에게서 얻은 수집 재료입니다.',usable:false}
 };
 export const equipmentName=p=>p?.job==='bodybuilder'?'핑크 덤벨':p?.job==='swordsman'?'일본도':'없음';
@@ -33,7 +33,7 @@ export const itemEquipped=(p,id)=>id==='typeATitle'?hasTypeATitle(p):id==='unifo
 export function equipTypeATitle(p){if(!(p.typeATitle>0))return {ok:false,message:'먼저 A형을 처치해 칭호를 얻으세요.'};p.typeATitleEquipped=!p.typeATitleEquipped;return {ok:true,message:p.typeATitleEquipped?'A형 칭호 장착 · 공격력 +5%':'A형 칭호를 해제했어요.'};}
 export const movementMultiplier=p=>(p?.job==='swordsman'?1.1:1)*(p?.uniform>0&&p.uniformEquipped?1.2:1)*(p?.respectTime>0?1.2:1);
 export const incomingDamage=(p,damage,multiplier=1)=>Math.max(0,Math.round(damage*(p?.job==='bodybuilder'?0.9:1)*(p?.respectTime>0?.8:1)*multiplier));
-export function equipUniform(p){if(!p.uniform)return {ok:false,message:'먼저 군인 승현을 처치해 군복을 얻으세요.'};p.uniformEquipped=!p.uniformEquipped;return {ok:true,message:p.uniformEquipped?'군복 장착 · 이동속도 +20%':'군복을 벗었어요.'};}
+export function equipUniform(p){if(!p.uniform)return {ok:false,message:'먼저 신원미상의 예비군을 처치해 군복을 얻으세요.'};p.uniformEquipped=!p.uniformEquipped;return {ok:true,message:p.uniformEquipped?'군복 장착 · 이동속도 +20%':'군복을 벗었어요.'};}
 export const validItem=id=>Object.hasOwn(ITEMS,id);
 export const shopItemsFor=p=>['potions','largePotions','mpPotions',...(p.map==='yeoksamStreet'?['yeoksamStreetScrolls']:['returnScrolls','gangnamScrolls'])];
 export const itemPrice=(p,id)=>validItem(id)?id==='gangnamScrolls'&&p.map==='town'?1500:ITEMS[id].price:undefined;
@@ -91,7 +91,7 @@ export const MAPS = {
  canal:{id:'canal',name:'지하 냉각수로',subtitle:'고레벨 던전 · Lv. 17–20',en:'UNDERGROUND COOLING CANAL',description:'중계소 아래로 이어지는 푸른 수로. 냉각 로봇 무리를 상대하고 오른쪽 자동화 주조소로 사냥을 이어가세요.',width:3400,danger:6,minLevel:17,maxLevel:20,color:'#82d8d3',background:'high-dungeons',backgroundTile:1,monster:'냉각 로봇',monsterCount:8,robotTint:'hue-rotate(55deg) saturate(1.7)',portals:[]},
  foundry:{id:'foundry',name:'자동화 주조소',subtitle:'고레벨 던전 · Lv. 21–24',en:'AUTOMATED FOUNDRY',description:'밤새 붉게 타오르는 용광로와 제련 로봇. 더 강한 접촉 공격에 대비해 회복과 막기를 활용하세요. 강남역 마을에서 정비하거나 중앙 제어실로 사냥을 이어갈 수 있어요.',width:3600,danger:7,minLevel:21,maxLevel:24,color:'#f3a28a',background:'high-dungeons',backgroundTile:2,monster:'제련 로봇',monsterCount:9,robotTint:'hue-rotate(195deg) saturate(2)',portals:[]},
  gangnam:{id:'gangnam',name:'강남역',subtitle:'마을 · 안전 구역',en:'GANGNAM STATION',description:'자동화 주조소를 지나 만나는 안전한 마을. 마구리에게 물약과 귀환 주문서를 구입하고, 오른쪽 빨간 포탈로 한사발포차 보스에 도전하세요.',width:2200,danger:0,minLevel:1,maxLevel:1,color:'#9ce1d4',background:'gangnam',portals:[]},
- pocha:{id:'pocha',name:'한사발포차 역삼점',subtitle:'중간보스 · 권장 Lv. 20–25',en:'HANSABAL POCHA · DUEL',description:'강남역 마을의 빨간 포탈로 들어오는 포차. 군인 승현에게 말을 걸면 Lv. 25 중간보스 결투가 시작됩니다. 전투 중 물약 재사용 10초. 보상: EXP 3,500 · 이동속도 +20% 군복.',width:1600,danger:0,boss:true,minLevel:20,maxLevel:25,color:'#eabb77',background:'hansabal-pocha',portals:[]},
+ pocha:{id:'pocha',name:'한사발포차 역삼점',subtitle:'중간보스 · 권장 Lv. 20–25',en:'HANSABAL POCHA · DUEL',description:'강남역 마을의 빨간 포탈로 들어오는 포차. 신원미상의 예비군에게 말을 걸면 Lv. 25 중간보스 결투가 시작됩니다. 전투 중 물약 재사용 10초. 보상: EXP 3,500 · 이동속도 +20% 군복.',width:1600,danger:0,boss:true,minLevel:20,maxLevel:25,color:'#eabb77',background:'hansabal-pocha',portals:[]},
  nexus:{id:'nexus',name:'중앙 제어실',subtitle:'고레벨 던전 · Lv. 25–30',en:'CENTRAL CONTROL NEXUS',description:'도시의 로봇을 제어하는 중앙 시설. 오른쪽 가속 실험구역부터 Lv. 31–40의 새로운 사냥길이 이어집니다.',width:4000,danger:8,minLevel:25,maxLevel:30,color:'#c7b3f6',background:'high-dungeons',backgroundTile:3,monster:'코어 수호 로봇',monsterCount:10,robotTint:'hue-rotate(110deg) saturate(2)',portals:[]},
  accelerator:{id:'accelerator',name:'가속 실험구역',subtitle:'고레벨 던전 · Lv. 31–33',en:'ACCELERATOR LAB',description:'중앙 제어실 뒤의 폐쇄 실험구역. 푸른 가속 코일 사이를 고속 정찰 로봇이 지켜요.',width:3800,danger:9,minLevel:31,maxLevel:33,color:'#7cdcf2',background:'endgame-dungeons',backgroundTile:0,monster:'가속 정찰 로봇',monsterCount:10,robotTint:'hue-rotate(35deg) saturate(1.6)',portals:[]},
  arsenal:{id:'arsenal',name:'병기 조립라인',subtitle:'고레벨 던전 · Lv. 34–36',en:'WEAPONS ASSEMBLY',description:'전투 로봇이 생산되는 심층 공장. 조립 로봇을 돌파하고 적색 동력로로 이동하세요.',width:4000,danger:10,minLevel:34,maxLevel:36,color:'#bea6f7',background:'endgame-dungeons',backgroundTile:1,monster:'병기 조립 로봇',monsterCount:11,robotTint:'hue-rotate(120deg) saturate(1.7)',portals:[]},
@@ -134,7 +134,7 @@ export const MAP_ROUTES = [
  {id:'parkway',tab:'hunt',title:'공원 사냥길',hint:'Lv. 3–9 · 승강장으로 가는 짧은 길',maps:['town','park','subway']},
  {id:'deep-route',tab:'advanced',title:'도시의 깊은 밤',hint:'Lv. 10–30 · 아래로 갈수록 강한 몬스터',maps:['rooftop','relay','canal','foundry','nexus']},
  {id:'endgame-route',tab:'advanced',title:'A형을 향한 심층 사냥길',hint:'Lv. 31–40 · 마지막 지역에서 Lv.35 A형에 도전',maps:['nexus','accelerator','arsenal','reactor','hangar','yeoksamStreet']},
- {id:'boss-route',tab:'advanced',title:'군인 승현의 결투',hint:'주조소 → 강남역에서 정비 → Lv.25 보스',maps:['foundry','gangnam','pocha']},
+ {id:'boss-route',tab:'advanced',title:'신원미상의 예비군의 결투',hint:'주조소 → 강남역에서 정비 → Lv.25 보스',maps:['foundry','gangnam','pocha']},
  {id:'yeoksam-street-route',tab:'town',title:'역삼역주변거리',hint:'수료조건 → 안전구역 · A형 칭호 장착 필수 · 전투 중 이동 불가',maps:['hangar','yeoksamStreet']},
  {id:'gangnam-route',tab:'town',title:'강남역 마을',hint:'주조소에서 이동 · 물약과 두 마을 귀환 주문서',maps:['foundry','gangnam']},
  {id:'gym-route',tab:'town',title:'바디빌더 전직',hint:'Lv. 10 · 1번 출구에서 바로 이동',maps:['town','gym']},

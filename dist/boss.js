@@ -1,6 +1,6 @@
 // Encounter state is deliberately transient: leaving the room always starts a fresh duel.
 export const SOLDIER = {
- name:'군인 승현',level:25,hp:30000,xp:3500,potionCooldown:10,
+ name:'신원미상의 예비군',level:25,hp:30000,xp:3500,potionCooldown:10,
  slash:{windup:.42,interval:.26,range:205,halfLane:52,damage:84},
  palm:{charge:.8,speed:1680,length:1600,halfLane:64,damage:144,duration:1.4,interval:.35},
  ambush:{charge:.6,flight:.46,landing:.42,interval:.2,range:240,halfLane:60,damage:48},
