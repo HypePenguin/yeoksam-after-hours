@@ -1707,7 +1707,7 @@ test('hacker types standing still and keeps a full walking cycle during held bas
  const x=p.x,frames=new Set();h.api.keys.add('ArrowRight');h.api.keys.add('KeyA');
  for(let i=0;i<50;i++){h.api.update(1/60);assert.equal(h.api.get().walking,true);frames.add(h.api.chickFrame());}
  assert.ok(p.x>x+200);assert.deepEqual([...frames].sort(),[20,21,22,23]);
- h.api.keys.delete('ArrowRight');h.api.keys.add('ArrowLeft');h.api.update(1/60);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-typing-feet.png'&&d.matrix[0]<0));
+ h.api.keys.delete('ArrowRight');h.api.keys.add('ArrowLeft');h.api.update(1/60);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-typing.png'&&d.matrix[0]<0));
  h.api.keys.delete('ArrowLeft');h.api.update(1/60);assert.ok(h.api.chickFrame()>=16&&h.api.chickFrame()<20);
  h.api.keys.clear();advance(h,.4);assert.equal(h.api.chickFrame(),8);
 });
@@ -1732,8 +1732,8 @@ test('hacker keeps the laptop jump pose when attacking in midair',()=>{
  const {h,p}=chickFixture('maple');h.api.jump();advance(h,.2);h.api.attack();assert.equal(h.api.chickFrame(),29);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-actions.png'));assert.ok(!h.draws.some(d=>d.asset==='assets/chick-typing.png'));
 });
 
-test('chick restores the original chunky walk sequences with corrected foot artwork',()=>{
- for(const job of [null,'hacker']){const {h,p}=chickFixture('maple',job);h.api.keys.add('ArrowRight');const seen=new Set();for(let i=0;i<40;i++){h.api.update(.01);const phase=h.api.get().walkPhase;assert.equal(h.api.chickFrame(),(job?[9,8,10,8]:[1,2,3,2])[Math.floor(phase*4)%4]);seen.add(h.api.chickFrame());}assert.ok(seen.size>=2);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion-feet.png'));h.api.keys.clear();h.api.update(.02);assert.equal(h.api.chickFrame(),job?8:0);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion.png'));}
+test('chick restores the original chunky walk sequences with the original pre-edit artwork',()=>{
+ for(const job of [null,'hacker']){const {h,p}=chickFixture('maple',job);h.api.keys.add('ArrowRight');const seen=new Set();for(let i=0;i<40;i++){h.api.update(.01);const phase=h.api.get().walkPhase;assert.equal(h.api.chickFrame(),(job?[9,8,10,8]:[1,2,3,2])[Math.floor(phase*4)%4]);seen.add(h.api.chickFrame());}assert.ok(seen.size>=2);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion.png'));h.api.keys.clear();h.api.update(.02);assert.equal(h.api.chickFrame(),job?8:0);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion.png'));}
 });
 test('chick walk cadence uses the original 165-unit cycle instead of the rushed 80-unit rig',()=>{
  const {h,p}=chickFixture('maple',null);const x=p.x;h.api.keys.add('ArrowRight');h.api.update(.1);assert.ok(Math.abs(h.api.get().walkPhase-(p.x-x)/165)<1e-9);
