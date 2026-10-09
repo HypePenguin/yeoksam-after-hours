@@ -1944,3 +1944,13 @@ test('otter punch includes the complete overflowing fist effect in both outfits 
   assert.ok(Math.abs(overflow.height/overflow.source[3]-body.height/body.source[3])<1e-9,'effect keeps the artwork scale');
  }
 });
+
+test('otter wave hits the expanded vertical boundary in both directions and stops outside it',()=>{
+ for(const job of [null,'idol'])for(const dir of [1,-1])for(const dy of [96,-96,97,-97]){
+  const {h,p}=otterFixture('alley',job);p.y=dy>0?620:680;
+  h.api.keys.add(dir===1?'ArrowRight':'ArrowLeft');h.api.update(.01);h.api.keys.clear();
+  const target=placeOtterEnemy(h,0,p.x+dir*200,p.y+dy);
+  h.api.cast('w');const damage=h.api.get().otterWave.damage;advance(h,.4);
+  assert.equal(target.hp,10000-(Math.abs(dy)<=96?damage:0));
+ }
+});
