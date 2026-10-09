@@ -168,7 +168,8 @@ export function findMapRoute(from,to){
 export const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export const xpNeeded=level=>(level<10?48:80)*level;
 const classFor=p=>CLASSES.find(c=>c.id===p.classId)||CLASSES[0];
-export const maxHp=p=>Math.round((classFor(p).hp+(p.level-1)*20)*(p.respectTime>0?1.2:1));
+// Round the rabbit's 70% base HP before applying temporary max-HP buffs.
+export const maxHp=p=>Math.round(Math.round((classFor(p).hp+(p.level-1)*20)*(p.classId==='rabbit'?7:10)/10)*(p.respectTime>0?1.2:1));
 export const maxMp=p=>classFor(p).mp+(p.level-1)*10;
 export const attackPower=p=>(classFor(p).attack+(p.level-1)*5)*(p.respectTime>0?1.2:1);
 export const isPowered=p=>p?.job==='bodybuilder'&&p.powerTime>0;
@@ -216,7 +217,7 @@ export function createCharacter(name,classId='wanderer'){
  const clean=String(name).trim();
  if(!/^[\p{L}\p{N}_ ]{1,12}$/u.test(clean))throw new Error('이름은 한글·영문·숫자 1~12자로 입력해 주세요.');
  const stats=CLASSES.find(c=>c.id===classId);if(!stats)throw new Error('선택할 수 없는 캐릭터입니다.');
- return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:stats.hp,mp:stats.mp,money:500,potions:3,mpPotions:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,quickSlots:['potions',null,null],uniform:0,uniformEquipped:false,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],respectTime:0,powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
+ return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:maxHp({classId,level:1}),mp:stats.mp,money:500,potions:3,mpPotions:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,quickSlots:['potions',null,null],uniform:0,uniformEquipped:false,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],respectTime:0,powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
 }
 export function normalizeCharacter(raw){
  if(!raw||typeof raw.id!=='string'||typeof raw.name!=='string')return null;
