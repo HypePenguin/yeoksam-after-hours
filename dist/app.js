@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=77';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=77';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=77';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=78';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=78';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=78';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={};let assetsReady=false,assetFailed=false;
@@ -15,7 +15,7 @@ const catAsset=(asset,p=player)=>p?.job==='protester'?asset.replace('cat','cat-p
 const rabbitPortraits={};
 const rabbitAsset=(p=player)=>p?.job==='mage'?'rabbit-motion':'rabbit-novice-motion';
 const characterPortrait=(p,powered=false)=>p?.classId==='chick'?(rabbitPortraits[p.job==='hacker'?'chick-hacker':'chick-motion']||'assets/chick-motion.png'):p?.classId==='rabbit'?(rabbitPortraits[rabbitAsset(p)]||`assets/${rabbitAsset(p)}.png`):p?.classId==='cat'?`assets/${catAsset('cat',p)}.png`:`assets/${characterAsset(powered?'penguin-power-poses':'penguin',p)}.png`;
-const loadAssets=Promise.all(['chick-motion','npc-hyupro','maple-hideout','rabbit-novice-motion','rabbit-motion','type-a','endgame-dungeons','combat-brawler','combat-swordsman','combat-power','soldier-boss','soldier-counter','soldier-walk','gangnam','hansabal-pocha','city','crossroads','station-six','player','robot','penguin','penguin-power','penguin-hurt','penguin-power-poses','districts','high-dungeons','dojo','penguin-walk','penguin-power-walk','penguin-jump','penguin-power-jump','cat','cat-motion','cat-skills','cat-protester','cat-protester-motion','cat-protester-skills','npc-redfox','olympic-park','npc-hyuntori-white','npc-maguri-large-crate','npc-emperor-coach','npc-tiger-master','job-equipment','sword-guard-walk','builder-recovery-walk','power-recovery-walk',...[...UNIFORM_ASSETS].map(name=>`uniform-${name}`)].map(name=>new Promise(resolve=>{const img=new Image();images[name]=img;img.onload=()=>resolve();img.onerror=()=>{assetFailed=true;resolve();};img.src=`assets/${name}.png`;}))).then(()=>{assetsReady=true;prepareRabbitPortrait();});
+const loadAssets=Promise.all(['chick-typing','chick-motion','npc-hyupro','maple-hideout','rabbit-novice-motion','rabbit-motion','type-a','endgame-dungeons','combat-brawler','combat-swordsman','combat-power','soldier-boss','soldier-counter','soldier-walk','gangnam','hansabal-pocha','city','crossroads','station-six','player','robot','penguin','penguin-power','penguin-hurt','penguin-power-poses','districts','high-dungeons','dojo','penguin-walk','penguin-power-walk','penguin-jump','penguin-power-jump','cat','cat-motion','cat-skills','cat-protester','cat-protester-motion','cat-protester-skills','npc-redfox','olympic-park','npc-hyuntori-white','npc-maguri-large-crate','npc-emperor-coach','npc-tiger-master','job-equipment','sword-guard-walk','builder-recovery-walk','power-recovery-walk',...[...UNIFORM_ASSETS].map(name=>`uniform-${name}`)].map(name=>new Promise(resolve=>{const img=new Image();images[name]=img;img.onload=()=>resolve();img.onerror=()=>{assetFailed=true;resolve();};img.src=`assets/${name}.png`;}))).then(()=>{assetsReady=true;prepareRabbitPortrait();});
 let records=[],storageBroken=false;
 try{const saved=localStorage.getItem(SAVE_KEY);if(saved){const parsed=JSON.parse(saved);if(!parsed||parsed.version!==1||!Array.isArray(parsed.characters))throw new Error('invalid save');records=parsed.characters.map(normalizeCharacter).filter(Boolean);}}catch{storageBroken=true;}
 let scene='title',player=null,selectedId=records[0]?.id??null,modal=null,returnFocus=null,keys=new Set(),monsters=[],drops=[],effects=[],texts=[],camera=0,worldTime=0,screenWidth=1440,prev=0,lastHud=0,saveClock=0,toastTimer=null,transitionId=0,lastSavedLabel='',walking=false,walkPhase=0,soundOn=false,audioContext=null;
@@ -641,7 +641,7 @@ function playerDamage(raw,source=null,kind='magic'){
  if(rabbitShield){const absorbed=Math.min(rabbitShield.hp,damage);rabbitShield.hp-=absorbed;damage-=absorbed;if(rabbitShield.hp<=0)rabbitShield=null;}
  return damage;
 }
-function playCombatMotion(kind,duration,extra={}){walking=false;combatMotion={kind,duration,elapsed:0,dir:facing,...extra};}
+function playCombatMotion(kind,duration,extra={}){if(kind!=='chickType')walking=false;combatMotion={kind,duration,elapsed:0,dir:facing,...extra};}
 const FX_PALETTES={
  builder:{color:'#f7fcff',accent:'#bfeaff',glow:'#9edfff',outline:'#426679'},
  electric:{color:'#ffe45c',accent:'#fff9ce',glow:'#ffe45c',outline:'#111117'}
@@ -888,7 +888,7 @@ function updateChickCombat(dt){
 }
 function chickFrame(){
  if(hackerUlt)return 12+Math.floor(worldTime*(hackerUlt.phase==='channeling'?28:10))%3;
- if(combatMotion?.kind==='chickType')return 12+Math.floor(combatMotion.elapsed*12)%3;
+ if(combatMotion?.kind==='chickType')return walking?20+Math.floor(walkPhase*4)%4:16+Math.floor(combatMotion.elapsed*16)%4;
  if(chickCharge||combatMotion?.kind==='chickHack')return 11;
  if(hurtTime>0)return 15;
  if(['chickPunch','chickScratch'].includes(combatMotion?.kind))return combatMotion.elapsed/combatMotion.duration<.3?6:7;
@@ -897,9 +897,9 @@ function chickFrame(){
  return player.job==='hacker'?8:0;
 }
 function drawChickPlayer(){
- const img=images['chick-motion'];if(!img?.complete||!img.naturalWidth)return;
- const frame=chickFrame(),cw=img.naturalWidth/4,ch=img.naturalHeight/4,height=138,x=combatDisplayX()-camera,y=player.y;
- ctx.save();ctx.fillStyle='#03162560';ctx.beginPath();ctx.ellipse(x,y+3,28,7,0,0,Math.PI*2);ctx.fill();ctx.translate(x,y-pz);ctx.scale(combatMotion?.dir??chickCharge?.dir??facing,1);
+ const pose=chickFrame(),typing=pose>=16,img=images[typing?'chick-typing':'chick-motion'];if(!img?.complete||!img.naturalWidth)return;
+ const frame=typing?pose-16:pose,cw=img.naturalWidth/4,ch=img.naturalHeight/(typing?2:4),height=138,x=combatDisplayX()-camera,y=player.y;
+ ctx.save();ctx.fillStyle='#03162560';ctx.beginPath();ctx.ellipse(x,y+3,28,7,0,0,Math.PI*2);ctx.fill();ctx.translate(x,y-pz);ctx.scale(typing&&walking?facing:combatMotion?.dir??chickCharge?.dir??facing,1);
  ctx.globalAlpha=chickStealth>0?.38:invincible>0&&Math.floor(invincible*13)%2===0?.6:1;
  if(chickStealth>0){ctx.shadowColor='#9affe2';ctx.shadowBlur=10;}
  const furious=hackerUlt?.phase==='channeling';

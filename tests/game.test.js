@@ -1655,7 +1655,7 @@ test('E and R control the active soldier without counter reflection and resume a
 test('chick walk, jump, punch, laptop charge and seated typing use different atlas frames',()=>{
  const {h,p}=chickFixture();assert.equal(h.api.chickFrame(),8);h.api.keys.add('ArrowRight');const frames=new Set();for(let i=0;i<40;i++){h.api.update(1/60);frames.add(h.api.chickFrame());}assert.ok(frames.size>=3);h.api.keys.clear();
  h.api.jump();assert.equal(h.api.chickFrame(),4);advance(h,.2);assert.equal(h.api.chickFrame(),5);advance(h,1);
- h.api.attack();assert.equal(h.api.chickFrame(),12);advance(h,.12);assert.equal(h.api.chickFrame(),13);advance(h,.4);
+ h.api.attack();assert.equal(h.api.chickFrame(),16);advance(h,.12);assert.equal(h.api.chickFrame(),18);advance(h,.4);
  h.api.startChickCharge('test');assert.equal(h.api.chickFrame(),11);h.api.cancelChickAim();h.api.cast('r');assert.ok(h.api.chickFrame()>=12);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion.png'));
 });
 
@@ -1700,4 +1700,18 @@ test('hacker initial selection uses both axes and retargets to the nearest livin
  const {h,p}=chickFixture();const [a,b]=h.api.get().monsters;Object.assign(a,{x:p.x+90,y:p.y+70,level:99});Object.assign(b,{x:p.x-100,y:p.y,level:1});
  h.api.cast('r');assert.equal(h.api.get().hackerUlt.targetId,b.id);b.dead=true;h.api.update(.01);assert.equal(h.api.get().hackerUlt.targetId,a.id);
  assert.equal(h.el('#hack-controls').hidden,false);h.api.confirmHack();h.api.update(.2);assert.equal(h.el('#hack-controls').hidden,true);
+});
+
+test('hacker types standing still and keeps a full walking cycle during held basic attack',()=>{
+ const {h,p}=chickFixture('maple');h.api.attack();assert.equal(h.api.chickFrame(),16);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-typing.png'&&d.source[1]===0));advance(h,.4);
+ const x=p.x,frames=new Set();h.api.keys.add('ArrowRight');h.api.keys.add('KeyA');
+ for(let i=0;i<50;i++){h.api.update(1/60);assert.equal(h.api.get().walking,true);frames.add(h.api.chickFrame());}
+ assert.ok(p.x>x+200);assert.deepEqual([...frames].sort(),[20,21,22,23]);
+ h.api.keys.delete('ArrowRight');h.api.keys.add('ArrowLeft');h.api.update(1/60);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-typing.png'&&d.matrix[0]<0));
+ h.api.keys.delete('ArrowLeft');h.api.update(1/60);assert.ok(h.api.chickFrame()>=16&&h.api.chickFrame()<20);
+ h.api.keys.clear();advance(h,.4);assert.equal(h.api.chickFrame(),8);
+});
+test('hacker ultimate keeps its seated typing atlas while basic attacks use the standing atlas',()=>{
+ const {h,p}=chickFixture();h.api.cast('r');h.api.confirmHack();render(h);
+ assert.ok(h.api.chickFrame()>=12&&h.api.chickFrame()<=14);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion.png'));assert.ok(!h.draws.some(d=>d.asset==='assets/chick-typing.png'));
 });
