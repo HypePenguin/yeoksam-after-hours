@@ -1638,3 +1638,27 @@ test('chick walk, jump, punch, laptop charge and seated typing use different atl
  h.api.attack();assert.equal(h.api.chickFrame(),6);advance(h,.12);assert.equal(h.api.chickFrame(),7);advance(h,.4);
  h.api.startChickCharge('test');assert.equal(h.api.chickFrame(),11);h.api.cancelChickAim();h.api.cast('r');assert.ok(h.api.chickFrame()>=12);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion.png'));
 });
+
+test('cat E roots charge and throw, then allows movement while the projectile and fire persist',()=>{
+ const h=harness(),p=core.createCharacter('화염병 시전','cat');Object.assign(p,{level:15,job:'protester',x:1100,y:640});p.mp=core.maxMp(p);h.api.start(p);
+ h.api.keys.add('ArrowRight');h.api.keys.add('ArrowDown');assert.equal(h.api.startCatCharge('test'),true);
+ const x=p.x,y=p.y;h.api.jump();h.api.update(.5);assert.equal(p.x,x);assert.equal(p.y,y);assert.equal(h.api.get().pz,0);assert.equal(h.api.get().walking,false);
+ h.api.releaseCatCharge('test');const mp=p.mp;h.api.attack();h.api.cast('w');h.api.cast('r');h.api.jump();assert.equal(p.mp,mp);assert.equal(h.api.get().combatMotion.kind,'catThrow');
+ h.api.update(.27);assert.equal(p.x,x);assert.equal(p.y,y);assert.equal(h.api.get().jumpPrep,0);
+ h.api.update(.02);assert.ok(p.x>x);assert.ok(p.y>y);assert.ok(h.api.get().catProjectiles.length>0,'movement resumes before the bottle lands');
+});
+test('cat R locks all actions for 0.3 seconds across frame rates, without locking the five-second field',()=>{
+ for(const fps of [30,60,120]){
+  const h=harness(),p=core.createCharacter('투표함 시전','cat');Object.assign(p,{level:15,job:'protester',x:1100});p.mp=core.maxMp(p);h.api.start(p);h.api.cast('r');
+  const x=p.x,mp=p.mp;h.api.keys.add('ArrowRight');h.api.attack();h.api.cast('q');h.api.cast('w');h.api.startCatCharge('test');h.api.jump();
+  assert.equal(p.mp,mp);assert.equal(h.api.get().catCharge,null);assert.equal(h.api.get().jumpPrep,0);assert.equal(h.api.get().combatMotion.kind,'catBallot');
+  for(let i=0;i<fps/2;i++)h.api.update(1/fps);
+  assert.ok(Math.abs(p.x-x-285*.2)<1e-7,'only 0.2 seconds of the first half-second are movable');assert.ok(h.api.get().catBallot.remaining>4);
+  h.api.attack();assert.equal(h.api.get().combatMotion.kind,'catPunch');
+ }
+});
+test('cancelled cat E and scene resets cannot leave a movement lock behind',()=>{
+ const h=harness(),p=core.createCharacter('시전 취소','cat');Object.assign(p,{level:15,job:'protester',x:1100});p.mp=core.maxMp(p);h.api.start(p);
+ h.api.startCatCharge('keyboard');h.windowEvents.get('blur').forEach(fn=>fn());h.api.keys.add('ArrowRight');h.api.update(.1);assert.equal(p.x,1128.5);
+ h.api.cast('r');h.api.resetCombat();h.api.keys.add('ArrowRight');h.api.update(.1);assert.equal(p.x,1157);
+});

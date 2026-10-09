@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=73';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=73';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=73';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=74';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=74';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=74';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={};let assetsReady=false,assetFailed=false;
@@ -21,7 +21,7 @@ try{const saved=localStorage.getItem(SAVE_KEY);if(saved){const parsed=JSON.parse
 let scene='title',player=null,selectedId=records[0]?.id??null,modal=null,returnFocus=null,keys=new Set(),monsters=[],drops=[],effects=[],texts=[],camera=0,worldTime=0,screenWidth=1440,prev=0,lastHud=0,saveClock=0,toastTimer=null,transitionId=0,lastSavedLabel='',walking=false,walkPhase=0,soundOn=false,audioContext=null;
 let rabbitOrbs=[],rabbitShield=null;
 let chickStealth=0,chickCharge=null,hackerUlt=null;
-let inventorySelection='potions',boss=null,potionCooldown=0,catCharge=null,catProjectiles=[],catFires=[],catBallot=null;
+let inventorySelection='potions',boss=null,potionCooldown=0,catCharge=null,catCastLock=0,catProjectiles=[],catFires=[],catBallot=null;
 const bossActive=()=>!!boss?.active;
 const canTarget=m=>!m.dead&&(!m.isBoss||(isTypeA(m)?typeATargetable(m):targetableBoss(m)));
 const bossInfo=()=>isTypeA(boss)?TYPE_A:SOLDIER;
@@ -361,7 +361,7 @@ function refreshCombatHUD(){
  if(swordUlt){const charging=swordUlt.phase==='charging',alive=monsters.filter(m=>!m.dead&&swordUlt.targets.includes(m.id)).length,solo=charging?alive===1:swordUlt.damageMultiplier>1;$('#combat-title').textContent=charging?'섬광 연참 · 기 모으기':'섬광 연참';$('#combat-clock').textContent=charging?`${swordUlt.elapsed.toFixed(1)} / 3초`:'연속 베기';$('#combat-detail').textContent=charging?`${alive} / 5명 조준${solo?' · 단일 대상 2배':''} · 받는 피해 80% 감소 · 손을 떼면 발동`:`연속 베기${solo?' · 단일 대상 2배':''} · 받는 피해 80% 감소`;$('#combat-bar').style.width=`${swordUlt.elapsed/3*100}%`;}
  else if(guardTime>0){$('#combat-title').textContent='막기';$('#combat-clock').textContent=`${guardTime.toFixed(1)}초`;$('#combat-detail').textContent='공격 차단 · 공격/스킬 사용 불가';$('#combat-bar').style.width=`${guardTime*100}%`;}
  else if(recovery){$('#combat-title').textContent=isPowered(player)?'근육 각성 · 한 번 더!':'한 번 더!';$('#combat-clock').textContent=`${recovery.remaining.toFixed(1)}초`;$('#combat-detail').textContent='HP 회복 · 피해 50% 감소 · 이동 60% · 공격 불가';$('#combat-bar').style.width=`${recovery.remaining/recovery.duration*100}%`;}
- else if(catCharge){$('#combat-title').textContent='화염병 · 사거리 충전';$('#combat-clock').textContent=`${catCharge.elapsed.toFixed(1)} / 1초`;$('#combat-detail').textContent='E를 놓으면 투척 · 1초에 자동 발동';$('#combat-bar').style.width=`${catCharge.elapsed*100}%`;}
+ else if(catCharge){$('#combat-title').textContent='화염병 · 사거리 충전';$('#combat-clock').textContent=`${catCharge.elapsed.toFixed(1)} / 1초`;$('#combat-detail').textContent='차징·투척 중 이동 불가 · 1초에 자동 발동';$('#combat-bar').style.width=`${catCharge.elapsed*100}%`;}
  if(hackerUlt||chickCharge||chickStealth>0){const u=hackerUlt;$('#combat-title').textContent=u?'해킹':chickCharge?'시스템 정지 · 차징':'시크릿 모드';$('#combat-clock').textContent=u?`${Math.ceil(u.remaining)}초`:chickCharge?`${chickCharge.elapsed.toFixed(1)} / 2초`:`${chickStealth.toFixed(1)}초`;$('#combat-detail').textContent=u?(u.phase==='selecting'?'← → 대상 선택 · Enter 확정 · Esc 취소 · 피해 80% 감소':'해킹당함! · 5초 경직과 지속 피해 · 피해 80% 감소'):chickCharge?'E를 놓으면 발동 · 차징 중 은신 유지':'이동속도 +30% · 다음 공격 +20%';$('#combat-bar').style.width=`${(u?u.remaining/(u.phase==='selecting'?u.skill.selection:u.skill.duration):chickCharge?chickCharge.elapsed/2:chickStealth/5)*100}%`;}
 }
 function drawCombatIndicators(){
@@ -609,7 +609,7 @@ function drawBossTelegraphs(){
 }
 function resetJump(){pz=0;pvz=0;jumpScale=1;jumpPrep=0;jumpLanding=0;}
 function jump(){
- if(hackerUlt)return;
+ if(hackerUlt||catCharge||catCastLock>0)return;
  if(scene!=='playing'||modal||swordUlt||pz>0||pvz!==0||jumpPrep>0)return;
  walking=false;jumpPrep=player?.classId==='cat' ? .11 : .065;jumpLanding=0;beep(isPowered(player)?190:310,.12,'triangle',.04);
 }
@@ -634,7 +634,7 @@ function jumpFrame(){
  return jumpLanding>0?5:-1;
 }
 function textAt(text,x,y,color='#ffe2a7'){texts.push({text,x,y,life:1.15,max:1.15,color});}
-function resetCombat(){chickStealth=0;cancelChickAim();for(const m of monsters){m.stunTime=0;m.hack=null;}rabbitOrbs=[];rabbitShield=null;guardTime=0;recovery=null;combatMotion=null;}
+function resetCombat(){catCastLock=0;chickStealth=0;cancelChickAim();for(const m of monsters){m.stunTime=0;m.hack=null;}rabbitOrbs=[];rabbitShield=null;guardTime=0;recovery=null;combatMotion=null;}
 function playerDamage(raw,source=null,kind='magic'){
  if(kind==='magic'&&raw>0)chickStealth=0;
  let damage=incomingDamage(player,raw*(source?.respectTime>0?.7:1),(hackerUlt?.skill?1-hackerUlt.skill.reduction:1)*(swordUlt?1-swordUlt.skill.reduction:1)*(recovery?1-recovery.reduction:1));
@@ -747,7 +747,7 @@ function drawRabbitEffects(){
 
 function cancelCatCharge(){catCharge=null;}
 function startCatCharge(input='keyboard'){
- if(scene!=='playing'||modal||player?.job!=='protester'||catCharge||swordUlt||guardTime>0||recovery)return false;
+ if(scene!=='playing'||modal||player?.job!=='protester'||catCharge||catCastLock>0||swordUlt||guardTime>0||recovery)return false;
  const check=canUseSkill(player,'e',cooldowns.e);if(!check.ok){toast(check.message);return false;}
  catCharge={input,elapsed:0,skill:check.skill};combatMotion=null;walking=false;beep(420,.09);return true;
 }
@@ -758,7 +758,7 @@ function releaseCatCharge(input='keyboard'){
  const skill=check.skill,strength=clamp(charge.elapsed/skill.charge,0,1),distance=skill.range+(skill.maxRange-skill.range)*strength;
  player.mp-=skill.mp;cooldowns.e=skill.cooldown;
  catProjectiles.push({x:player.x+facing*20,y:player.y-82,toX:clamp(player.x+facing*distance,45,MAPS[player.map].width-45),toY:player.y-24,elapsed:0,duration:.35+strength*.2,skill});
- playCombatMotion('catThrow',.28);textAt(strength>.95?'최대 사거리!':'화염병!',player.x,player.y-156,'#ffb47b');beep(570,.18);refreshHUD();save();return true;
+ catCastLock=.28;playCombatMotion('catThrow',catCastLock);textAt(strength>.95?'최대 사거리!':'화염병!',player.x,player.y-156,'#ffb47b');beep(570,.18);refreshHUD();save();return true;
 }
 function catAreaHit(x,y,radius,damage){
  for(const m of [...monsters])if(canTarget(m)&&Math.hypot(m.x-x,(m.y-y)*1.5)<radius){hitMonster(m,Math.round(attackPower(player)*damage));if(scene!=='playing')break;}
@@ -905,7 +905,7 @@ function drawChickEffects(){
 function attack(){
  if(chickCharge||hackerUlt)return;
  if(scene!=='playing'||modal||swordUlt||guardTime>0||recovery||attackTimer>0)return;
- if(catCharge)return;
+ if(catCharge||catCastLock>0)return;
  if(player.classId==='chick'){chickPunch(false);return;}
  if(player.classId==='rabbit'){rabbitAttack();return;}
  if(player.classId==='cat'){
@@ -923,7 +923,7 @@ function cast(key){
  if(player.classId==='chick'){castChick(key);return;}
  if(player.classId==='rabbit'){castRabbit(key);return;}
  if(player.classId==='cat'){
-  if(catCharge)return;
+  if(catCharge||catCastLock>0)return;
   if(key==='e'){startCatCharge('keyboard');return;}
   const check=canUseSkill(player,key,cooldowns[key]);if(!check.ok){toast(check.message);return;}
   const skill=check.skill;player.mp-=skill.mp;cooldowns[key]=skill.cooldown;
@@ -937,7 +937,7 @@ function cast(key){
    playCombatMotion('catBack',.34);effects.push({type:'dash',x:from,y:player.y-45,toX:player.x,toY:player.y-45,life:.35,max:.35,color:'#d9eaf5',accent:'#fff',outline:'#62778d',glow:'#e6f3ff',travelDuration:.28});
    textAt('회피!',player.x,player.y-145,'#d4f4ff');beep(720,.12);
   }else if(key==='r'){
-   playCombatMotion('catBallot',.46);
+   catCastLock=.3;playCombatMotion('catBallot',catCastLock);
    catBallot={x:player.x+facing*58,y:player.y,remaining:skill.duration,skill,tick:.05};effects.push({type:'ring',x:catBallot.x,y:catBallot.y-20,life:.7,max:.7,color:'#fff3d8',size:skill.range});
    textAt('부정선거',catBallot.x,catBallot.y-165,'#ffe7cf');beep(520,.3,'triangle');
   }
@@ -995,8 +995,9 @@ function hitMonster(m,damage){if(scene!=='playing'||!canTarget(m))return;if(m.is
 function die(){if(scene!=='playing')return;closeModal();setScene('dead');beep(130,.5,'triangle');screens.innerHTML=`<div class="screen-overlay"><div class="death-symbol">☾</div><h2 class="screen-title">잠시, 숨을 고를 시간</h2><p class="screen-subtitle">괜찮아요. 돈과 아이템은 그대로입니다.<br>마을에서 다시 모험을 시작해 보세요.</p><button class="primary" id="revive">마을에서 부활하기</button></div>`;respawn(player);save();$('#revive').onclick=()=>{resetWorld();setScene('playing');screens.innerHTML='';buildHUD();canvas.focus();toast('체력과 MP가 모두 회복되었어요. 다시 출발해 볼까요?');};}
 function update(dt){
  walking=false;worldTime+=dt;if(scene!=='playing'||modal||document.hidden)return;
- // Apply the slow only to the part of this frame during which recovery is active.
- const moveDt=dt-(1-(recovery?.moveSpeed??1))*Math.min(dt,recovery?.remaining||0);
+ // Apply recovery slow and cast locks only to their active fraction of this frame.
+ const moveDt=Math.max(0,dt-(1-(recovery?.moveSpeed??1))*Math.min(dt,recovery?.remaining||0)-Math.min(dt,catCharge?dt:catCastLock));
+ catCastLock=Math.max(0,catCastLock-dt);
  player.mpPotionCooldown=Math.max(0,(player.mpPotionCooldown||0)-dt);
  if(bossActive())potionCooldown=Math.max(0,potionCooldown-dt);
  guardTime=Math.max(0,guardTime-dt);updateCombat(dt);hurtTime=Math.max(0,hurtTime-dt);updateSword(dt);if(modal||scene!=='playing')return;
