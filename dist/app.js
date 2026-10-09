@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=61';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=61';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=61';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=62';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=62';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=62';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={};let assetsReady=false,assetFailed=false;
@@ -919,12 +919,13 @@ function drawBackground(mapId){
  ctx.restore();
 }
 function drawPortal(portal){
- const x=portal.x-camera,y=portal.y,isBossPortal=!!MAPS[portal.to]?.boss,rgb=isBossPortal?'255,82,105':'122,239,214';
- ctx.save();ctx.shadowColor=isBossPortal?'#ff395d':'#6af6cf';ctx.shadowBlur=isBossPortal?34:26;
+ const destination=MAPS[portal.to],x=portal.x-camera,y=portal.y,isBossPortal=!!destination?.boss,isSafePortal=!!destination&&!destination.danger&&!isBossPortal;
+ const rgb=isBossPortal?'255,82,105':isSafePortal?'100,255,115':'122,239,214';
+ ctx.save();ctx.shadowColor=isBossPortal?'#ff395d':isSafePortal?'#46ef71':'#6af6cf';ctx.shadowBlur=isBossPortal?34:26;
  for(let i=0;i<3;i++){ctx.strokeStyle=`rgba(${rgb},${.75-i*.2})`;ctx.lineWidth=4-i;ctx.beginPath();ctx.ellipse(x,y-48,35+i*5+Math.sin(worldTime*2+i)*3,68+i*3,0,0,Math.PI*2);ctx.stroke();}
- const glow=ctx.createRadialGradient(x,y-40,2,x,y-40,60);glow.addColorStop(0,isBossPortal?'#ff456640':'#8fffe428');glow.addColorStop(1,isBossPortal?'#ff456600':'#8fffe400');ctx.fillStyle=glow;ctx.fillRect(x-65,y-120,130,150);
- ctx.shadowBlur=0;ctx.strokeStyle=isBossPortal?'#ff718aaa':'#9dedda75';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y+19,48,12,0,0,Math.PI*2);ctx.stroke();
- label(portal.label,x,y-141,isBossPortal?'#ffb9c4':'#b9ffe7',16);label(isBossPortal?'보스방 · Lv.25':portal.level,x,y-112,isBossPortal?'#ff91a3':'#a9cbcf',12);ctx.restore();
+ const glow=ctx.createRadialGradient(x,y-40,2,x,y-40,60);glow.addColorStop(0,isBossPortal?'#ff456640':isSafePortal?'#64ff7328':'#8fffe428');glow.addColorStop(1,isBossPortal?'#ff456600':isSafePortal?'#64ff7300':'#8fffe400');ctx.fillStyle=glow;ctx.fillRect(x-65,y-120,130,150);
+ ctx.shadowBlur=0;ctx.strokeStyle=isBossPortal?'#ff718aaa':isSafePortal?'#83ff8875':'#9dedda75';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y+19,48,12,0,0,Math.PI*2);ctx.stroke();
+ label(portal.label,x,y-141,isBossPortal?'#ffb9c4':isSafePortal?'#c1ffc1':'#b9ffe7',16);label(isBossPortal?`보스방 · Lv.${destination.bossLevel||25}`:portal.level,x,y-112,isBossPortal?'#ff91a3':isSafePortal?'#a6f4ad':'#a9cbcf',12);ctx.restore();
 }
 function drawNPC(npc){
  const x=npc.x-camera,y=npc.y,isShop=npc.id==='shop',height=npc.height??(isShop?MAGURI_WIDTH*MAGURI_CROP[3]/MAGURI_CROP[2]:npc.id==='gm'?122:104),width=npc.width??(npc.crop?height*npc.crop[2]/npc.crop[3]:isShop?MAGURI_WIDTH:npc.id==='gm'?86:74);
