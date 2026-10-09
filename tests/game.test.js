@@ -31,7 +31,7 @@ function harness(){
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),hidden:false,activeElement:el('#game')};
  const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;this.complete=true;this.naturalWidth=1500;this.naturalHeight=1000;this.onload?.();}},Promise,Math,Date,Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
- vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,catAreaHit,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
+ vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
  return {api:context.gameTest,persistence,draws,labels,strokes,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
 }
 function advance(h,seconds){for(let t=0;t<seconds;t+=1/60)h.api.update(1/60);}
@@ -1775,4 +1775,54 @@ test('ballot cannot pull a boss when damage is blocked or reflected',()=>{
   const h=harness(),p=core.createCharacter('보스 판정','cat');Object.assign(p,{level:35,job:'protester',map,x:1000,y:650});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);h.api.startBossFight();const b=h.api.get().boss;Object.assign(b,{x:1200,y:650,phase:map==='pocha'?'counter':'safety',elapsed:1});
   const x=b.x,y=b.y,hp=b.hp;h.api.catAreaHit(1000,650,490,.9,20);assert.equal(b.hp,hp);assert.equal(b.x,x);assert.equal(b.y,y);
  }
+});
+
+function ballotFixture(map='alley'){
+ const h=harness(),p=core.createCharacter('도발','cat');Object.assign(p,{level:25,job:'protester',map,x:1000,y:650});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);
+ if(core.MAPS[map].boss)h.api.startBossFight();
+ h.api.cast('r');return {h,p,box:h.api.get().catBallot};
+}
+test('ballot has 1500 HP, taunts within its damage ellipse, and monsters prioritize it over a closer player',()=>{
+ const {h,p,box}=ballotFixture(),group=h.api.get().monsters;group.forEach(m=>m.dead=true);
+ const m=group[0];Object.assign(m,{dead:false,x:p.x-80,y:p.y,hp:100000,maxHp:100000,speed:80,attack:10});
+ assert.equal(box.hp,1500);assert.equal(box.maxHp,1500);assert.equal(h.api.enemyTarget(m),box);
+ const x=m.x;h.api.update(.1);assert.ok(m.x>x,'chases past the closer player toward the box');
+ m.x=box.x+box.skill.range+1;assert.equal(h.api.enemyTarget(m),p);
+ m.x=box.x;m.y=box.y+box.skill.range/1.5+1;assert.equal(h.api.enemyTarget(m),p);
+ m.x=box.x-12;m.y=box.y;p.x=m.x;advance(h,2.1);
+ assert.equal(p.hp,core.maxHp(p),'contact attacks hit the prioritized box');assert.equal(box.hp,1480,'contact damage has a per-enemy 1.1 second interval');
+ render(h);assert.ok(h.labels.some(l=>l.text==='투표함 · 1480 / 1500'));
+});
+test('multiple monsters can destroy the box, immediately end its damage, and return to chasing the player',()=>{
+ const {h,p,box}=ballotFixture(),group=h.api.get().monsters;group.forEach(m=>m.dead=true);
+ for(const m of group.slice(0,2))Object.assign(m,{dead:false,x:box.x+10,y:box.y,hp:100000,maxHp:100000,speed:0,attack:800});
+ h.api.update(.1);assert.equal(box.hp,0);assert.equal(h.api.get().catBallot,null);
+ const m=group[0];assert.equal(h.api.enemyTarget(m),p);const hp=m.hp;p.x=500;m.speed=100;const x=m.x;advance(h,.5);assert.ok(m.x<x);assert.equal(m.hp,hp,'destroyed ballot no longer ticks');
+});
+test('ballot expiry and leaving the encounter clear both taunt and the summon',()=>{
+ const {h,p,box}=ballotFixture();h.api.get().monsters.forEach(m=>m.dead=true);advance(h,5.1);assert.equal(h.api.get().catBallot,null);assert.equal(h.api.enemyTarget({x:box.x,y:box.y}),p);
+ p.mp=core.maxMp(p);h.api.get().cooldowns.r=0;h.api.cast('r');assert.ok(h.api.get().catBallot);h.api.selectCharacters();assert.equal(h.api.get().catBallot,null);
+});
+test('both bosses aim at the nearby box and switch back when it expires',()=>{
+ for(const map of ['pocha','hangar']){
+  const {h,p,box}=ballotFixture(map),b=h.api.get().boss;Object.assign(b,{x:box.x+250,y:box.y,phase:'approach',elapsed:0});p.x=box.x-400;
+  assert.equal(h.api.bossPerception().x,box.x);assert.equal(h.api.bossPerception().hidden,false);
+  h.api.update(.1);assert.equal(b.dir,-1);box.remaining=0;assert.equal(h.api.bossPerception().x,p.x);
+ }
+});
+test('soldier melee and sustained beam damage the box with independent beam hit intervals',()=>{
+ const {h,p,box}=ballotFixture('pocha'),b=h.api.get().boss;p.x=45;
+ Object.assign(b,{x:box.x-100,y:box.y,dir:1,phase:'slash',elapsed:0,strikes:0});h.api.update(.01);assert.equal(box.hp,1500-bossCore.SOLDIER.slash.damage);
+ Object.assign(b,{phase:'recover',elapsed:0});b.projectiles=[{x:box.x-200,originX:box.x-200,y:box.y,dir:1,life:1.4,hitCooldown:0,spent:false}];
+ advance(h,.2);const hp=box.hp;assert.equal(hp,1500-bossCore.SOLDIER.slash.damage-bossCore.SOLDIER.palm.damage);advance(h,.1);assert.equal(box.hp,hp);advance(h,.2);assert.equal(box.hp,hp-bossCore.SOLDIER.palm.damage);
+});
+test('A-type projectiles hit the box and its targeted bombs follow the taunted target',()=>{
+ const {h,p,box}=ballotFixture('hangar'),b=h.api.get().boss;p.x=45;
+ Object.assign(b,{x:box.x+250,y:box.y,phase:'bomb',elapsed:0,strikes:0});h.api.update(.01);assert.equal(b.bombs[0].x,box.x);assert.equal(b.bombs[0].y,box.y);
+ b.bombs=[];b.phase='recover';b.elapsed=0;b.projectiles=[{x:box.x-5,y:box.y,dir:1,life:1,spent:false}];h.api.update(.01);
+ assert.equal(box.hp,1500-typeACore.TYPE_A.gun.damage-150);assert.ok(b.projectiles[0].spent);
+});
+test('A-type safety placement uses the actual player position even while taunted',()=>{
+ const {h,p,box}=ballotFixture('hangar'),b=h.api.get().boss;Object.assign(b,{x:box.x,y:box.y,phase:'recover',elapsed:0});p.x=45;
+ b.hp=b.maxHp*.4;h.api.update(.01);assert.equal(b.phase,'safety');assert.ok(Math.abs(b.safeZone.x-p.x)<=420);
 });

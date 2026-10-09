@@ -11,6 +11,7 @@ export const inTypeASafeZone=(p,s)=>!!s&&((p.x-s.x)/s.rx)**2+((p.y-s.y)/s.ry)**2
 export function createTypeA(){return {kind:'type-a',id:'type-a',isBoss:true,level:35,x:1150,y:650,z:0,dir:-1,hp:TYPE_A.hp,maxHp:TYPE_A.hp,active:false,dead:false,rewardGranted:false,phase:'waiting',elapsed:0,strikes:0,walking:false,walkPhase:0,hit:0,projectiles:[],bombs:[],safetyUsed:false,safeZone:null,enraged:false};}
 export function beginTypeA(b){if(b.active)return false;Object.assign(b,createTypeA(),{active:true,phase:'approach'});return true;}
 function beginSafety(b,p){
+ p=p.safetyTarget||p;
  b.safetyUsed=true;b.projectiles=[];b.bombs=[];
  // At most 420 horizontal units away; fully inside the walkable floor and reachable in 5 seconds.
  const x=clamp(p.x+(p.x<TYPE_A.width/2?420:-420),160,TYPE_A.width-160);

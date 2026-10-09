@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=85';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=85';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=85';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=86';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=86';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=86';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={};let assetsReady=false,assetFailed=false;
@@ -182,7 +182,7 @@ function skillBook(){showModal('skills',`${jobName(player)}의 스킬`,`${skills
 function jobModal(job){
  const target=JOBS[job];if(!target)return;
  const current=player.job,ready=!current&&player.level>=10&&player.classId===(target.classId||'wanderer');
- showModal('job',`${job==='hacker'?'휴프로 · ':job==='mage'?'마구리 · ':job==='protester'?'레드폭스 · ':''}${target.name} 전직`, `<p>${job==='hacker'?'코드를 읽으면 적의 빈틈이 보여요. 메이플아지트에서 시작해 봅시다.':job==='mage'?'마법은 서로를 지키는 힘이기도 해요.':job==='protester'?'작은 목소리도 함께 모이면 멀리 퍼져요.':target.name==='바디빌더'?'꾸준한 훈련으로 강인한 몸을 만들어 보세요.':'마음을 가라앉히고 한 번의 베기에 집중하세요.'}</p><div class="job-choice"><strong>직업 특성 · ${target.passive}</strong><p>전직 후 항상 적용됩니다.</p><strong>Lv. 10 · E ${target.e}</strong><p>${job==='hacker'?'최대 1.5초 차징해 사각 범위에 강력한 피해와 2초 경직을 줍니다.':job==='mage'?'3초간 피해를 흡수하는 보호막과 주변 마력 방출.':job==='protester'?'최대 1초 차징해 화염병을 던집니다. 폭발 후 바닥에 불길이 남아요.':job==='bodybuilder'?'HP 40%를 1.5초간 회복하고 받는 피해를 50% 줄입니다.':'1초 동안 칼로 공격을 막습니다.'}</p><strong>Lv. 15 · R ${target.r}</strong><p>${job==='hacker'?'좌우로 대상을 선택하고 Enter로 확정합니다. 노트북을 두드리며 5초간 경직과 지속 피해를 주고 받는 피해가 80% 감소합니다.':job==='mage'?'아군을 선택해 10초간 강화하고 주변 적의 공격력을 3초간 30% 낮춥니다.':job==='protester'?'투표함을 5초간 설치해 주변 적에게 휘날리는 투표지로 지속 피해를 줍니다.':job==='bodybuilder'?'12초간 거대해지며 기본 공격과 Q·W·E가 강화됩니다.':'R을 누르면 가까운 적부터 최대 5명을 조준해 연속으로 벱니다.'}</p></div><p>${current?`현재 직업은 ${jobName(player)}입니다. 전직은 캐릭터당 한 번입니다.`:ready?'한 번 선택한 직업은 변경할 수 없습니다. 다른 직업은 새 캐릭터로 시작할 수 있어요.':`현재 Lv. ${player.level}. Lv. 10이 되면 전직할 수 있어요.`}</p>${ready?`<button class="primary" id="advance-job">${target.name}로 전직하기</button>`:''}`);
+ showModal('job',`${job==='hacker'?'휴프로 · ':job==='mage'?'마구리 · ':job==='protester'?'레드폭스 · ':''}${target.name} 전직`, `<p>${job==='hacker'?'코드를 읽으면 적의 빈틈이 보여요. 메이플아지트에서 시작해 봅시다.':job==='mage'?'마법은 서로를 지키는 힘이기도 해요.':job==='protester'?'작은 목소리도 함께 모이면 멀리 퍼져요.':target.name==='바디빌더'?'꾸준한 훈련으로 강인한 몸을 만들어 보세요.':'마음을 가라앉히고 한 번의 베기에 집중하세요.'}</p><div class="job-choice"><strong>직업 특성 · ${target.passive}</strong><p>전직 후 항상 적용됩니다.</p><strong>Lv. 10 · E ${target.e}</strong><p>${job==='hacker'?'최대 1.5초 차징해 사각 범위에 강력한 피해와 2초 경직을 줍니다.':job==='mage'?'3초간 피해를 흡수하는 보호막과 주변 마력 방출.':job==='protester'?'최대 1초 차징해 화염병을 던집니다. 폭발 후 바닥에 불길이 남아요.':job==='bodybuilder'?'HP 40%를 1.5초간 회복하고 받는 피해를 50% 줄입니다.':'1초 동안 칼로 공격을 막습니다.'}</p><strong>Lv. 15 · R ${target.r}</strong><p>${job==='hacker'?'좌우로 대상을 선택하고 Enter로 확정합니다. 노트북을 두드리며 5초간 경직과 지속 피해를 주고 받는 피해가 80% 감소합니다.':job==='mage'?'아군을 선택해 10초간 강화하고 주변 적의 공격력을 3초간 30% 낮춥니다.':job==='protester'?'체력 1500의 투표함을 5초간 설치합니다. 주변 적을 도발하고 투표지로 지속 피해를 주며 중심으로 끌어당깁니다.':job==='bodybuilder'?'12초간 거대해지며 기본 공격과 Q·W·E가 강화됩니다.':'R을 누르면 가까운 적부터 최대 5명을 조준해 연속으로 벱니다.'}</p></div><p>${current?`현재 직업은 ${jobName(player)}입니다. 전직은 캐릭터당 한 번입니다.`:ready?'한 번 선택한 직업은 변경할 수 없습니다. 다른 직업은 새 캐릭터로 시작할 수 있어요.':`현재 Lv. ${player.level}. Lv. 10이 되면 전직할 수 있어요.`}</p>${ready?`<button class="primary" id="advance-job">${target.name}로 전직하기</button>`:''}`);
  if(ready)$('#advance-job').onclick=()=>{const result=advanceJob(player,job);if(result.ok){cancelSword();resetCombat();save();closeModal();buildHUD();}toast(result.message);};
 }
 
@@ -412,11 +412,17 @@ function updateBossFight(dt){
  if(chickStunned(boss)){boss.walking=false;return;}
  if(!bossActive())return;
  if(isTypeA(boss)){updateTypeAFight(dt);return;}
+ for(const shot of boss.projectiles)shot.ballotHitCooldown=Math.max(0,(shot.ballotHitCooldown||0)-dt);
  const events=stepSoldier(boss,dt,bossPerception());
  for(const event of events){
   if(event.type==='land'){shake=Math.max(shake,8);effects.push({type:'ring',x:boss.x,y:boss.y,life:.35,max:.35,color:'#ffc080',size:SOLDIER.landing.range});}
   if(event.type==='cast'){beep(190,.3,'sawtooth',.03);continue;}
   if(event.type==='melee')effects.push({type:'slash',x:event.x,y:event.y-65,dir:event.dir,life:.18,max:.18,color:'#ffc0a0',size:event.range});
+  const box=liveBallot();
+  if(box&&soldierHit(event,{...box,z:0})&&(!event.shot||!event.shot.ballotHitCooldown)){
+   if(event.shot)event.shot.ballotHitCooldown=SOLDIER.palm.interval;
+   damageBallot(event.damage,boss);
+  }
   if(!soldierHit(event,{x:player.x,y:player.y,z:pz}))continue;
   // A sustained beam can hit again after its own interval, including after re-entry.
   if(event.shot?.hitCooldown>0)continue;
@@ -447,6 +453,12 @@ function updateTypeAFight(dt){
   if(e.type==='blade')effects.push({type:'slash',x:e.x,y:e.y-95,dir:e.dir,life:.32,max:.32,color:'#ff8295',size:e.range});
   if(e.type==='bomb')effects.push({type:'ring',x:e.x,y:e.y-12,life:.45,max:.45,color:'#ff7755',size:e.radius});
   if(e.type==='execution'){shake=16;effects.push({type:'ring',x:player.x,y:650,life:.7,max:.7,color:'#ff3159',size:1200});}
+  const box=liveBallot();
+  if(box&&typeAHit(e,{...box,z:0})){
+   damageBallot(e.type==='execution'?box.hp:e.damage+box.maxHp*TYPE_A.maxHpDamage,boss);
+   if(e.type==='bullet'){e.shot.spent=true;continue;}
+   if(e.type==='dash')boss.dashHit=true;
+  }
   if(!typeAHit(e,{x:player.x,y:player.y,z:pz}))continue;
   if(e.type==='bullet')e.shot.spent=true;
   if(e.type==='dash')boss.dashHit=true;
@@ -773,6 +785,19 @@ function catAreaHit(x,y,radius,damage,pull=0){
   }
  }
 }
+// Summons are encounter-only objects, never saved with the character.
+function liveBallot(){return catBallot&&catBallot.hp>0&&catBallot.remaining>0?catBallot:null;}
+function enemyTarget(m){
+ const box=liveBallot();
+ return box&&Math.hypot(m.x-box.x,(m.y-box.y)*1.5)<=box.skill.range?box:player;
+}
+function damageBallot(raw,source){
+ const box=liveBallot();if(!box)return;
+ const damage=Math.max(0,Math.round(raw*(source?.respectTime>0?.7:1)));
+ box.hp=Math.max(0,box.hp-damage);box.hit=.18;
+ textAt(`−${damage}`,box.x,box.y-95,'#ffc7a3');
+ if(box.hp<=0){catBallot=null;effects.push({type:'ring',x:box.x,y:box.y-35,life:.35,max:.35,color:'#d6cbbb',size:65});textAt('투표함 파괴',box.x,box.y-125,'#e9d8c3');}
+}
 function updateCatCombat(dt){
  if(catCharge){catCharge.elapsed=Math.min(catCharge.skill.charge,catCharge.elapsed+dt);if(catCharge.elapsed>=catCharge.skill.charge)releaseCatCharge(catCharge.input);}
  for(const bottle of catProjectiles){bottle.elapsed+=dt;if(bottle.elapsed<bottle.duration)continue;
@@ -783,12 +808,14 @@ function updateCatCombat(dt){
  catProjectiles=catProjectiles.filter(b=>b.elapsed<b.duration);
  for(const fire of catFires){fire.remaining-=dt;fire.tick-=dt;if(fire.tick<=0){fire.tick+=.5;catAreaHit(fire.x,fire.y,fire.radius,.43);}}
  catFires=catFires.filter(f=>f.remaining>0);
- if(catBallot){const ballot=catBallot;ballot.remaining-=dt;ballot.tick-=dt;if(ballot.tick<=0){ballot.tick+=ballot.skill.tick;catAreaHit(ballot.x,ballot.y,ballot.skill.range,ballot.skill.damage,ballot.skill.pull);}if(catBallot===ballot&&ballot.remaining<=0)catBallot=null;}
+ if(catBallot){const ballot=catBallot;ballot.hit=Math.max(0,ballot.hit-dt);for(const [id,time] of ballot.contactCooldowns)ballot.contactCooldowns.set(id,Math.max(0,time-dt));ballot.remaining-=dt;ballot.tick-=dt;if(ballot.tick<=0){ballot.tick+=ballot.skill.tick;catAreaHit(ballot.x,ballot.y,ballot.skill.range,ballot.skill.damage,ballot.skill.pull);}if(catBallot===ballot&&ballot.remaining<=0)catBallot=null;}
 }
 // Chick combat state lives only in this encounter; no invisible/stunned save states.
 const chickStunned=m=>!!m&&!m.dead&&((m.stunTime||0)>0||!!m.hack);
 function bossPerception(){
  if(!boss)return {x:player.x,y:player.y,facing,hidden:false};
+ const target=enemyTarget(boss);
+ if(target!==player)return {x:target.x,y:target.y,facing,hidden:false,safetyTarget:player};
  if(chickStealth<=0)boss.lastSeen={x:player.x,y:player.y,facing};
  return {...(boss.lastSeen||{x:boss.x+boss.dir*250,y:boss.y,facing}),hidden:chickStealth>0};
 }
@@ -1003,7 +1030,7 @@ function cast(key){
    beep(720,.12);
   }else if(key==='r'){
    catCastLock=.3;playCombatMotion('catBallot',catCastLock);
-   catBallot={x:player.x+facing*58,y:player.y,remaining:skill.duration,skill,tick:.05};effects.push({type:'ring',x:catBallot.x,y:catBallot.y-20,life:.7,max:.7,color:'#fff3d8',size:skill.range});
+   catBallot={x:clamp(player.x+facing*58,45,MAPS[player.map].width-45),y:player.y,hp:skill.hp,maxHp:skill.hp,hit:0,contactCooldowns:new Map(),remaining:skill.duration,skill,tick:.05};effects.push({type:'ring',x:catBallot.x,y:catBallot.y-20,life:.7,max:.7,color:'#fff3d8',size:skill.range});
    textAt('부정선거',catBallot.x,catBallot.y-165,'#ffe7cf');beep(520,.3,'triangle');
   }
   refreshHUD();save();return;
@@ -1082,7 +1109,11 @@ function update(dt){
  updateCatCombat(dt);if(scene!=='playing')return;
  updateChickCombat(dt);if(scene!=='playing'||modal)return;
  updateBossFight(dt);if(scene!=='playing'||modal)return;
- for(const m of monsters){if(m.isBoss)continue;if(m.dead){m.deathFx=Math.max(0,(m.deathFx||0)-dt);m.respawnIn-=dt;if(m.respawnIn<=0&&Math.abs(m.home-player.x)>230){m.dead=false;m.hp=m.maxHp;m.x=m.home;m.hit=0;m.deathFx=0;}continue;}m.hit=Math.max(0,m.hit-dt);if(chickStunned(m))continue;const distance=Math.hypot(player.x-m.x,(player.y-m.y)*1.5);if(chickStealth<=0&&distance<380&&distance>28){m.dir=player.x>m.x?1:-1;m.x+=Math.sign(player.x-m.x)*m.speed*dt;m.y=clamp(m.y+Math.sign(player.y-m.y)*m.speed*.33*dt,580,720);}else if(chickStealth>0||distance>=380){patrolMonster(m,player.map,dt);}
+ for(const m of monsters){if(m.isBoss)continue;if(m.dead){m.deathFx=Math.max(0,(m.deathFx||0)-dt);m.respawnIn-=dt;if(m.respawnIn<=0&&Math.abs(m.home-player.x)>230){m.dead=false;m.hp=m.maxHp;m.x=m.home;m.hit=0;m.deathFx=0;}continue;}m.hit=Math.max(0,m.hit-dt);if(chickStunned(m))continue;const target=enemyTarget(m),taunted=target!==player,distance=Math.hypot(target.x-m.x,(target.y-m.y)*1.5);if((taunted||chickStealth<=0)&&distance<(taunted?target.skill.range:380)&&distance>28){m.dir=target.x>m.x?1:-1;m.x+=Math.sign(target.x-m.x)*m.speed*dt;m.y=clamp(m.y+Math.sign(target.y-m.y)*m.speed*.33*dt,580,720);}else if(!taunted&&(chickStealth>0||distance>=380)){patrolMonster(m,player.map,dt);}
+ if(taunted){
+  if(Math.hypot(target.x-m.x,(target.y-m.y)*1.5)<55&&Math.abs(m.y-target.y)<34&&!(target.contactCooldowns.get(m.id)>0)){target.contactCooldowns.set(m.id,1.1);damageBallot(m.attack,m);}
+  continue;
+ }
  if(chickStealth<=0&&distance<55&&Math.abs(m.y-player.y)<34&&pz<48&&invincible<=0){if(guardTime>0)continue;const damage=playerDamage(m.attack,m,'physical');player.hp=Math.max(0,player.hp-damage);hurtTime=.32;invincible=1.1;shake=4;player.x=clamp(player.x+(player.x>=m.x?27:-27),45,MAPS[player.map].width-45);textAt(`−${damage}`,player.x,player.y-105,'#ff9b91');beep(120,.13,'square',.018);if(player.hp<=0){die();return;}}
  }
  for(const drop of drops){drop.life-=dt;const distance=Math.hypot(drop.x-player.x,(drop.y-player.y)*1.6);if(distance<100){drop.x+=(player.x-drop.x)*dt*9;drop.y+=(player.y-drop.y)*dt*9;if(distance<32){player[drop.type]+=drop.amount;drop.life=0;const labels={money:'원',scrap:' 로봇 부품',cores:' 에너지 코어',potions:' 체력 물약'};textAt(`+${drop.amount}${labels[drop.type]}`,player.x,player.y-100,drop.type==='money'?'#ffe1a1':'#a6ecdf');beep(850,.05);save();}}}
@@ -1408,7 +1439,7 @@ function drawWindSwing(e,t){
 function drawCatFields(){
  for(const fire of catFires){const x=fire.x-camera,y=fire.y,t=fire.remaining/fire.duration;ctx.save();ctx.globalAlpha=.45+.25*t;const glow=ctx.createRadialGradient(x,y,2,x,y,fire.radius);glow.addColorStop(0,'#ffe9a7a8');glow.addColorStop(.55,'#fb71376c');glow.addColorStop(1,'#f23b1700');ctx.fillStyle=glow;ctx.beginPath();ctx.ellipse(x,y-10,fire.radius,fire.radius*.55,0,0,Math.PI*2);ctx.fill();for(let i=0;i<11;i++){const px=x+Math.sin(i*17)*fire.radius*.72,py=y-8-(i%3)*6-Math.abs(Math.sin(worldTime*8+i))*20*t;ctx.fillStyle=i%2?'#ffb64b':'#ff6b38';ctx.beginPath();ctx.ellipse(px,py,5+4*t,10+8*t,0,0,Math.PI*2);ctx.fill();}ctx.restore();}
  for(const bottle of catProjectiles){const t=clamp(bottle.elapsed/bottle.duration,0,1),x=bottle.x+(bottle.toX-bottle.x)*t-camera,y=bottle.y+(bottle.toY-bottle.y)*t-90*Math.sin(Math.PI*t);ctx.save();ctx.translate(x,y);ctx.rotate(t*9);ctx.shadowColor='#ff8b46';ctx.shadowBlur=16;ctx.fillStyle='#b45339';ctx.fillRect(-8,-12,16,22);ctx.fillStyle='#ffbd58';ctx.fillRect(-5,-8,10,15);ctx.fillStyle='#efe0b6';ctx.fillRect(-3,-17,6,6);ctx.restore();}
- if(catBallot){const b=catBallot,x=b.x-camera,y=b.y,t=b.remaining/b.skill.duration;ctx.save();ctx.globalAlpha=Math.min(1,t*3);ctx.strokeStyle='#f4d8c0';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y-43,b.skill.range*.82,b.skill.range*.36,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#ece6d9';ctx.strokeStyle='#493f49';ctx.lineWidth=3;ctx.fillRect(x-24,y-75,48,69);ctx.strokeRect(x-24,y-75,48,69);ctx.fillStyle='#aeb9bb';ctx.fillRect(x-28,y-82,56,12);ctx.fillStyle='#403b43';ctx.fillRect(x-9,y-79,18,3);for(let i=0;i<15;i++){const a=i*2.4+worldTime*3,r=(45+(i%5)*35)*b.skill.range/245;ctx.save();ctx.translate(x+Math.cos(a)*r,y-95+Math.sin(a*1.3)*42*b.skill.range/245);ctx.rotate(a);ctx.fillStyle='#fffaf0';ctx.fillRect(-7,-4,14,8);ctx.strokeStyle='#d6bc8e';ctx.strokeRect(-7,-4,14,8);ctx.restore();}ctx.restore();}
+ if(catBallot){const b=catBallot,x=b.x-camera,y=b.y,t=b.remaining/b.skill.duration;ctx.save();ctx.globalAlpha=Math.min(1,t*3);ctx.strokeStyle='#f4d8c0';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y-43,b.skill.range*.82,b.skill.range*.36,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle=b.hit>0?'#ffffff':'#ece6d9';ctx.strokeStyle='#493f49';ctx.lineWidth=3;ctx.fillRect(x-24,y-75,48,69);ctx.strokeRect(x-24,y-75,48,69);ctx.fillStyle='#aeb9bb';ctx.fillRect(x-28,y-82,56,12);ctx.fillStyle='#403b43';ctx.fillRect(x-9,y-79,18,3);roundedRect(x-43,y-114,86,7,3,'#29252ddd');roundedRect(x-43,y-114,86*b.hp/b.maxHp,7,3,'#a8e7c4');label(`투표함 · ${Math.ceil(b.hp)} / ${b.maxHp}`,x,y-135,'#d9ffe8',11);for(let i=0;i<15;i++){const a=i*2.4+worldTime*3,r=(45+(i%5)*35)*b.skill.range/245;ctx.save();ctx.translate(x+Math.cos(a)*r,y-95+Math.sin(a*1.3)*42*b.skill.range/245);ctx.rotate(a);ctx.fillStyle='#fffaf0';ctx.fillRect(-7,-4,14,8);ctx.strokeStyle='#d6bc8e';ctx.strokeRect(-7,-4,14,8);ctx.restore();}ctx.restore();}
  if(catCharge){const skill=catCharge.skill,t=catCharge.elapsed/skill.charge,reach=skill.range+(skill.maxRange-skill.range)*t,x=player.x+facing*reach-camera;ctx.save();ctx.strokeStyle='#ffb777';ctx.setLineDash([9,7]);ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(player.x-camera,player.y-20);ctx.quadraticCurveTo((player.x-camera+x)/2,player.y-150,x,player.y-20);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.ellipse(x,player.y-20,skill.radius*.7,skill.radius*.25,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
 }
 function drawEffects(){effects.forEach(e=>{const t=e.life/e.max,route=e.followDash,x=route?route.fromX+(route.toX-route.fromX)*dashProgress(e.max-e.life,route.duration):e.x;ctx.save();ctx.translate(x-camera,e.y);ctx.globalAlpha=Math.min(1,t*2);ctx.strokeStyle=e.color;ctx.fillStyle=e.color;ctx.shadowColor=e.glow||e.color;ctx.shadowBlur=18;ctx.lineWidth=e.type==='slash'?9:4;if(e.type==='lightning'){

@@ -210,7 +210,7 @@ export function effectiveSkill(p,key){
   if(key==='q')return {...skill,name:'앞발 할퀴기',icon:'爪',mp:9,cooldown:2.4,damage:2.25,range:195,description:'전방의 적을 발톱으로 크게 할퀴어요.',enhanced:''};
   if(key==='w')return {...skill,name:'뒤로 뛰기',icon:'↶',mp:12,cooldown:3.5,damage:0,range:0,dash:210,invulnerable:.7,description:'바라보는 방향의 뒤로 빠르게 뛰어 0.7초 동안 무적이 돼요.',enhanced:''};
   if(key==='e')return {...skill,name:p.job==='protester'?'화염병':'전직 스킬',icon:'🔥',mp:20,cooldown:7,damage:2.75,range:180,maxRange:490,charge:1,radius:157.5,burnRadius:153.51,burn:3,description:p.job==='protester'?'E를 최대 1초간 누르면 사거리가 늘어요. 차징·투척 중 이동할 수 없고, 착탄 후 바닥에 3초간 불길을 남깁니다.':'올림픽공원에서 시위대로 전직하세요.',enhanced:''};
-  if(key==='r')return {...skill,name:p.job==='protester'?'부정선거':'전직 궁극기',icon:'▣',mp:36,cooldown:32,damage:.9,range:490,duration:5,tick:.5,pull:20,description:p.job==='protester'?'시전 직후 0.3초간 행동할 수 없습니다. 투표함을 5초간 설치해 주변 적에게 지속 피해를 주며, 맞을 때마다 중심으로 조금씩 끌어당겨요.':'올림픽공원에서 시위대로 전직하세요.',enhanced:''};
+  if(key==='r')return {...skill,name:p.job==='protester'?'부정선거':'전직 궁극기',icon:'▣',mp:36,cooldown:32,damage:.9,range:490,duration:5,tick:.5,pull:20,hp:1500,description:p.job==='protester'?'시전 직후 0.3초간 행동할 수 없습니다. 체력 1500의 투표함을 5초간 설치해 주변 적의 우선 공격대상이 됩니다. 지속 피해를 주며 맞을 때마다 중심으로 조금씩 끌어당겨요.':'올림픽공원에서 시위대로 전직하세요.',enhanced:''};
  }
  if(base.requiresJob&&!JOBS[p.job])skill={...skill,name:key==='e'?'전직 스킬':'전직 궁극기',description:'Lv. 10부터 헬스장 또는 검도장에서 전직하세요.',enhanced:''};
  if(p.job==='swordsman'&&key==='q')skill={...skill,name:'번개 베기',range:skill.range*1.2,description:'검을 크게 휘둘러 전방의 적을 베어요.'};
