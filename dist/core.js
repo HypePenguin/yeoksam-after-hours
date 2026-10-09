@@ -283,5 +283,14 @@ export function makeMonster(mapId,index){
  const map=MAPS[mapId],intervals=Math.max(1,monsterCount(mapId)-1),step=(map.width-600-(map.monsterCount?600:250))/intervals,x=600+index*step;
  const level=map.minLevel+Math.floor(index*(map.maxLevel-map.minLevel)/intervals),strong=map.danger>=2;
  const hp=strong?60+level*15:28+level*12;
- return {id:uid(),x,y:620+(index%3)*37,home:x,level,hp,maxHp:hp,attack:strong?9+level*3:5+level*3,speed:strong?55+level*5:34+level*7,dead:false,respawnIn:0,hit:0,dir:-1,phase:index*1.7};
+ return {id:uid(),x,y:620+(index%3)*37,home:x,level,hp,maxHp:hp,attack:strong?9+level*3:5+level*3,speed:strong?55+level*5:34+level*7,dead:false,respawnIn:0,hit:0,dir:index%2?1:-1,patrolY:580+(index*53)%141,phase:index*1.7};
+}
+
+// Spawn coordinates are used for respawning only, never as a patrol leash.
+export function patrolMonster(m,mapId,dt){
+ const left=60,right=MAPS[mapId].width-60;
+ m.x=clamp(m.x+(m.dir||1)*m.speed*.7*dt,left,right);
+ if(m.x<=left||m.x>=right){m.dir=m.x<=left?1:-1;m.patrolY=580+Math.random()*140;}
+ const target=clamp(m.patrolY??m.y,580,720),dy=target-m.y;
+ m.y=clamp(m.y+Math.sign(dy)*Math.min(Math.abs(dy),m.speed*.22*dt),580,720);
 }

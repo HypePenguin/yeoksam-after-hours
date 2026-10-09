@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createCharacter,normalizeCharacter,gainXp,maxHp,maxMp,xpNeeded,buyPotion,usePotion,canUseSkill,respawn,makeMonster,MAPS,advanceJob,effectiveSkill,isPowered,monsterCount,findMapRoute,recommendedMap,MAP_ROUTES,WORLD_MAP_LAYOUT,worldMapConnections} from '../dist/core.js';
+import {createCharacter,normalizeCharacter,gainXp,maxHp,maxMp,xpNeeded,buyPotion,usePotion,canUseSkill,respawn,makeMonster,patrolMonster,MAPS,advanceJob,effectiveSkill,isPowered,monsterCount,findMapRoute,recommendedMap,MAP_ROUTES,WORLD_MAP_LAYOUT,worldMapConnections} from '../dist/core.js';
 import {incomingDamage} from '../dist/core.js';
 
 test('active defense multiplies passive defense before one final rounding',()=>{
@@ -222,4 +222,16 @@ test('all character classes unlock W at level six, including restored saves',()=
   const p=createCharacter('해금확인',classId);p.level=5;assert.equal(canUseSkill(p,'w').ok,false);
   p.level=6;const restored=normalizeCharacter(p);assert.equal(effectiveSkill(restored,'w').level,6);assert.equal(canUseSkill(restored,'w').ok,true);
  }
+});
+
+test('ordinary enemies patrol both ends of every dungeon while staying in the walkable area',()=>{
+ for(const map of Object.values(MAPS).filter(m=>m.danger&&!m.boss)){
+  const m=makeMonster(map.id,0);m.speed=1000;let min=m.x,max=m.x;
+  for(let t=0;t<map.width*3/(m.speed*.7);t+=1/60){patrolMonster(m,map.id,1/60);min=Math.min(min,m.x);max=Math.max(max,m.x);assert.ok(m.y>=580&&m.y<=720);assert.ok(m.x>=60&&m.x<=map.width-60);}
+  assert.equal(min,60,map.id);assert.equal(max,map.width-60,map.id);
+ }
+});
+test('patrol continues smoothly from current position and respects zero movement speed',()=>{
+ const m=makeMonster('alley',0);Object.assign(m,{home:600,x:1700,y:650,patrolY:650,dir:1,speed:100});patrolMonster(m,'alley',.1);assert.equal(m.x,1707);
+ m.speed=0;patrolMonster(m,'alley',1);assert.equal(m.x,1707);assert.equal(m.y,650);
 });

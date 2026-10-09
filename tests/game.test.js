@@ -530,7 +530,8 @@ test('every new dungeon supports combat rewards, respawning and exact saved re-e
   const group=h.api.get().monsters;assert.equal(group.length,core.monsterCount(id));const m=group[0];m.y=p.y;
   const beforeHp=m.hp;h.api.cast('q');assert.ok(m.hp<beforeHp);h.api.hitMonster(m,10000);const xp=p.xp;assert.ok(xp>0);assert.equal(p.kills,1);h.api.hitMonster(m,10000);assert.equal(p.xp,xp);
   p.x=m.x;advance(h,.1);assert.ok(p.money>500);assert.equal(p.cores,1);
-  p.x=60;p.y=680;advance(h,12.2);assert.equal(m.dead,false);assert.equal(m.hp,m.maxHp);
+  // Isolate respawn/save verification from the new map-wide patrol encounters.
+  group.forEach(enemy=>enemy.speed=0);p.x=60;p.y=680;advance(h,12.2);assert.equal(m.dead,false);assert.equal(m.hp,m.maxHp);
   p.x=1743;p.y=691;h.api.save();h.api.selectCharacters();const pending=h.api.enterWorld(p.id);await h.flush();await pending;
   const saved=h.api.get().player;assert.equal(saved.map,id);assert.equal(saved.x,1743);assert.equal(saved.y,691);assert.equal(saved.job,'swordsman');assert.ok(saved.visited.includes(id));assert.equal(h.api.get().monsters.length,core.monsterCount(id));
  }
@@ -1595,7 +1596,7 @@ test('chick Q adds 40% horizontal range and stealth boosts only the next attack'
 });
 test('stealth gives 30% movement, prevents tracking/contact, expires, and magic reveals it',()=>{
  const {h,p}=chickFixture();const m=h.api.get().monsters[0];Object.assign(m,{x:p.x,y:p.y,home:p.x,speed:100});
- h.api.cast('w');const hp=p.hp,x=p.x;h.api.keys.add('ArrowRight');h.api.update(.2);h.api.keys.clear();assert.ok(Math.abs(p.x-x-285*1.3*.2)<1e-8);assert.equal(p.hp,hp);assert.equal(m.x,x);
+ h.api.cast('w');const hp=p.hp,x=p.x;h.api.keys.add('ArrowRight');h.api.update(.2);h.api.keys.clear();assert.ok(Math.abs(p.x-x-285*1.3*.2)<1e-8);assert.equal(p.hp,hp);assert.ok(m.x<x,'hidden player does not pull the patrolling enemy toward them');
  h.api.playerDamage(20,null,'physical');assert.ok(h.api.get().chickStealth>0);h.api.playerDamage(20,null,'magic');assert.equal(h.api.get().chickStealth,0);
  const b=chickFixture();b.h.api.cast('w');advance(b.h,5.1);assert.equal(b.h.api.get().chickStealth,0);
 });
@@ -1661,4 +1662,12 @@ test('cancelled cat E and scene resets cannot leave a movement lock behind',()=>
  const h=harness(),p=core.createCharacter('시전 취소','cat');Object.assign(p,{level:15,job:'protester',x:1100});p.mp=core.maxMp(p);h.api.start(p);
  h.api.startCatCharge('keyboard');h.windowEvents.get('blur').forEach(fn=>fn());h.api.keys.add('ArrowRight');h.api.update(.1);assert.equal(p.x,1128.5);
  h.api.cast('r');h.api.resetCombat();h.api.keys.add('ArrowRight');h.api.update(.1);assert.equal(p.x,1157);
+});
+
+test('dungeon patrol never snaps back to the spawn after chasing, and stun pauses it',()=>{
+ const h=harness(),p=core.createCharacter('순찰 확인');p.map='alley';p.x=100;h.api.start(p);const m=h.api.get().monsters[0];Object.assign(m,{x:1700,home:600,y:650,patrolY:650,speed:100,dir:1});
+ h.api.update(.1);assert.equal(m.x,1707);
+ p.x=1900;h.api.update(.1);assert.equal(m.x,1717,'nearby player is still pursued');
+ p.x=100;h.api.update(.1);assert.equal(m.x,1724,'patrol resumes at the chase endpoint');
+ m.stunTime=1;h.api.update(.5);assert.equal(m.x,1724);h.api.update(.51);assert.ok(m.x>1724);
 });
