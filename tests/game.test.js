@@ -1632,15 +1632,15 @@ test('E auto fires after two seconds, blocks other attacks, and cancels safely o
  advance(h,2.1);assert.equal(h.api.get().chickCharge,null);assert.ok(h.api.get().cooldowns.e>13);assert.ok(p.mp<mp-18);
  const b=chickFixture();b.h.api.startChickCharge('keyboard');b.h.windowEvents.get('blur').forEach(f=>f());assert.equal(b.h.api.get().chickCharge,null);assert.equal(b.h.api.get().cooldowns.e,0);
 });
-test('hacking picks level then remaining HP, cycles with arrows, zooms out and types in place',()=>{
+test('hacking picks the nearest enemy regardless of level or HP, cycles with arrows, zooms out and types in place',()=>{
  const {h,p}=chickFixture();const list=h.api.get().monsters;list.forEach((m,i)=>Object.assign(m,{level:2,x:1200+i*200,home:1200+i*200}));list[1].level=9;list[2].level=9;list[2].hp=9000;
- h.api.cast('r');assert.equal(h.api.get().hackerUlt.targetId,list[1].id);assert.equal(h.api.playerDamage(100),20);
+ h.api.cast('r');assert.equal(h.api.get().hackerUlt.targetId,list[0].id);assert.equal(h.api.playerDamage(100),20);
  const key=code=>h.events.get('keydown')({code,repeat:false,target:{matches:()=>false},preventDefault(){}});
- key('ArrowRight');assert.equal(h.api.get().hackerUlt.targetId,list[2].id);key('ArrowLeft');assert.equal(h.api.get().hackerUlt.targetId,list[1].id);
+ key('ArrowRight');assert.equal(h.api.get().hackerUlt.targetId,list[1].id);key('ArrowLeft');assert.equal(h.api.get().hackerUlt.targetId,list[0].id);
  const x=p.x;h.api.keys.add('ArrowUp');advance(h,.3);assert.equal(p.x,x);assert.equal(p.y,650);assert.ok(h.api.get().cameraZoom<.8);assert.ok(h.api.chickFrame()>=12);
- key('Enter');render(h);assert.ok(h.labels.some(l=>l.text.includes('타다다다닥')));assert.equal(h.api.get().hackerUlt.phase,'channeling');assert.ok(list[1].hack);assert.equal(h.api.playerDamage(100),20);
- const hp=list[1].hp,tx=list[1].x;advance(h,4.95);assert.ok(list[1].hack);assert.equal(list[1].x,tx);assert.equal(hp-list[1].hp,9*Math.round(core.attackPower(p)*1.25));
- advance(h,.1);assert.equal(list[1].hack,null);assert.equal(hp-list[1].hp,10*Math.round(core.attackPower(p)*1.25));assert.equal(h.api.get().hackerUlt,null);assert.equal(h.api.playerDamage(100),100);
+ key('Enter');render(h);assert.ok(h.labels.some(l=>l.text.includes('타다다다닥')));assert.equal(h.api.get().hackerUlt.phase,'channeling');assert.ok(list[0].hack);assert.equal(h.api.playerDamage(100),20);
+ const hp=list[0].hp,tx=list[0].x;advance(h,4.95);assert.ok(list[0].hack);assert.equal(list[0].x,tx);assert.equal(hp-list[0].hp,9*Math.round(core.attackPower(p)*1.25));
+ advance(h,.1);assert.equal(list[0].hack,null);assert.equal(hp-list[0].hp,10*Math.round(core.attackPower(p)*1.25));assert.equal(h.api.get().hackerUlt,null);assert.equal(h.api.playerDamage(100),100);
 });
 test('hack selection expires, absent enemies cost nothing, and cancellation removes control',()=>{
  const {h,p}=chickFixture();h.api.cast('r');advance(h,10.1);assert.equal(h.api.get().hackerUlt,null);
@@ -1689,4 +1689,15 @@ test('dungeon patrol never snaps back to the spawn after chasing, and stun pause
  p.x=1900;h.api.update(.1);assert.equal(m.x,1717,'nearby player is still pursued');
  p.x=100;h.api.update(.1);assert.equal(m.x,1724,'patrol resumes at the chase endpoint');
  m.stunTime=1;h.api.update(.5);assert.equal(m.x,1724);h.api.update(.51);assert.ok(m.x>1724);
+});
+
+test('expanded hacker E hits the added width and height, but not beyond the preview border',()=>{
+ const {h,p}=chickFixture();h.api.startChickCharge('test');const area=h.api.chickArea();assert.equal(area.width,288);assert.equal(area.height,132);
+ const [wide,tall,outside]=h.api.get().monsters;Object.assign(wide,{x:area.x+140,y:area.y});Object.assign(tall,{x:area.x,y:area.y+60});Object.assign(outside,{x:area.x+145,y:area.y});
+ h.api.releaseChickCharge('test');assert.ok(wide.hp<10000);assert.ok(tall.hp<10000);assert.equal(outside.hp,10000);render(h);assert.ok(h.labels.some(l=>l.text==='> SYSTEM HALTED_'));
+});
+test('hacker initial selection uses both axes and retargets to the nearest living enemy',()=>{
+ const {h,p}=chickFixture();const [a,b]=h.api.get().monsters;Object.assign(a,{x:p.x+90,y:p.y+70,level:99});Object.assign(b,{x:p.x-100,y:p.y,level:1});
+ h.api.cast('r');assert.equal(h.api.get().hackerUlt.targetId,b.id);b.dead=true;h.api.update(.01);assert.equal(h.api.get().hackerUlt.targetId,a.id);
+ assert.equal(h.el('#hack-controls').hidden,false);h.api.confirmHack();h.api.update(.2);assert.equal(h.el('#hack-controls').hidden,true);
 });
