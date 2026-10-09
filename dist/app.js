@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=65';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=65';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=65';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=66';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=66';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=66';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={};let assetsReady=false,assetFailed=false;
@@ -40,7 +40,7 @@ const TRAINERS={
  olympic:{id:'park-organizer',job:'protester',x:940,y:648,name:'레드폭스',role:'시위대 전직 · Lv. 10',asset:'npc-redfox',height:184,crop:[63,10,909,1513],icon:'E'}
 };
 const GANGNAM_NPCS=[{...NPCS.find(n=>n.id==='shop'),x:1050,y:654}];
-const mapNPCs=()=>player?.map==='town'?NPCS:player?.map==='gangnam'?GANGNAM_NPCS:TRAINERS[player?.map]?[TRAINERS[player.map]]:[];
+const mapNPCs=()=>player?.map==='town'?NPCS:['gangnam','yeoksamStreet'].includes(player?.map)?GANGNAM_NPCS:TRAINERS[player?.map]?[TRAINERS[player.map]]:[];
 const icon=(name)=>({map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5ZM9 3v16M15 5v16"/></svg>',bag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 8V6a5 5 0 0 1 10 0v2M5 8h14l1 13H4L5 8Z"/><path d="M9 13h6"/></svg>',save:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 3h13l4 4v14H3V3h1Z"/><path d="M7 3v6h9V3M7 21v-8h10v8"/></svg>',menu:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 6h14M5 12h14M5 18h14"/></svg>',sound:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m11 4-6 5H2v6h3l6 5V4ZM16 8a6 6 0 0 1 0 8M19 5a10 10 0 0 1 0 14"/></svg>'}[name]);
 const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function toast(message){$('#toast').textContent=message;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2700);}
@@ -423,14 +423,14 @@ function updateBossFight(dt){
  }
 }
 function typeATalk(){
- showModal('boss-talk','Lv.35 A형 · 가동 대기',`<div class="boss-intro"><span class="boss-eyebrow">A형 격납고 · 전투 로봇</span><h3>침입자 감지. 전투 프로토콜 준비.</h3><p>전방 칼날, 기관총 연사, 붉은 충전 후 돌진, 0.5초 간격 4연속 표적 폭격을 사용합니다. 모든 타격에 내 최대 HP의 10%만큼 추가 피해가 적용됩니다.</p><ul><li>HP 40%: ${TYPE_A.safety.duration}초간 무적. 파란 안전지대 밖은 즉사합니다. 무적기나 막기로 회피할 수 있습니다.</li><li>HP 20%: 광폭화. 이동과 패턴이 빨라지고 4초 회전 칼날, 넓은 원형 자기장 흡인이 추가됩니다.</li><li>체력 ${TYPE_A.hp.toLocaleString()} · 물약 재사용 10초</li></ul><p class="boss-reward">EXP 12,000 · 6,000원 · 에너지 코어 15개</p><button class="primary" id="challenge-boss">${boss.dead?'A형 다시 가동':'A형 가동 · 전투 시작'}</button></div>`,'#challenge-boss');
+ showModal('boss-talk','Lv.35 A형 · 가동 대기',`<div class="boss-intro"><span class="boss-eyebrow">수료조건 · 전투 로봇</span><h3>침입자 감지. 전투 프로토콜 준비.</h3><p>전방 칼날, 기관총 연사, 붉은 충전 후 돌진, 0.5초 간격 4연속 표적 폭격을 사용합니다. 모든 타격에 내 최대 HP의 10%만큼 추가 피해가 적용됩니다.</p><ul><li>HP 40%: ${TYPE_A.safety.duration}초간 무적. 파란 안전지대 밖은 즉사합니다. 무적기나 막기로 회피할 수 있습니다.</li><li>HP 20%: 광폭화. 이동과 패턴이 빨라지고 4초 회전 칼날, 넓은 원형 자기장 흡인이 추가됩니다.</li><li>체력 ${TYPE_A.hp.toLocaleString()} · 물약 재사용 10초</li></ul><p class="boss-reward">EXP 12,000 · 6,000원 · 에너지 코어 15개</p><button class="primary" id="challenge-boss">${boss.dead?'A형 다시 가동':'A형 가동 · 전투 시작'}</button></div>`,'#challenge-boss');
  $('#challenge-boss').onclick=startBossFight;
 }
 function winTypeA(){
  if(!defeatTypeA(boss))return;
  cancelSword();cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;potionCooldown=0;player.typeAWins=(player.typeAWins||0)+1;player.kills++;
  player.money+=TYPE_A.money;player.cores+=TYPE_A.cores;gainXp(player,TYPE_A.xp);save();refreshHUD();
- showModal('boss-victory','A형 격파',`<div class="boss-intro"><h3>전투 프로토콜 종료.</h3><p>${player.typeAWins}번째 A형 격파! 격납고의 출구가 열렸어요.</p><p class="boss-reward">EXP +12,000 · 6,000원 · 에너지 코어 15개</p><button class="primary" id="type-a-reward-close">모험 계속하기</button></div>`,'#type-a-reward-close');
+ showModal('boss-victory','A형 격파',`<div class="boss-intro"><h3>전투 프로토콜 종료.</h3><p>${player.typeAWins}번째 A형 격파! 역삼역주변거리로 가는 포탈이 열렸어요.</p><p class="boss-reward">EXP +12,000 · 6,000원 · 에너지 코어 15개</p><button class="primary" id="type-a-reward-close">모험 계속하기</button></div>`,'#type-a-reward-close');
  $('#type-a-reward-close').onclick=closeModal;
 }
 function updateTypeAFight(dt){
@@ -870,7 +870,7 @@ function update(dt){
  walking=wasGrounded&&jumpFrame()<0&&stepDistance>.001&&!swordUlt;
  if(walking)walkPhase=(walkPhase+stepDistance/(isPowered(player)?220:165))%1;
  if(keys.has('KeyA')&&!swordUlt)attack();if(modal||scene!=='playing')return;
- const townRegen=player.map==='town'||player.map==='gangnam'?2:1;
+ const townRegen=['town','gangnam','yeoksamStreet'].includes(player.map)?2:1;
  player.mp=Math.min(maxMp(player),player.mp+dt*(player.map==='gym'?6:2.2)*townRegen);if(!MAPS[player.map].danger&&!bossActive())player.hp=Math.min(maxHp(player),player.hp+dt*(player.map==='gym'?12:6)*townRegen);
  updateRabbit(dt);if(scene!=='playing'||modal)return;
  updateCatCombat(dt);if(scene!=='playing')return;
@@ -1215,7 +1215,7 @@ function draw(){
   if(!bossActive())MAPS[player.map].portals.forEach(drawPortal);
   drawBossTelegraphs();
   if(player.map==='town')label(MAPS.town.name,290-camera,407,'#d4f4df',20);
-  else if(player.map==='gangnam')label(MAPS.gangnam.name,1070-camera,345,'#d4f4df',20);
+  else if(['gangnam','yeoksamStreet'].includes(player.map))label(MAPS[player.map].name,1070-camera,345,'#d4f4df',20);
   else if(player.map==='station6')label(MAPS.station6.name,490-camera,252,'#d4f4df',20);
   else label(MAPS[player.map].name,820-camera,375,MAPS[player.map].color,20);
   const entities=[

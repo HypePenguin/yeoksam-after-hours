@@ -7,7 +7,7 @@ export const CLASSES = [
 ];
 export const POWER_DURATION = 12;
 export const JOBS = {
- mage:{id:'mage',name:'마법사',classId:'rabbit',map:'town',maps:['town','gangnam'],e:'마력 방벽',r:'존경!',passive:'W가 순간 이동으로 변경'},
+ mage:{id:'mage',name:'마법사',classId:'rabbit',map:'town',maps:['town','gangnam','yeoksamStreet'],e:'마력 방벽',r:'존경!',passive:'W가 순간 이동으로 변경'},
  bodybuilder:{id:'bodybuilder',name:'바디빌더',map:'gym',e:'회복',r:'근육 각성',passive:'받는 피해 10% 감소'},
  swordsman:{id:'swordsman',name:'검사',map:'dojo',e:'막기',r:'섬광 연참',passive:'기본 이동속도 +10%'},
  protester:{id:'protester',name:'시위대',map:'olympic',classId:'cat',e:'화염병',r:'부정선거',passive:'점프 높이 +20%'}
@@ -88,8 +88,9 @@ export const MAPS = {
  nexus:{id:'nexus',name:'중앙 제어실',subtitle:'고레벨 던전 · Lv. 25–30',en:'CENTRAL CONTROL NEXUS',description:'도시의 로봇을 제어하는 중앙 시설. 오른쪽 가속 실험구역부터 Lv. 31–40의 새로운 사냥길이 이어집니다.',width:4000,danger:8,minLevel:25,maxLevel:30,color:'#c7b3f6',background:'high-dungeons',backgroundTile:3,monster:'코어 수호 로봇',monsterCount:10,robotTint:'hue-rotate(110deg) saturate(2)',portals:[]},
  accelerator:{id:'accelerator',name:'가속 실험구역',subtitle:'고레벨 던전 · Lv. 31–33',en:'ACCELERATOR LAB',description:'중앙 제어실 뒤의 폐쇄 실험구역. 푸른 가속 코일 사이를 고속 정찰 로봇이 지켜요.',width:3800,danger:9,minLevel:31,maxLevel:33,color:'#7cdcf2',background:'endgame-dungeons',backgroundTile:0,monster:'가속 정찰 로봇',monsterCount:10,robotTint:'hue-rotate(35deg) saturate(1.6)',portals:[]},
  arsenal:{id:'arsenal',name:'병기 조립라인',subtitle:'고레벨 던전 · Lv. 34–36',en:'WEAPONS ASSEMBLY',description:'전투 로봇이 생산되는 심층 공장. 조립 로봇을 돌파하고 적색 동력로로 이동하세요.',width:4000,danger:10,minLevel:34,maxLevel:36,color:'#bea6f7',background:'endgame-dungeons',backgroundTile:1,monster:'병기 조립 로봇',monsterCount:11,robotTint:'hue-rotate(120deg) saturate(1.7)',portals:[]},
- reactor:{id:'reactor',name:'적색 동력로',subtitle:'고레벨 던전 · Lv. 37–40',en:'CRIMSON REACTOR',description:'Lv. 40까지 사냥할 수 있는 최심부. 오른쪽 빨간 포탈은 Lv. 35 A형의 격납고로 연결됩니다.',width:4200,danger:11,minLevel:37,maxLevel:40,color:'#ff8e9d',background:'endgame-dungeons',backgroundTile:2,monster:'동력로 수호 로봇',monsterCount:12,robotTint:'hue-rotate(185deg) saturate(2.2)',portals:[]},
- hangar:{id:'hangar',name:'A형 격납고',subtitle:'보스 · Lv. 35 A형',en:'TYPE A · TERMINAL HANGAR',description:'대형 전투 로봇 A형. F로 가동합니다. HP 40%에 7초 안전지대 시험, 20%에 광폭화합니다. 파란 영역으로 이동하거나 무적기로 즉사를 피하세요.',width:1800,danger:0,boss:true,bossName:'A형',bossLevel:35,minLevel:35,maxLevel:40,color:'#ff7088',background:'endgame-dungeons',backgroundTile:3,portals:[]}
+ reactor:{id:'reactor',name:'적색 동력로',subtitle:'고레벨 던전 · Lv. 37–40',en:'CRIMSON REACTOR',description:'Lv. 40까지 사냥할 수 있는 최심부. 오른쪽 빨간 포탈은 Lv. 35 A형이 있는 수료조건으로 연결됩니다.',width:4200,danger:11,minLevel:37,maxLevel:40,color:'#ff8e9d',background:'endgame-dungeons',backgroundTile:2,monster:'동력로 수호 로봇',monsterCount:12,robotTint:'hue-rotate(185deg) saturate(2.2)',portals:[]},
+ hangar:{id:'hangar',name:'수료조건',subtitle:'보스 · Lv. 35 A형',en:'GRADUATION REQUIREMENT',description:'대형 전투 로봇 A형. F로 가동합니다. HP 40%에 5초 안전지대 시험, 20%에 광폭화합니다. 파란 영역으로 이동하거나 무적기로 즉사를 피하세요. 오른쪽 포탈은 역삼역주변거리로 이어지며 전투 전과 처치 후에 이용할 수 있어요.',width:1800,danger:0,boss:true,bossName:'A형',bossLevel:35,minLevel:35,maxLevel:40,color:'#ff7088',background:'endgame-dungeons',backgroundTile:3,portals:[]},
+ yeoksamStreet:{id:'yeoksamStreet',name:'역삼역주변거리',subtitle:'마을 · 안전 구역',en:'YEOKSAM NEIGHBORHOOD',description:'수료조건 너머의 조용한 역삼 거리. 마구리에게 물약을 구입하고 쉬어 갈 수 있어요. 왼쪽 포탈은 수료조건으로 돌아갑니다.',width:2200,danger:0,minLevel:1,maxLevel:1,color:'#9ce1a5',background:'city',portals:[]}
 
 };
 // Every connection is bidirectional and arrivals stay outside the return portal's interaction radius.
@@ -118,27 +119,29 @@ connect('nexus',3830,'accelerator',100);
 connect('accelerator',3630,'arsenal',100);
 connect('arsenal',3830,'reactor',100);
 connect('reactor',4030,'hangar',100);
+connect('hangar',1640,'yeoksamStreet',100);
 
 // Route lists describe actual adjacent portals; the map never implies a shortcut.
 export const MAP_ROUTES = [
  {id:'backstreet',tab:'hunt',title:'골목 사냥길',hint:'Lv. 1–9 · 공사장을 지나 승강장으로',maps:['town','alley','depths','subway']},
  {id:'parkway',tab:'hunt',title:'공원 사냥길',hint:'Lv. 3–9 · 승강장으로 가는 짧은 길',maps:['town','park','subway']},
  {id:'deep-route',tab:'advanced',title:'도시의 깊은 밤',hint:'Lv. 10–30 · 아래로 갈수록 강한 몬스터',maps:['rooftop','relay','canal','foundry','nexus']},
- {id:'endgame-route',tab:'advanced',title:'A형을 향한 심층 사냥길',hint:'Lv. 31–40 · 마지막 지역에서 Lv.35 A형에 도전',maps:['nexus','accelerator','arsenal','reactor','hangar']},
+ {id:'endgame-route',tab:'advanced',title:'A형을 향한 심층 사냥길',hint:'Lv. 31–40 · 마지막 지역에서 Lv.35 A형에 도전',maps:['nexus','accelerator','arsenal','reactor','hangar','yeoksamStreet']},
  {id:'boss-route',tab:'advanced',title:'군인 승현의 결투',hint:'주조소 → 강남역에서 정비 → Lv.25 보스',maps:['foundry','gangnam','pocha']},
+ {id:'yeoksam-street-route',tab:'town',title:'역삼역주변거리',hint:'수료조건 → 마구리가 있는 안전구역 · 전투 중에는 이동 불가',maps:['hangar','yeoksamStreet']},
  {id:'gangnam-route',tab:'town',title:'강남역 마을',hint:'주조소에서 이동 · 물약과 두 마을 귀환 주문서',maps:['foundry','gangnam']},
  {id:'gym-route',tab:'town',title:'바디빌더 전직',hint:'Lv. 10 · 1번 출구에서 바로 이동',maps:['town','gym']},
  {id:'dojo-route',tab:'town',title:'검사 전직',hint:'Lv. 10 · 몬스터가 있는 사거리를 통과',maps:['town','crossroads','station6','dojo']},
  {id:'olympic-route',tab:'town',title:'고양이 · 시위대 전직',hint:'Lv. 10 · 1번 출구에서 올림픽공원으로',maps:['town','olympic']}
 ];
-export const mapTabFor=id=>['rooftop','relay','canal','foundry','nexus','pocha','accelerator','arsenal','reactor','hangar'].includes(id)?'advanced':['town','crossroads','station6','gym','dojo','gangnam','olympic'].includes(id)?'town':'hunt';
+export const mapTabFor=id=>['rooftop','relay','canal','foundry','nexus','pocha','accelerator','arsenal','reactor','hangar'].includes(id)?'advanced':['town','crossroads','station6','gym','dojo','gangnam','olympic','yeoksamStreet'].includes(id)?'town':'hunt';
 // A schematic world layout; paths are derived from real portals, never from visual proximity.
 export const WORLD_MAP_LAYOUT = {
  gym:{x:140,y:72,label:'피치플레이'},town:{x:350,y:72,label:'역삼역 1번 출구'},crossroads:{x:560,y:72,label:'역삼역사거리'},station6:{x:770,y:72,label:'역삼역 6번 출구'},dojo:{x:980,y:72,label:'강남성균검도관'},
  depths:{x:140,y:175,label:'불 꺼진 공사장'},alley:{x:350,y:175,label:'테헤란 뒷골목'},park:{x:560,y:175,label:'달빛 근린공원'},
  subway:{x:350,y:278,label:'폐쇄된 승강장'},rooftop:{x:560,y:278,label:'테헤란 스카이루프'},relay:{x:770,y:278,label:'방치된 중계소'},canal:{x:980,y:278,label:'지하 냉각수로'},
  nexus:{x:560,y:381,label:'중앙 제어실'},foundry:{x:770,y:381,label:'자동화 주조소'},gangnam:{x:980,y:381,label:'강남역'},
- accelerator:{x:350,y:381,label:'가속 실험구역'},arsenal:{x:140,y:381,label:'병기 조립라인'},reactor:{x:140,y:468,label:'적색 동력로'},hangar:{x:350,y:468,label:'A형 격납고'},
+ accelerator:{x:350,y:381,label:'가속 실험구역'},arsenal:{x:140,y:381,label:'병기 조립라인'},reactor:{x:140,y:468,label:'적색 동력로'},hangar:{x:350,y:468,label:'수료조건'},yeoksamStreet:{x:560,y:468,label:'역삼역주변거리'},
  pocha:{x:980,y:468,label:'한사발포차'},
  olympic:{x:250,y:140,label:'올림픽공원'}
 };
@@ -208,7 +211,7 @@ export function advanceJob(p,job){
  if(p.classId!==(target.classId||'wanderer'))return {ok:false,message:'이 캐릭터가 전직할 수 없는 직업이에요.'};
  if(p.job)return {ok:false,message:'이미 전직했어요. 이 캐릭터의 직업은 변경할 수 없어요.'};
  if(p.level<10)return {ok:false,message:'전직은 Lv. 10부터 할 수 있어요.'};
- if(!(target.maps||[target.map]).includes(p.map))return {ok:false,message:job==='mage'?'역삼역 또는 강남역의 마구리에게 전직을 배워요.':`${MAPS[target.map].name}의 사범에게 전직을 배워요.`};
+ if(!(target.maps||[target.map]).includes(p.map))return {ok:false,message:job==='mage'?'안전구역의 마구리에게 전직을 배워요.':`${MAPS[target.map].name}의 사범에게 전직을 배워요.`};
  p.job=job;p.powerTime=0;
  return {ok:true,message:`${target.name} 전직 완료! E · ${target.e} 습득${p.level>=15?' / R · '+target.r+' 습득':''}`};
 }

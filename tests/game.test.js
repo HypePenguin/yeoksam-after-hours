@@ -171,7 +171,7 @@ test('travel preserves awakening and cooldowns, death removes awakening, re-entr
 test('map hotkey toggles the map, pauses gameplay and keeps keyboard state clean',()=>{
  const h=harness(),p=core.createCharacter('지도');h.api.start(p);h.api.keys.add('ArrowRight');const x=p.x;
  const event={code:'KeyM',repeat:false,preventDefault(){},target:{matches(){return false;}}};h.events.get('keydown')(event);
- assert.equal(h.api.get().modal,'world-map');assert.equal(h.api.keys.size,0);advance(h,2);assert.equal(p.x,x);assert.match(h.el('#modal-root').innerHTML,/21 지역 탐험/);for(const id of Object.keys(core.MAPS))assert.match(h.el('#modal-root').innerHTML,new RegExp(`data-map="${id}"`));
+ assert.equal(h.api.get().modal,'world-map');assert.equal(h.api.keys.size,0);advance(h,2);assert.equal(p.x,x);assert.match(h.el('#modal-root').innerHTML,/22 지역 탐험/);for(const id of Object.keys(core.MAPS))assert.match(h.el('#modal-root').innerHTML,new RegExp(`data-map="${id}"`));
  h.events.get('keydown')(event);assert.equal(h.api.get().modal,null);assert.equal(h.api.keys.size,0);
 });
 test('new regions are playable via portals and record exploration; training room heals',async()=>{
@@ -831,7 +831,7 @@ test('M opens the overview every time and retains the old detailed route guide a
  assert.equal(h.api.get().mapView,'overview');assert.equal(h.el('#map-view-overview').hidden,false);assert.equal(h.el('#map-view-details').hidden,true);
  const html=h.el('#modal-root').innerHTML;assert.match(html,/role="tablist"/);assert.match(html,/상세 안내/);assert.match(html,/초반 사냥/);assert.match(html,/고레벨 던전/);assert.match(html,/마을 · 전직/);
  const graph=html.slice(html.indexOf('<div class="atlas-board">'),html.indexOf('<div class="atlas-legend">'));
- assert.equal([...graph.matchAll(/data-map="/g)].length,21);assert.equal([...graph.matchAll(/data-map-edge="/g)].length,21);assert.equal([...graph.matchAll(/aria-current="location"/g)].length,1);
+ assert.equal([...graph.matchAll(/data-map="/g)].length,22);assert.equal([...graph.matchAll(/data-map-edge="/g)].length,22);assert.equal([...graph.matchAll(/aria-current="location"/g)].length,1);
  h.api.showMapView('details');assert.equal(h.el('#map-view-overview').hidden,true);assert.equal(h.el('#map-view-details').hidden,false);
  h.api.closeModal();h.api.worldMap();assert.equal(h.api.get().mapView,'overview');assert.equal(h.api.get().mapSelection,p.map);
 });
@@ -1482,4 +1482,17 @@ test('every Type A attack adds ten percent of target max HP before defense, incl
   h.api.update(.02);assert.equal(before-p.hp,expected,`${classId} ${kind}`);
   if(kind==='spin'){const hp=p.hp;advance(h,.4);assert.equal(hp-p.hp,expected,`${classId} next spin hit`);}
  }
+});
+
+test('graduation room portal works before challenge and after victory, but is hidden and blocked during combat',async()=>{
+ const h=harness(),p=core.createCharacter('다음거리');Object.assign(p,{level:35,map:'hangar',hp:780});h.api.start(p);
+ const out=core.MAPS.hangar.portals.find(p=>p.to==='yeoksamStreet');assert.ok(out);assert.equal(core.MAPS.hangar.name,'수료조건');p.x=out.x;p.y=out.y;
+ render(h);assert.ok(h.labels.some(l=>l.text==='역삼역주변거리'));assert.equal(h.api.findInteraction().to,'yeoksamStreet');
+ let pending=h.api.travel(out);await h.flush();await pending;assert.equal(p.map,'yeoksamStreet');assert.equal(h.api.get().monsters.length,0);assert.equal(h.api.get().boss,null);
+ assert.equal(core.normalizeCharacter(p).map,'yeoksamStreet');p.x=1050;p.y=654;h.api.interact();assert.equal(h.api.get().modal,'shop');const money=p.money;h.el('#buy-mpPotions').onclick();assert.equal(p.money,money-500);assert.equal(p.mpPotions,1);h.api.closeModal();
+ const back=core.MAPS.yeoksamStreet.portals.find(p=>p.to==='hangar');pending=h.api.travel(back);await h.flush();await pending;assert.equal(p.map,'hangar');
+ h.api.startBossFight();const b=h.api.get().boss;p.x=out.x;p.y=out.y;render(h);assert.ok(!h.labels.some(l=>l.text==='역삼역주변거리'));assert.equal(h.api.findInteraction(),null);await h.api.travel(out);assert.equal(p.map,'hangar');
+ b.safetyUsed=true;b.hp=1;h.api.hitMonster(b,2);assert.equal(b.dead,true);h.api.closeModal();render(h);assert.ok(h.labels.some(l=>l.text==='역삼역주변거리'));assert.equal(h.api.findInteraction().to,'yeoksamStreet');
+ pending=h.api.travel(out);await h.flush();await pending;assert.equal(p.map,'yeoksamStreet');assert.equal(p.typeAWins,1);
+ h.api.worldMap();assert.match(h.el('#modal-root').innerHTML,/역삼역주변거리/);assert.match(h.el('#modal-root').innerHTML,/수료조건/);assert.doesNotMatch(h.el('#modal-root').innerHTML,/A형 격납고/);
 });
