@@ -38,6 +38,7 @@ export function stepTypeA(b,dt,p,random=Math.random){
  for(const bomb of b.bombs){bomb.remaining-=dt;if(bomb.remaining<=0){events.push({type:'bomb',x:bomb.x,y:bomb.y,radius:TYPE_A.bomb.radius,damage:TYPE_A.bomb.damage,height:160});}}
  b.bombs=b.bombs.filter(s=>s.remaining>0);
  if(b.phase==='approach'){
+  if(p.hidden){b.elapsed=0;return events;}
   const x=b.x,y=b.y,dx=p.x-b.x,dy=p.y-b.y,speed=b.enraged?360:230;b.dir=dx>=0?1:-1;
   if(Math.abs(dx)>220)b.x=clamp(b.x+Math.sign(dx)*Math.min(Math.abs(dx)-220,speed*dt),140,TYPE_A.width-140);
   b.y=clamp(b.y+Math.sign(dy)*Math.min(Math.abs(dy),speed*.5*dt),590,710);

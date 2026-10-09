@@ -1,0 +1,17 @@
+{
+  "mode": "built-in image_gen",
+  "assets": [
+    {
+      "file": "dist/assets/chick-motion.png",
+      "prompt": "Use case: stylized-concept. Asset: transparent 2D side-scrolling RPG sprite atlas, 4 columns by 4 rows, exactly 16 equal cells, no grid lines, no background or ground shadows. Reference image is the character identity: adorable round fluffy yellow chick, tiny black eyes, orange beak and feet, huge round head, white hoodie with small navy 'ssafy' on chest. Match reference, hand-drawn polished cartoon with dark outline and soft shading. All poses face RIGHT in slight 3/4 view; identical head/body proportions and scale, feet baseline at 90% of each cell height, centered, generous margin so no overlapping cells. Row 1 cells: 0 standing idle, 1 walk left foot forward, 2 walk passing feet, 3 walk right foot forward. Row 2: 4 jump crouch preparation, 5 airborne jump legs tucked wings out, 6 punch windup, 7 extended long rightward punch. Row 3 hacker variant same white hoodie: 8 standing holding closed dark laptop under left wing, 9 walking left foot forward carrying laptop, 10 walking right foot forward carrying laptop, 11 standing using open laptop. Row 4: 12 seated on floor with laptop on knees, left wing typing; 13 same seated pose right wing typing; 14 same seated pose both wings typing rapidly; 15 hurt wince. The laptop is dark navy with mint code glow. Fully transparent background, isolated separate complete characters. No visual effects, no UI, no labels or numbers. Output square sprite sheet."
+    },
+    {
+      "file": "dist/assets/npc-hyupro.png",
+      "prompt": "Use case: stylized-concept. Create a game NPC transparent cutout, rear view ONLY of an adult man in a charcoal tailored business suit with short neatly cut black hair sitting in a black gaming chair at a PC cafe desk, actively typing with both hands on a keyboard, large monitor in front showing abstract mint code, mouse, coffee cup. Whole seated person, chair, small desk and monitor isolated, no floor, no room, no background, no text. Warm detailed hand-painted cartoon game illustration with crisp dark outlines matching a cute animal 2D RPG, rear three-quarter angle showing his back clearly, no face visible. Compact readable silhouette, generous transparent margin, full object fits within canvas. This is hacker job instructor Hyupro, not a villain."
+    },
+    {
+      "file": "dist/assets/maple-hideout.png",
+      "prompt": "Use case: stylized-concept. Asset: wide 16:9 hand-painted background for a cute 2D side scrolling RPG. Korean PC gaming cafe called Maple Hideout, no readable text (sign will be added in game). Cozy nighttime interior, rows of navy desks with glowing cyan and mint monitors, padded gaming chairs, warm ceiling lamps, a vending machine at far right, tiny maple leaf decor, contemporary Seoul PC bang ambience. View is SIDE-ON, horizontal from walking character eye level, NO steep perspective, NO people, NO characters. The bottom 30 percent is a broad empty dark slate floor walkway spanning entire width, with no obstacles or chairs on it. All desks and computers behind the walkway. Dense atmospheric details above the floor, pleasing green-blue screen glow and warm amber highlights, clean outlined illustration, soft painterly shading. Horizontal game backdrop, not UI, no lettering, no watermark."
+    }
+  ]
+}

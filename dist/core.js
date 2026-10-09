@@ -3,10 +3,12 @@ export const SAVE_KEY = 'yeoksam-after-hours.v1';
 export const CLASSES = [
  {id:'wanderer',name:'펭귄 모험가',description:'평소에는 동글동글, 결정적인 순간에는 누구보다 든든하게.',hp:100,mp:60,attack:18},
  {id:'rabbit',name:'토끼 모험가',description:'동그란 안경 너머로 빛나는 마법. 마구리에게 마법사의 길을 배워요.',hp:85,mp:90,attack:16},
+ {id:'chick',name:'병아리 모험가',description:'작은 날개와 빠른 두뇌. 메이플아지트에서 해커의 길을 배워요.',hp:95,mp:80,attack:17},
  {id:'cat',name:'고양이 모험가',description:'민첩한 발과 날카로운 발톱. 올림픽공원에서 새로운 길을 찾아요.',hp:90,mp:70,attack:17}
 ];
 export const POWER_DURATION = 12;
 export const JOBS = {
+ hacker:{id:'hacker',name:'해커',classId:'chick',map:'maple',e:'시스템 정지',r:'해킹',passive:'노트북으로 적의 행동을 제어'},
  mage:{id:'mage',name:'마법사',classId:'rabbit',map:'town',maps:['town','gangnam','yeoksamStreet'],e:'마력 방벽',r:'존경!',passive:'W가 순간 이동으로 변경'},
  bodybuilder:{id:'bodybuilder',name:'바디빌더',map:'gym',e:'회복',r:'근육 각성',passive:'받는 피해 10% 감소'},
  swordsman:{id:'swordsman',name:'검사',map:'dojo',e:'막기',r:'섬광 연참',passive:'기본 이동속도 +10%'},
@@ -25,7 +27,7 @@ export const ITEMS = {
  uniform:{name:'군복',icon:'▣',description:'신원미상의 예비군의 결투 보상. 장착하면 위장 군복을 입고, 걷기와 공중 이동 속도가 20% 증가합니다.',usable:false,equippable:true},
  cores:{name:'에너지 코어',icon:'◇',description:'강한 로봇에게서 얻은 수집 재료입니다.',usable:false}
 };
-export const equipmentName=p=>p?.job==='bodybuilder'?'핑크 덤벨':p?.job==='swordsman'?'일본도':'없음';
+export const equipmentName=p=>p?.job==='hacker'?'노트북':p?.job==='bodybuilder'?'핑크 덤벨':p?.job==='swordsman'?'일본도':'없음';
 export const jumpHeightMultiplier=p=>p?.classId==='cat'&&p?.job==='protester'?1.2:1;
 // Derive passives from the saved job so old characters benefit without accumulating bonuses.
 export const hasTypeATitle=p=>!!(p?.typeATitle>0&&p.typeATitleEquipped);
@@ -76,6 +78,7 @@ export const SKILLS = [
 ];
 
 export const MAPS = {
+ maple:{id:'maple',name:'메이플아지트',subtitle:'PC방 · 해커 전직 Lv. 10',en:'MAPLE HIDEOUT',description:'역삼역 1번 출구에서 이어지는 PC방. 컴퓨터 앞에 앉아 작업 중인 휴프로에게 Lv.10 병아리가 해커로 전직할 수 있어요.',width:1800,danger:0,minLevel:1,maxLevel:1,color:'#9fe8cf',background:'maple-hideout',portals:[]},
  town:{id:'town',name:'역삼역 1번 출구',subtitle:'마을 · 안전 구역',en:'YEOKSAM STATION',description:'모험이 시작되는 역삼역. 안내를 듣고 물약을 챙겨요.',width:2600,danger:0,minLevel:1,maxLevel:1,position:[12,20],color:'#8bdbc2',portals:[]},
  olympic:{id:'olympic',name:'올림픽공원',subtitle:'시위대 전직 · Lv. 10',en:'OLYMPIC PARK',description:'역삼역 1번 출구와 연결된 공원. 빨간 두건을 두르고 화염병을 든 여우 레드폭스에게 Lv. 10 고양이가 시위대 전직을 배울 수 있어요.',width:2200,danger:0,minLevel:1,maxLevel:1,color:'#f6b09d',background:'olympic-park',portals:[]},
  crossroads:{id:'crossroads',name:'역삼역사거리',subtitle:'사냥터 · Lv. 1–3',en:'YEOKSAM CROSSROADS',description:'역삼역 1번 출구와 6번 출구를 잇는 사거리. 신호 로봇을 조심하세요.',width:2400,danger:1,minLevel:1,maxLevel:3,position:[38,20],color:'#f1c477',background:'crossroads',monster:'신호 로봇',robotTint:'hue-rotate(25deg)',portals:[]},
@@ -113,6 +116,7 @@ connect('alley',2430,'depths',100);
 connect('town',100,'park',2430);
 connect('town',1370,'gym',1430);
 connect('town',2090,'olympic',100);
+connect('town',1610,'maple',100);
 connect('park',100,'subway',1540);
 connect('depths',2830,'subway',100);
 connect('subway',3130,'rooftop',100);
@@ -130,6 +134,7 @@ connect('hangar',1640,'yeoksamStreet',100);
 
 // Route lists describe actual adjacent portals; the map never implies a shortcut.
 export const MAP_ROUTES = [
+ {id:'maple-route',tab:'town',title:'병아리 · 해커 전직',hint:'Lv.10 · 메이플아지트의 휴프로',maps:['town','maple']},
  {id:'backstreet',tab:'hunt',title:'골목 사냥길',hint:'Lv. 1–9 · 공사장을 지나 승강장으로',maps:['town','alley','depths','subway']},
  {id:'parkway',tab:'hunt',title:'공원 사냥길',hint:'Lv. 3–9 · 승강장으로 가는 짧은 길',maps:['town','park','subway']},
  {id:'deep-route',tab:'advanced',title:'도시의 깊은 밤',hint:'Lv. 10–30 · 아래로 갈수록 강한 몬스터',maps:['rooftop','relay','canal','foundry','nexus']},
@@ -141,15 +146,16 @@ export const MAP_ROUTES = [
  {id:'dojo-route',tab:'town',title:'검사 전직',hint:'Lv. 10 · 몬스터가 있는 사거리를 통과',maps:['town','crossroads','station6','dojo']},
  {id:'olympic-route',tab:'town',title:'고양이 · 시위대 전직',hint:'Lv. 10 · 1번 출구에서 올림픽공원으로',maps:['town','olympic']}
 ];
-export const mapTabFor=id=>['rooftop','relay','canal','foundry','nexus','pocha','accelerator','arsenal','reactor','hangar'].includes(id)?'advanced':['town','crossroads','station6','gym','dojo','gangnam','olympic','yeoksamStreet'].includes(id)?'town':'hunt';
+export const mapTabFor=id=>['rooftop','relay','canal','foundry','nexus','pocha','accelerator','arsenal','reactor','hangar'].includes(id)?'advanced':['town','crossroads','station6','gym','dojo','gangnam','olympic','yeoksamStreet','maple'].includes(id)?'town':'hunt';
 // A schematic world layout; paths are derived from real portals, never from visual proximity.
 export const WORLD_MAP_LAYOUT = {
  gym:{x:140,y:72,label:'피치플레이'},town:{x:350,y:72,label:'역삼역 1번 출구'},crossroads:{x:560,y:72,label:'역삼역사거리'},station6:{x:770,y:72,label:'역삼역 6번 출구'},dojo:{x:980,y:72,label:'강남성균검도관'},
- depths:{x:140,y:175,label:'불 꺼진 공사장'},alley:{x:350,y:175,label:'테헤란 뒷골목'},park:{x:560,y:175,label:'달빛 근린공원'},
- subway:{x:350,y:278,label:'폐쇄된 승강장'},rooftop:{x:560,y:278,label:'테헤란 스카이루프'},relay:{x:770,y:278,label:'방치된 중계소'},canal:{x:980,y:278,label:'지하 냉각수로'},
- nexus:{x:560,y:381,label:'중앙 제어실'},foundry:{x:770,y:381,label:'자동화 주조소'},gangnam:{x:980,y:381,label:'강남역'},
- accelerator:{x:350,y:381,label:'가속 실험구역'},arsenal:{x:140,y:381,label:'병기 조립라인'},reactor:{x:140,y:468,label:'적색 동력로'},hangar:{x:350,y:468,label:'수료조건'},yeoksamStreet:{x:560,y:468,label:'역삼역주변거리'},
- pocha:{x:980,y:468,label:'한사발포차'},
+ depths:{x:140,y:235,label:'불 꺼진 공사장'},alley:{x:350,y:235,label:'테헤란 뒷골목'},park:{x:560,y:235,label:'달빛 근린공원'},
+ subway:{x:350,y:338,label:'폐쇄된 승강장'},rooftop:{x:560,y:338,label:'테헤란 스카이루프'},relay:{x:770,y:338,label:'방치된 중계소'},canal:{x:980,y:338,label:'지하 냉각수로'},
+ nexus:{x:560,y:441,label:'중앙 제어실'},foundry:{x:770,y:441,label:'자동화 주조소'},gangnam:{x:980,y:441,label:'강남역'},
+ accelerator:{x:350,y:441,label:'가속 실험구역'},arsenal:{x:140,y:441,label:'병기 조립라인'},reactor:{x:140,y:528,label:'적색 동력로'},hangar:{x:350,y:528,label:'수료조건'},yeoksamStreet:{x:560,y:528,label:'역삼역주변거리'},
+ pocha:{x:980,y:528,label:'한사발포차'},
+ maple:{x:90,y:140,label:'메이플아지트'},
  olympic:{x:250,y:140,label:'올림픽공원'}
 };
 export function worldMapConnections(){
@@ -186,6 +192,13 @@ export const isPowered=p=>p?.job==='bodybuilder'&&p.powerTime>0;
 export const basicAttackPower=p=>Math.round(attackPower(p)*(isPowered(p)?1.8:1));
 export function effectiveSkill(p,key){
  const base=SKILLS.find(s=>s.key===key);if(!base)return null;let skill={...base};
+ if(p?.classId==='chick'){
+  const clean={...skill,heal:0,recovery:0,reduction:0,enhanced:''};
+  if(key==='q')return {...clean,name:'롱 펀치',icon:'✦',mp:8,cooldown:2.4,damage:2.1,range:294,description:'주먹을 길게 휘둘러 공격합니다. 펭귄 펀치보다 가로 범위가 40% 길어요.'};
+  if(key==='w')return {...clean,name:'시크릿 모드',icon:'◌',mp:14,cooldown:10,damage:0,range:0,duration:5,description:'최대 5초 은신 · 이동속도 +30%. 적 추적과 접촉 피해를 피하며, 마법 피격 또는 공격 발동 시 해제돼요. 은신 중 다음 공격 +20%. E 차징 중 유지됩니다.'};
+  if(key==='e')return {...clean,name:'시스템 정지',icon:'▧',mp:24,cooldown:14,damage:4.5,range:110,maxRange:600,charge:2,width:240,height:110,stun:3,description:'E를 최대 2초 눌러 사각 범위를 전진시켜요. 놓으면 범위 피해와 3초 경직. 경직된 적은 흑백으로 변해요.'};
+  if(key==='r')return {...clean,name:'해킹',icon:'⌘',mp:38,cooldown:40,damage:1.25,tick:.5,duration:5,selection:10,reduction:.8,description:'시야를 넓혀 가장 강한 적을 조준합니다. 좌우로 선택, Enter로 확정, Esc로 취소. 5초 경직과 지속 피해. 선택·해킹 중 이동 불가, 받는 피해 80% 감소. 10초 안에 확정하세요.'};
+ }
  if(p?.classId==='rabbit'){
   const clean={...skill,heal:0,recovery:0,reduction:0,enhanced:''};
   if(key==='q')return {...clean,name:'보랏빛 번개',icon:'ϟ',mp:20,cooldown:2.8,damage:2.4,range:p.job==='mage'?540:360,description:p.job==='mage'?'전방으로 보라색 번개를 쏘아 경로의 적을 공격해요. 전직으로 사거리가 50% 늘어납니다.':'전방으로 보라색 번개를 쏘아 경로의 적을 공격해요.'};
@@ -260,7 +273,7 @@ export function usePotion(p,id='potions'){const amount=validItem(id)?ITEMS[id].h
 export function canUseSkill(p,key,cooldown=p.cooldowns?.[key]??0){
  const s=effectiveSkill(p,key);if(!s)return {ok:false,message:'알 수 없는 스킬이에요.'};
  if(p.level<s.level)return {ok:false,message:`${s.name}은 Lv. ${s.level}에 배울 수 있어요.`};
- if(s.requiresJob&&!JOBS[p.job])return {ok:false,message:p.classId==='rabbit'?'마구리에게 먼저 전직해 주세요.':p.classId==='cat'?'올림픽공원에서 먼저 전직해 주세요.':'헬스장이나 검도장에서 먼저 전직해 주세요.'};
+ if(s.requiresJob&&!JOBS[p.job])return {ok:false,message:p.classId==='chick'?'메이플아지트의 휴프로에게 먼저 전직해 주세요.':p.classId==='rabbit'?'마구리에게 먼저 전직해 주세요.':p.classId==='cat'?'올림픽공원에서 먼저 전직해 주세요.':'헬스장이나 검도장에서 먼저 전직해 주세요.'};
  if(key==='r'&&isPowered(p))return {ok:false,message:'이미 근육 펭귄으로 변신 중이에요.'};
  if(cooldown>0)return {ok:false,message:'스킬이 아직 준비되지 않았어요.'};
  if(p.mp<s.mp)return {ok:false,message:'MP가 부족해요. 잠시 기다리면 회복됩니다.'};

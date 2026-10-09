@@ -28,6 +28,7 @@ export function stepSoldier(b,dt,p){
  }
  b.projectiles=b.projectiles.filter(s=>s.life>0&&!s.spent);
  if(b.phase==='approach'){
+  if(p.hidden){b.elapsed=0;return events;}
   const beforeX=b.x,beforeY=b.y,dx=p.x-b.x,dy=p.y-b.y;b.dir=dx>=0?1:-1;
   if(Math.abs(dx)>155)b.x=clamp(b.x+Math.sign(dx)*250*dt,160,1440);
   b.y=clamp(b.y+Math.sign(dy)*Math.min(Math.abs(dy),155*dt),580,720);
