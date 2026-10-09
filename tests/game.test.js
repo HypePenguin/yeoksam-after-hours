@@ -1913,7 +1913,7 @@ test('concert can finish either boss safely without accessing a cleared concert'
 });
 test('otter walk, jump, punch, water, wave, shield and dance use directionally consistent dedicated poses',()=>{
  for(const job of [null,'idol']){
-  const {h,p}=otterFixture('town',job);const asset=job?'assets/otter-idol-leopard-motion.png':'assets/otter-motion.png';render(h);assert.ok(h.draws.some(d=>d.asset===asset));assert.equal(h.api.otterFrame(),0);
+  const {h,p}=otterFixture('town',job);const asset=job?'assets/otter-idol-skirt-motion.png':'assets/otter-motion.png';render(h);assert.ok(h.draws.some(d=>d.asset===asset));assert.equal(h.api.otterFrame(),0);
   h.api.keys.add('ArrowLeft');const seen=new Set();for(let i=0;i<48;i++){h.api.update(1/60);seen.add(h.api.otterFrame());}assert.deepEqual([...seen].sort(),[1,2,3]);render(h);assert.ok(h.draws.find(d=>d.asset===asset).matrix[0]<0);
   h.api.keys.clear();h.api.jump();assert.equal(h.api.otterFrame(),4);advance(h,.18);assert.equal(h.api.otterFrame(),5);advance(h,1);h.api.attack();assert.equal(h.api.otterFrame(),7);advance(h,.15);assert.equal(h.api.otterFrame(),8);advance(h,.4);
   h.api.cast('q');assert.equal(h.api.otterFrame(),9);h.api.cast('w');assert.equal(h.api.otterFrame(),10);h.api.cast('w');assert.equal(h.api.otterFrame(),11);advance(h,1.1);
@@ -1921,12 +1921,12 @@ test('otter walk, jump, punch, water, wave, shield and dance use directionally c
  }
 });
 test('otter selection portraits use the idle tile and both atlases have equal geometry',()=>{
- const h=harness();for(const job of [null,'idol']){const p=core.createCharacter('선택','otter');Object.assign(p,{job,level:15});h.api.characters([p],p.id);const html=h.el('#screens').innerHTML;assert.ok(html.includes('수달 '+(job?'아이돌':'모험가')+' 기본 자세'));assert.ok(html.includes(`assets/${job?'otter-idol-leopard-motion':'otter-motion'}.png`));}
- const a=fs.readFileSync(new URL('../dist/assets/otter-motion.png',import.meta.url)),b=fs.readFileSync(new URL('../dist/assets/otter-idol-leopard-motion.png',import.meta.url));assert.deepEqual(a.subarray(16,24),b.subarray(16,24));assert.equal(a[25],6,'RGBA retains transparency');assert.equal(b[25],6);
+ const h=harness();for(const job of [null,'idol']){const p=core.createCharacter('선택','otter');Object.assign(p,{job,level:15});h.api.characters([p],p.id);const html=h.el('#screens').innerHTML;assert.ok(html.includes('수달 '+(job?'아이돌':'모험가')+' 기본 자세'));assert.ok(html.includes(`assets/${job?'otter-idol-skirt-motion':'otter-motion'}.png`));}
+ const a=fs.readFileSync(new URL('../dist/assets/otter-motion.png',import.meta.url)),b=fs.readFileSync(new URL('../dist/assets/otter-idol-skirt-motion.png',import.meta.url));assert.deepEqual(a.subarray(16,24),b.subarray(16,24));assert.equal(a[25],6,'RGBA retains transparency');assert.equal(b[25],6);
 });
 test('otter Q/W exclude the next row artwork while concert keeps the full head at the same scale',()=>{
  for(const job of [null,'idol']){
-  const {h}=otterFixture('town',job),asset=job?'assets/otter-idol-leopard-motion.png':'assets/otter-motion.png';
+  const {h}=otterFixture('town',job),asset=job?'assets/otter-idol-skirt-motion.png':'assets/otter-motion.png';
   h.api.cast('q');render(h);const q=h.draws.find(d=>d.asset===asset);assert.ok(q.source[1]<=650);assert.ok(q.source[1]+q.source[3]<939,'Q cannot include row 4 head pixels');
   const scale=q.height/q.source[3];advance(h,.5);h.api.cast('w');render(h);const w=h.draws.find(d=>d.asset===asset);assert.ok(w.source[1]+w.source[3]<939);
   if(job){advance(h,.5);h.api.cast('r');render(h);const r=h.draws.find(d=>d.asset===asset);assert.ok(r.source[1]<=939,'dance includes top of head');assert.ok(Math.abs(r.height/r.source[3]-scale)<.01,'poses keep the same artwork scale');}
