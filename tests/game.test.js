@@ -1452,3 +1452,16 @@ test('new rabbit can use the automatically registered MP potion with slot two',(
  const h=harness(),p=core.createCharacter('첫포션','rabbit');h.api.start(p);p.mp=0;h.api.useQuickSlot(1);
  assert.equal(p.mp,Math.min(100,core.maxMp(p)));assert.equal(p.mpPotions,0);assert.equal(p.quickSlots[1],'mpPotions');
 });
+
+test('both towns regenerate HP and MP twice as fast without changing other areas or exceeding caps',()=>{
+ for(const [map,hpRate,mpRate] of [['town',12,4.4],['gangnam',12,4.4],['gym',12,6],['dojo',6,2.2],['alley',0,2.2]]){
+  const h=harness(),p=core.createCharacter('휴식');Object.assign(p,{level:20,map,hp:100,mp:0});h.api.start(p);
+  for(const m of h.api.get().monsters)m.x=m.home=2300;
+  for(let i=0;i<60;i++)h.api.update(1/60);
+  assert.ok(Math.abs(p.hp-(100+hpRate))<1e-8,map);assert.ok(Math.abs(p.mp-mpRate)<1e-8,map);
+  if(map==='town'||map==='gangnam'){
+   p.hp=core.maxHp(p)-1;p.mp=core.maxMp(p)-1;for(let i=0;i<60;i++)h.api.update(1/60);
+   assert.equal(p.hp,core.maxHp(p));assert.equal(p.mp,core.maxMp(p));
+  }
+ }
+});
