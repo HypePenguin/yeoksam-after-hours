@@ -1322,10 +1322,10 @@ test('boss landing shockwave damages nearby players once and respects sword guar
 });
 
 test('MP potion purchase, recovery cap, old saves and slot persistence',()=>{
- const p=core.createCharacter('마나');p.money=600;p.level=10;
- assert.equal(core.buyItem(p,'mpPotions').ok,true);assert.equal(p.money,300);assert.equal(p.mpPotions,1);
+ const p=core.createCharacter('마나');p.money=1000;p.level=10;
+ assert.equal(core.buyItem(p,'mpPotions').ok,true);assert.equal(p.money,500);assert.equal(p.mpPotions,1);
  assert.equal(core.buyItem(p,'mpPotions').ok,true);assert.equal(core.buyItem(p,'mpPotions').ok,false);
- p.mp=0;assert.equal(core.useItem(p,'mpPotions').ok,true);assert.equal(p.mp,50);assert.equal(p.mpPotionCooldown,0);
+ p.mp=0;assert.equal(core.useItem(p,'mpPotions').ok,true);assert.equal(p.mp,Math.min(100,core.maxMp(p)));assert.equal(p.mpPotionCooldown,0);
  p.mp=core.maxMp(p)-20;core.useItem(p,'mpPotions');assert.equal(p.mp,core.maxMp(p));
  p.mpPotions=1;assert.equal(core.useItem(p,'mpPotions').ok,false);assert.equal(p.mpPotions,1);
  core.assignQuickSlot(p,1,'mpPotions');const saved=core.normalizeCharacter(p);assert.equal(saved.mpPotions,1);assert.equal(saved.quickSlots[1],'mpPotions');
@@ -1333,13 +1333,13 @@ test('MP potion purchase, recovery cap, old saves and slot persistence',()=>{
 });
 test('MP potion cooldown applies throughout boss room, pauses in inventory and is independent of HP potion',()=>{
  const {h,p}=bossHarness();p.mpPotions=10;p.mp=0;p.quickSlots=['mpPotions','mpPotions','potions'];
- h.api.useQuickSlot(0);assert.equal(p.mp,50);assert.equal(p.mpPotionCooldown,10);assert.equal(p.mpPotions,9);
+ h.api.useQuickSlot(0);assert.equal(p.mp,Math.min(100,core.maxMp(p)));assert.equal(p.mpPotionCooldown,10);assert.equal(p.mpPotions,9);
  h.api.useQuickSlot(1);assert.equal(p.mpPotions,9);
  h.api.inventory('mpPotions');h.api.update(4);assert.equal(p.mpPotionCooldown,10);h.api.useInventoryItem('mpPotions',true);assert.equal(p.mpPotions,9);h.api.closeModal();
  h.api.startBossFight();assert.equal(p.mpPotionCooldown,10);p.hp=100;h.api.useQuickSlot(2);assert.equal(p.hp,160);assert.equal(h.api.get().potionCooldown,10);
- const b=h.api.get().boss;b.phase='recover';b.elapsed=-20;advance(h,10.1);assert.equal(p.mpPotionCooldown,0);p.mp=0;h.api.useQuickSlot(1);assert.equal(p.mp,50);assert.equal(p.mpPotions,8);
+ const b=h.api.get().boss;b.phase='recover';b.elapsed=-20;advance(h,10.1);assert.equal(p.mpPotionCooldown,0);p.mp=0;h.api.useQuickSlot(1);assert.equal(p.mp,Math.min(100,core.maxMp(p)));assert.equal(p.mpPotions,8);
  const saved=core.normalizeCharacter(p);assert.equal(saved.mpPotionCooldown,10);
- p.map='town';p.mp=0;h.api.useQuickSlot(0);h.api.useQuickSlot(1);assert.equal(p.mp,100);assert.equal(p.mpPotionCooldown,0);assert.equal(p.mpPotions,6);
+ p.map='town';p.mp=0;h.api.useQuickSlot(0);h.api.useQuickSlot(1);assert.equal(p.mp,200);assert.equal(p.mpPotionCooldown,0);assert.equal(p.mpPotions,6);
 });
 
 test('A-type safety execution kills outside even with damage reduction, but safe floor and timed immunity survive',()=>{
@@ -1450,5 +1450,5 @@ test('rabbit Q requires twenty MP and spends it once for novice and mage',()=>{
 
 test('new rabbit can use the automatically registered MP potion with slot two',()=>{
  const h=harness(),p=core.createCharacter('첫포션','rabbit');h.api.start(p);p.mp=0;h.api.useQuickSlot(1);
- assert.equal(p.mp,50);assert.equal(p.mpPotions,0);assert.equal(p.quickSlots[1],'mpPotions');
+ assert.equal(p.mp,Math.min(100,core.maxMp(p)));assert.equal(p.mpPotions,0);assert.equal(p.quickSlots[1],'mpPotions');
 });

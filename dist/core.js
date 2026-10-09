@@ -14,7 +14,7 @@ export const JOBS = {
 };
 export const jobName=p=>JOBS[p?.job]?.name||(CLASSES.find(c=>c.id===p?.classId)?.name||'펭귄 모험가');
 export const ITEMS = {
- mpPotions:{name:'MP 포션',icon:'💧',description:'MP를 50 회복합니다. MP가 가득 차면 소모하지 않아요. 보스방에서는 체력 물약과 별도로 재사용 대기 10초가 적용됩니다.',usable:true,price:300},
+ mpPotions:{name:'MP 포션',icon:'💧',description:'MP를 100 회복합니다. MP가 가득 차면 소모하지 않아요. 보스방에서는 체력 물약과 별도로 재사용 대기 10초가 적용됩니다.',usable:true,price:500},
  potions:{name:'체력 물약',icon:'♥',description:'HP를 60 회복합니다. 체력이 가득 차면 소모하지 않아요. 보스전에서는 재사용 대기 10초가 적용됩니다.',usable:true,price:50},
  returnScrolls:{name:'역삼역 1번 출구 귀환 주문서',icon:'역',description:'역삼역 1번 출구로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'town',x:530,y:648}},
  gangnamScrolls:{name:'강남역 귀환 주문서',icon:'강',description:'강남역 마을로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'gangnam',x:650,y:648}},
@@ -49,7 +49,7 @@ export function useItem(p,id){
   if(MAPS[p.map]?.boss&&p.mpPotionCooldown>0)return {ok:false,message:`MP 포션은 ${Math.ceil(p.mpPotionCooldown)}초 뒤에 사용할 수 있어요.`};
   if(!(p.mpPotions>0))return {ok:false,message:'MP 포션이 없어요. 마구리의 상점에서 구입하세요.'};
   if(p.mp>=maxMp(p))return {ok:false,message:'MP가 이미 가득 찼어요.'};
-  const restored=Math.min(50,maxMp(p)-p.mp);p.mpPotions--;p.mp+=restored;p.mpPotionCooldown=MAPS[p.map]?.boss?10:0;
+  const restored=Math.min(100,maxMp(p)-p.mp);p.mpPotions--;p.mp+=restored;p.mpPotionCooldown=MAPS[p.map]?.boss?10:0;
   return {ok:true,message:`MP가 ${Math.round(restored)} 회복되었어요.`};
  }
  const item=validItem(id)?ITEMS[id]:null,destination=item?.recall;
