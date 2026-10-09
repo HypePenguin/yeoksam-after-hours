@@ -1347,7 +1347,7 @@ test('A-type safety execution kills outside even with damage reduction, but safe
   const h=harness(),p=core.createCharacter('A형시험',mode==='backstep'?'cat':'wanderer');Object.assign(p,{level:35,job:mode==='backstep'?'protester':mode==='recovery'?'bodybuilder':'swordsman',map:'hangar',x:1100,y:650});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);h.api.startBossFight();
   const b=h.api.get().boss;b.phase='recover';b.elapsed=-20;advance(h,1);h.api.hitMonster(b,999999);assert.equal(b.phase,'safety');
   const frozen=b.hp;h.api.attack();h.api.cast('q');assert.equal(b.hp,frozen);h.api.worldMap();advance(h,2);assert.equal(b.elapsed,0);h.api.closeModal();
-  advance(h,6.7);
+  advance(h,4.7);
   if(mode==='safe'){p.x=b.safeZone.x;p.y=b.safeZone.y;}
   if(mode==='backstep')h.api.cast('w');
   if(mode==='guard'||mode==='recovery')h.api.cast('e');
@@ -1404,7 +1404,7 @@ test('respect target selection is cancellable, confirmation costs once and buffs
 });
 test('respect weakens both bosses and immunity execution still ignores ordinary shields',()=>{
  for(const map of ['pocha','hangar']){const {h,p}=rabbitHarness();p.map=map;h.api.start(p);h.api.startBossFight();const b=h.api.get().boss;p.x=b.x-100;h.api.cast('r');h.el('#respect-self').onclick();assert.equal(b.respectTime,3);assert.equal(h.api.playerDamage(100,b),56);}
- const {h,p}=rabbitHarness();p.map='hangar';h.api.start(p);h.api.startBossFight();const b=h.api.get().boss;b.phase='recover';b.elapsed=-20;advance(h,1);h.api.hitMonster(b,999999);advance(h,6.7);h.api.cast('e');advance(h,.4);assert.equal(h.api.get().scene,'dead');
+ const {h,p}=rabbitHarness();p.map='hangar';h.api.start(p);h.api.startBossFight();const b=h.api.get().boss;b.phase='recover';b.elapsed=-20;advance(h,1);h.api.hitMonster(b,999999);advance(h,4.7);h.api.cast('e');advance(h,.4);assert.equal(h.api.get().scene,'dead');
 });
 test('rabbit movement, jumps and every skill render distinct frames with direction and cleanup',()=>{
  const {h,p}=rabbitHarness();const frames=new Set();const capture=()=>{render(h);const d=h.draws.find(d=>d.asset==='assets/rabbit-motion.png');assert.ok(d);frames.add(d.source.slice(0,2).join(','));};capture();

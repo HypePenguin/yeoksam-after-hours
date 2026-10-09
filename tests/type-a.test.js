@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {TYPE_A,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,inTypeASafeZone} from '../dist/type-a.js';
+import {TYPE_A,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,inTypeASafeZone,typeACue} from '../dist/type-a.js';
 import {MAPS,findMapRoute,createCharacter,normalizeCharacter,useItem,makeMonster,monsterCount} from '../dist/core.js';
 const p={x:600,y:650,z:0,facing:1};
 const active=()=>{const b=createTypeA();beginTypeA(b);return b;};
@@ -34,11 +34,11 @@ test('red dash commits to a telegraphed position, moves and hits along its swept
  const b=active();b.phase='dash-charge';b.target={...p};const x=b.x;assert.equal(tick(b,.84).length,0);tick(b,.03);const events=tick(b,.3);assert.ok(b.x<x);assert.ok(events.some(e=>e.type==='dash'));
  const e={type:'dash',x:900,y:650,toX:400,toY:650,radius:85,height:180};assert.equal(typeAHit(e,p),true);assert.equal(typeAHit(e,{...p,y:750}),false);
 });
-test('40 percent transition cannot be skipped; shield lasts seven seconds and safe area is reachable at either edge',()=>{
+test('40 percent transition cannot be skipped; shield lasts five seconds and safe area is reachable at either edge',()=>{
  for(const x of [45,600,1755]){
   const b=active(),player={...p,x};damageTypeA(b,999999,player);assert.equal(b.hp,b.maxHp*.4);assert.equal(b.phase,'safety');assert.equal(typeATargetable(b),false);assert.equal(damageTypeA(b,1000,player),0);
   const s={...b.safeZone};assert.ok(Math.abs(s.x-x)<=420);assert.ok(s.x-s.rx>=45&&s.x+s.rx<=1755);assert.ok(s.y-s.ry>=580&&s.y+s.ry<=720);
-  assert.equal(tick(b,6.99,player).length,0);const e=tick(b,.02,player).find(e=>e.type==='execution');assert.ok(e);
+  assert.equal(tick(b,4.99,player).length,0);const e=tick(b,.02,player).find(e=>e.type==='execution');assert.ok(e);
   assert.equal(typeAHit(e,{...player,x:s.x,y:s.y}),false);assert.equal(typeAHit(e,{...player,x:s.x+s.rx+1,z:500}),true,'jumping alone cannot avoid execution');
   assert.equal(inTypeASafeZone({x:s.x+s.rx,y:s.y},s),true);assert.equal(typeATargetable(b),true);
   damageTypeA(b,1,player);assert.notEqual(b.phase,'safety');
@@ -54,4 +54,29 @@ test('20 percent enrages once, moves faster and recovers faster with four-second
 test('defeat/restart clears attacks and phase flags; boss room potion cooldown and new location survive save reload',()=>{
  const b=active();b.hp=0;assert.equal(defeatTypeA(b),true);assert.equal(defeatTypeA(b),false);beginTypeA(b);assert.equal(b.hp,TYPE_A.hp);assert.equal(b.safetyUsed,false);assert.equal(b.enraged,false);
  const c=createCharacter('저장');Object.assign(c,{level:38,map:'hangar',mp:0,mpPotions:3,typeAWins:2});assert.equal(useItem(c,'mpPotions').ok,true);assert.equal(c.mpPotionCooldown,10);assert.equal(useItem(c,'mpPotions').ok,false);const restored=normalizeCharacter(c);assert.equal(restored.map,'hangar');assert.equal(restored.typeAWins,2);assert.equal(restored.mpPotionCooldown,10);
+});
+
+test('all six damaging attacks emit the increased damage including repeated hits',()=>{
+ for(const [phase,seconds,eventType,damage] of [['blade-charge',.61,'blade',155],['gun',1.15,'bullet',62],['dash-charge',1.1,'dash',195],['bomb',2.45,'bomb',160],['spin',3.99,'spin',112],['pull-charge',.71,'pull',52]]){
+  const b=active();b.phase=phase;b.target={...p};
+  const hits=tick(b,seconds).filter(e=>e.type===eventType);
+  assert.ok(hits.length>0,eventType);assert.ok(hits.every(e=>e.damage===damage),eventType);
+ }
+});
+
+test('pattern selection uses each random draw, permits repeats and unlocks enrage-only attacks',()=>{
+ const b=active(),near={...p,x:b.x-200};
+ const choose=(roll,player=near)=>{b.phase='approach';b.elapsed=.96;stepTypeA(b,0,player,()=>roll);return b.phase;};
+ assert.deepEqual([.9,.3,.3,.01,.6].map(r=>choose(r)),['bomb-charge','gun-charge','gun-charge','blade-charge','dash-charge']);
+ assert.deepEqual([.01,.4,.9].map(r=>choose(r,p)),['gun-charge','dash-charge','bomb-charge']);
+ b.enraged=true;
+ assert.deepEqual([.75,.99].map(r=>choose(r)),['pull-charge','spin-charge']);
+});
+
+test('safety countdown and execution use the same five-second deadline',()=>{
+ const b=active();damageTypeA(b,999999,p);
+ assert.match(typeACue(b),/5\.0초/);
+ assert.equal(stepTypeA(b,4.9,p).length,0);assert.match(typeACue(b),/0\.1초/);
+ assert.equal(stepTypeA(b,.1,p).filter(e=>e.type==='execution').length,1);
+ assert.equal(stepTypeA(b,.1,p).filter(e=>e.type==='execution').length,0);
 });
