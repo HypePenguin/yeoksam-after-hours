@@ -196,8 +196,8 @@ export function effectiveSkill(p,key){
   const clean={...skill,heal:0,recovery:0,reduction:0,enhanced:''};
   if(key==='q')return {...clean,name:p.job==='hacker'?'코드 침투':'할퀴기',icon:'✦',mp:8,cooldown:2.4,damage:2.1,range:p.job==='hacker'?520:175,description:p.job==='hacker'?'사거리 안에서 가장 가까운 적 하나를 해킹해 푸른 폭발과 함께 피해를 줍니다.':'앞쪽의 적을 발톱으로 긁습니다.'};
   if(key==='w')return {...clean,name:'시크릿 모드',icon:'◌',mp:14,cooldown:10,damage:0,range:0,duration:5,invulnerable:.5,description:'사용 직후 0.5초 무적 · 최대 5초 은신 · 이동속도 +50%. 적 추적과 접촉 피해를 피하며, 마법 피격 또는 공격 발동 시 해제돼요. 은신 중 다음 공격 +20%. E 차징 중 유지됩니다.'};
-  if(key==='e')return {...clean,name:'시스템 정지',icon:'▧',mp:24,cooldown:14,damage:4.5,range:110,maxRange:600,charge:2,width:332,height:152,stun:3,description:'E를 최대 2초 눌러 사각 범위를 전진시켜요. 놓으면 범위 피해와 3초 경직. 경직된 적은 흑백으로 변해요.'};
-  if(key==='r')return {...clean,name:'해킹',icon:'⌘',mp:38,cooldown:40,damage:1.25,tick:.5,duration:5,selection:10,reduction:.8,description:'시야를 넓혀 가장 가까운 적을 먼저 조준합니다. 좌우로 선택, Enter로 확정, Esc로 취소. 5초 경직과 지속 피해. 선택·해킹 중 이동 불가, 받는 피해 80% 감소. 10초 안에 확정하세요.'};
+  if(key==='e')return {...clean,name:'시스템 정지',icon:'▧',mp:24,cooldown:14,damage:4.5,range:110,maxRange:600,charge:1.5,aimSpeed:490,width:332,height:152,stun:2,description:'E를 최대 1.5초 눌러 사각 범위를 빠르게 전진시켜요. 놓으면 범위 피해와 2초 경직. 경직된 적은 흑백으로 변해요.'};
+  if(key==='r')return {...clean,name:'해킹',icon:'⌘',mp:38,cooldown:40,damage:1.25,tick:.5,duration:5,selection:10,reduction:.8,description:'대상 선택 중 시야를 넓혀 가장 가까운 적을 먼저 조준하고, 확정하면 원래 시야로 돌아옵니다. 좌우로 선택, Enter로 확정, Esc로 취소. 5초 경직과 지속 피해. 선택·해킹 중 이동 불가, 받는 피해 80% 감소. 10초 안에 확정하세요.'};
  }
  if(p?.classId==='rabbit'){
   const clean={...skill,heal:0,recovery:0,reduction:0,enhanced:''};

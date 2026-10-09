@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=82';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=82';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=82';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=83';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=83';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=83';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={};let assetsReady=false,assetFailed=false;
@@ -182,7 +182,7 @@ function skillBook(){showModal('skills',`${jobName(player)}의 스킬`,`${skills
 function jobModal(job){
  const target=JOBS[job];if(!target)return;
  const current=player.job,ready=!current&&player.level>=10&&player.classId===(target.classId||'wanderer');
- showModal('job',`${job==='hacker'?'휴프로 · ':job==='mage'?'마구리 · ':job==='protester'?'레드폭스 · ':''}${target.name} 전직`, `<p>${job==='hacker'?'코드를 읽으면 적의 빈틈이 보여요. 메이플아지트에서 시작해 봅시다.':job==='mage'?'마법은 서로를 지키는 힘이기도 해요.':job==='protester'?'작은 목소리도 함께 모이면 멀리 퍼져요.':target.name==='바디빌더'?'꾸준한 훈련으로 강인한 몸을 만들어 보세요.':'마음을 가라앉히고 한 번의 베기에 집중하세요.'}</p><div class="job-choice"><strong>직업 특성 · ${target.passive}</strong><p>전직 후 항상 적용됩니다.</p><strong>Lv. 10 · E ${target.e}</strong><p>${job==='hacker'?'최대 2초 차징해 사각 범위에 강력한 피해와 3초 경직을 줍니다.':job==='mage'?'3초간 피해를 흡수하는 보호막과 주변 마력 방출.':job==='protester'?'최대 1초 차징해 화염병을 던집니다. 폭발 후 바닥에 불길이 남아요.':job==='bodybuilder'?'HP 40%를 1.5초간 회복하고 받는 피해를 50% 줄입니다.':'1초 동안 칼로 공격을 막습니다.'}</p><strong>Lv. 15 · R ${target.r}</strong><p>${job==='hacker'?'좌우로 대상을 선택하고 Enter로 확정합니다. 노트북을 두드리며 5초간 경직과 지속 피해를 주고 받는 피해가 80% 감소합니다.':job==='mage'?'아군을 선택해 10초간 강화하고 주변 적의 공격력을 3초간 30% 낮춥니다.':job==='protester'?'투표함을 5초간 설치해 주변 적에게 휘날리는 투표지로 지속 피해를 줍니다.':job==='bodybuilder'?'12초간 거대해지며 기본 공격과 Q·W·E가 강화됩니다.':'R을 누르면 가까운 적부터 최대 5명을 조준해 연속으로 벱니다.'}</p></div><p>${current?`현재 직업은 ${jobName(player)}입니다. 전직은 캐릭터당 한 번입니다.`:ready?'한 번 선택한 직업은 변경할 수 없습니다. 다른 직업은 새 캐릭터로 시작할 수 있어요.':`현재 Lv. ${player.level}. Lv. 10이 되면 전직할 수 있어요.`}</p>${ready?`<button class="primary" id="advance-job">${target.name}로 전직하기</button>`:''}`);
+ showModal('job',`${job==='hacker'?'휴프로 · ':job==='mage'?'마구리 · ':job==='protester'?'레드폭스 · ':''}${target.name} 전직`, `<p>${job==='hacker'?'코드를 읽으면 적의 빈틈이 보여요. 메이플아지트에서 시작해 봅시다.':job==='mage'?'마법은 서로를 지키는 힘이기도 해요.':job==='protester'?'작은 목소리도 함께 모이면 멀리 퍼져요.':target.name==='바디빌더'?'꾸준한 훈련으로 강인한 몸을 만들어 보세요.':'마음을 가라앉히고 한 번의 베기에 집중하세요.'}</p><div class="job-choice"><strong>직업 특성 · ${target.passive}</strong><p>전직 후 항상 적용됩니다.</p><strong>Lv. 10 · E ${target.e}</strong><p>${job==='hacker'?'최대 1.5초 차징해 사각 범위에 강력한 피해와 2초 경직을 줍니다.':job==='mage'?'3초간 피해를 흡수하는 보호막과 주변 마력 방출.':job==='protester'?'최대 1초 차징해 화염병을 던집니다. 폭발 후 바닥에 불길이 남아요.':job==='bodybuilder'?'HP 40%를 1.5초간 회복하고 받는 피해를 50% 줄입니다.':'1초 동안 칼로 공격을 막습니다.'}</p><strong>Lv. 15 · R ${target.r}</strong><p>${job==='hacker'?'좌우로 대상을 선택하고 Enter로 확정합니다. 노트북을 두드리며 5초간 경직과 지속 피해를 주고 받는 피해가 80% 감소합니다.':job==='mage'?'아군을 선택해 10초간 강화하고 주변 적의 공격력을 3초간 30% 낮춥니다.':job==='protester'?'투표함을 5초간 설치해 주변 적에게 휘날리는 투표지로 지속 피해를 줍니다.':job==='bodybuilder'?'12초간 거대해지며 기본 공격과 Q·W·E가 강화됩니다.':'R을 누르면 가까운 적부터 최대 5명을 조준해 연속으로 벱니다.'}</p></div><p>${current?`현재 직업은 ${jobName(player)}입니다. 전직은 캐릭터당 한 번입니다.`:ready?'한 번 선택한 직업은 변경할 수 없습니다. 다른 직업은 새 캐릭터로 시작할 수 있어요.':`현재 Lv. ${player.level}. Lv. 10이 되면 전직할 수 있어요.`}</p>${ready?`<button class="primary" id="advance-job">${target.name}로 전직하기</button>`:''}`);
  if(ready)$('#advance-job').onclick=()=>{const result=advanceJob(player,job);if(result.ok){cancelSword();resetCombat();save();closeModal();buildHUD();}toast(result.message);};
 }
 
@@ -281,7 +281,8 @@ function updateCamera(dt){
  // Map-wide targeting is independent of the finite camera baseline; widen for marked enemies.
  const safety=isTypeA(boss)&&bossActive()&&boss.phase==='safety';
  let targetZoom=safety?Math.min(.8,screenWidth/(TYPE_A.width+80)):1;
- if(hackerUlt)targetZoom=Math.min(.65,screenWidth/(MAPS[player.map].width+120));
+ const hackSelecting=hackerUlt?.phase==='selecting';
+ if(hackSelecting)targetZoom=Math.min(.65,screenWidth/(MAPS[player.map].width+120));
  if(swordUlt&&!safety){
   const u=swordUlt,marked=monsters.filter(m=>!m.dead&&u.targets.includes(m.id));
   u.viewRadius=Math.max(u.viewRadius,Math.abs(player.x-u.focusX)+(u.phase==='charging'?u.skill.cameraRange:0),...marked.map(m=>Math.abs(m.x-u.focusX)));
@@ -291,9 +292,9 @@ function updateCamera(dt){
  if(Math.abs(cameraZoom-targetZoom)<.001)cameraZoom=targetZoom;
  const width=viewWidth(),maxLeft=Math.max(0,MAPS[player.map].width-width);
  // Let the cinematic frame extend past map edges so distant edge reticles remain visible.
- const desiredLeft=hackerUlt?MAPS[player.map].width/2-width/2:safety?TYPE_A.width/2-width/2:swordUlt?swordUlt.focusX-width/2:clamp(player.x-width*.45,0,maxLeft);
+ const desiredLeft=hackSelecting?MAPS[player.map].width/2-width/2:safety?TYPE_A.width/2-width/2:swordUlt?swordUlt.focusX-width/2:clamp(player.x-width*.45,0,maxLeft);
  const center=oldCenter+(desiredLeft+width/2-oldCenter)*(1-Math.exp(-dt*10));
- camera=safety||swordUlt||hackerUlt||cameraZoom!==1?center-width/2:clamp(center-width/2,0,maxLeft);
+ camera=safety||swordUlt||hackSelecting||cameraZoom!==1?center-width/2:clamp(center-width/2,0,maxLeft);
 }
 
 function swordCandidates(seen=new Set()){
@@ -362,7 +363,7 @@ function refreshCombatHUD(){
  else if(guardTime>0){$('#combat-title').textContent='막기';$('#combat-clock').textContent=`${guardTime.toFixed(1)}초`;$('#combat-detail').textContent='공격 차단 · 공격/스킬 사용 불가';$('#combat-bar').style.width=`${guardTime*100}%`;}
  else if(recovery){$('#combat-title').textContent=isPowered(player)?'근육 각성 · 한 번 더!':'한 번 더!';$('#combat-clock').textContent=`${recovery.remaining.toFixed(1)}초`;$('#combat-detail').textContent='HP 회복 · 피해 50% 감소 · 이동 60% · 공격 불가';$('#combat-bar').style.width=`${recovery.remaining/recovery.duration*100}%`;}
  else if(catCharge){$('#combat-title').textContent='화염병 · 사거리 충전';$('#combat-clock').textContent=`${catCharge.elapsed.toFixed(1)} / 1초`;$('#combat-detail').textContent='차징·투척 중 이동 불가 · 1초에 자동 발동';$('#combat-bar').style.width=`${catCharge.elapsed*100}%`;}
- if(hackerUlt||chickCharge||chickStealth>0){const u=hackerUlt;$('#combat-title').textContent=u?'해킹':chickCharge?'시스템 정지 · 차징':'시크릿 모드';$('#combat-clock').textContent=u?`${Math.ceil(u.remaining)}초`:chickCharge?`${chickCharge.elapsed.toFixed(1)} / 2초`:`${chickStealth.toFixed(1)}초`;$('#combat-detail').textContent=u?(u.phase==='selecting'?'가까운 적 우선 · 피해 80% 감소':'해킹당함! · 5초 경직과 지속 피해 · 피해 80% 감소'):chickCharge?'E를 놓으면 발동 · 차징 중 은신 유지':'이동속도 +50% · 다음 공격 +20%';$('#combat-bar').style.width=`${(u?u.remaining/(u.phase==='selecting'?u.skill.selection:u.skill.duration):chickCharge?chickCharge.elapsed/2:chickStealth/5)*100}%`;}
+ if(hackerUlt||chickCharge||chickStealth>0){const u=hackerUlt;$('#combat-title').textContent=u?'해킹':chickCharge?'시스템 정지 · 차징':'시크릿 모드';$('#combat-clock').textContent=u?`${Math.ceil(u.remaining)}초`:chickCharge?`${chickCharge.elapsed.toFixed(1)} / ${chickCharge.skill.charge}초`:`${chickStealth.toFixed(1)}초`;$('#combat-detail').textContent=u?(u.phase==='selecting'?'가까운 적 우선 · 피해 80% 감소':'해킹당함! · 5초 경직과 지속 피해 · 피해 80% 감소'):chickCharge?'E를 놓으면 발동 · 차징 중 은신 유지':'이동속도 +50% · 다음 공격 +20%';$('#combat-bar').style.width=`${(u?u.remaining/(u.phase==='selecting'?u.skill.selection:u.skill.duration):chickCharge?chickCharge.elapsed/chickCharge.skill.charge:chickStealth/5)*100}%`;}
 }
 function drawCombatIndicators(){
  if(guardTime>0||recovery){ctx.save();ctx.strokeStyle=recovery?'#baffb1':'#abe8ff';ctx.lineWidth=4;ctx.shadowColor=recovery?'#a6ed89':'#64cbff';ctx.shadowBlur=18;ctx.beginPath();ctx.ellipse(player.x-camera,player.y-(isPowered(player)?100:56)-pz,isPowered(player)?82:53,isPowered(player)?110:74,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
@@ -828,7 +829,7 @@ function startChickCharge(input='keyboard'){
  chickCharge={input,elapsed:0,skill:check.skill,dir:facing};refreshHUD();return true;
 }
 function chickArea(c=chickCharge){
- const d=c.skill.range+(c.skill.maxRange-c.skill.range)*clamp(c.elapsed/c.skill.charge,0,1);
+ const d=Math.min(c.skill.maxRange,c.skill.range+c.skill.aimSpeed*Math.max(0,c.elapsed));
  return {x:clamp(player.x+c.dir*d,c.skill.width/2+45,MAPS[player.map].width-c.skill.width/2-45),y:clamp(player.y,580+Math.min(70,c.skill.height/2),720-Math.min(70,c.skill.height/2)),width:c.skill.width,height:c.skill.height};
 }
 function releaseChickCharge(input='keyboard'){

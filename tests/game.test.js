@@ -1624,12 +1624,12 @@ test('E keeps stealth while charging, moves its rectangle, pays once, freezes an
  advance(h,1);assert.ok(h.api.chickArea().x>first+200);assert.ok(h.api.get().chickStealth>0);assert.ok(p.mp>=mp);
  const m=h.api.get().monsters[0],a=h.api.chickArea();Object.assign(m,{x:a.x,y:a.y,home:a.x});const start=m.x,before=p.mp;
  assert.equal(h.api.releaseChickCharge('test'),true);assert.equal(before-p.mp,24);assert.equal(h.api.releaseChickCharge('test'),false);assert.equal(h.api.get().cooldowns.e,14);
- assert.equal(10000-m.hp,Math.round(core.attackPower(p)*4.5*1.2));assert.equal(m.stunTime,3);assert.equal(h.api.get().chickStealth,0);advance(h,1);assert.equal(m.x,start);
+ assert.equal(10000-m.hp,Math.round(core.attackPower(p)*4.5*1.2));assert.equal(m.stunTime,2);assert.equal(h.api.get().chickStealth,0);advance(h,1);assert.equal(m.x,start);
  render(h);assert.ok(h.draws.some(d=>d.asset==='assets/robot.png'&&d.filter.includes('grayscale')));advance(h,2.1);assert.equal(m.stunTime,0);
 });
-test('E auto fires after two seconds, blocks other attacks, and cancels safely on blur',()=>{
+test('E auto fires after 1.5 seconds, blocks other attacks, and cancels safely on blur',()=>{
  const {h,p}=chickFixture();h.api.startChickCharge('keyboard');const mp=p.mp;h.api.cast('q');h.api.attack();assert.equal(p.mp,mp);assert.equal(h.api.get().attackTimer,0);
- advance(h,2.1);assert.equal(h.api.get().chickCharge,null);assert.ok(h.api.get().cooldowns.e>13);assert.ok(p.mp<mp-18);
+ advance(h,1.49);assert.ok(h.api.get().chickCharge);advance(h,.02);assert.equal(h.api.get().chickCharge,null);assert.ok(h.api.get().cooldowns.e>13);assert.ok(p.mp<mp-18);
  const b=chickFixture();b.h.api.startChickCharge('keyboard');b.h.windowEvents.get('blur').forEach(f=>f());assert.equal(b.h.api.get().chickCharge,null);assert.equal(b.h.api.get().cooldowns.e,0);
 });
 test('hacking picks the nearest enemy regardless of level or HP, cycles with arrows, zooms out and types in place',()=>{
@@ -1741,4 +1741,13 @@ test('chick walk cadence uses the original 165-unit cycle instead of the rushed 
 
 test('hacker E shares the preview and impact area and remains centered at both lane edges',()=>{
  for(const y of [580,720]){const {h,p}=chickFixture();p.y=y;h.api.startChickCharge('test');const a=h.api.chickArea();assert.equal(a.y,650);assert.ok(a.y-a.height/2<=580&&a.y+a.height/2>=720);h.api.releaseChickCharge('test');const impact=h.api.get().effects.find(e=>e.type==='hackZone');for(const key of ['x','y','width','height'])assert.equal(impact[key],a[key]);}
+});
+
+
+test('hacker E aim advances twice as fast while keeping the maximum reach',()=>{
+ const {h,p}=chickFixture();h.api.startChickCharge('test');const c=h.api.get().chickCharge;assert.equal(c.skill.charge,1.5);assert.equal(c.skill.stun,2);
+ for(const dir of [-1,1]){c.dir=dir;c.elapsed=0;const start=h.api.chickArea().x;c.elapsed=.25;assert.ok(Math.abs((h.api.chickArea().x-start)*dir-122.5)<1e-8);c.elapsed=1;assert.equal(h.api.chickArea().x,p.x+dir*600);c.elapsed=1.49;assert.equal(h.api.chickArea().x,p.x+dir*600);}
+});
+test('hacker ultimate returns to normal player camera while channeling, retaining its damage and protection',()=>{
+ const {h,p}=chickFixture();h.api.cast('r');advance(h,.5);assert.ok(h.api.get().cameraZoom<.8);h.api.confirmHack();advance(h,1.2);const state=h.api.get();assert.equal(state.hackerUlt.phase,'channeling');assert.equal(state.cameraZoom,1);assert.equal(h.api.playerDamage(100),20);assert.ok(state.monsters.some(m=>m.hack));assert.ok(Math.abs(state.camera-core.clamp(p.x-state.screenWidth*.45,0,core.MAPS[p.map].width-state.screenWidth))<2);
 });
