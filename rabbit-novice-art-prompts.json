@@ -1,0 +1,6 @@
+{
+  "mode": "built-in image_gen edit",
+  "asset": "dist/assets/rabbit-novice-motion.png",
+  "reference": "dist/assets/rabbit-motion.png",
+  "prompt": "Use case: precise-object-edit. Edit target: the supplied transparent 4 by 4 rabbit animation sprite sheet. Make a NOVICE CLOTHING variant. Change ONLY every rabbit's clothes: replace wizard cape/cloak/collar/gem brooches/belt pouches/tunic with a simple pale sky-blue SHORT SLEEVE T-SHIRT, small dark-blue 'SSAFY' text on chest where visible, and simple dark charcoal shorts. No cloak, no hood, no jewels, no belt pouches, no wizard accessories. White rabbit with round black glasses and pink inner ears stays IDENTICAL. Preserve all 16 poses, right facing directions, expressions, gestures, hand/foot/ear positions, cell layout, each character scale and baseline, and small purple spell effects. The salute stays a salute. Same cute outlined hand-painted chibi finish. Exactly 4 rows and 4 columns aligned to equal square cells, no cell overlap. Keep transparent alpha background, no grid, no labels. This is the ordinary T-shirt rabbit before promotion; do not give it a mage outfit."
+}

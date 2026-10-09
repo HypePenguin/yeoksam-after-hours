@@ -1399,7 +1399,7 @@ test('rabbit E absorbs damage up to its pool, expires after three seconds and pu
 test('respect target selection is cancellable, confirmation costs once and buffs expire without permanent stats',()=>{
  const {h,p,mobs}=rabbitHarness(),baseHp=core.maxHp(p),baseAttack=core.attackPower(p),mp=p.mp;mobs[0].x=1180;mobs[1].x=1800;
  h.api.cast('r');assert.equal(h.api.get().modal,'respect-target');assert.match(h.el('#modal-root').innerHTML,/토끼시험 · 나/);assert.equal(p.mp,mp);h.api.closeModal();assert.equal(h.api.get().cooldowns.r,0);
- h.api.cast('r');h.el('#respect-self').onclick();assert.equal(p.mp,mp-35);assert.equal(p.respectTime,10);assert.equal(core.maxHp(p),Math.round(baseHp*1.2));assert.equal(core.attackPower(p),baseAttack*1.2);assert.equal(core.movementMultiplier(p),1.2);assert.equal(h.api.playerDamage(100,mobs[0]),56);assert.equal(h.api.playerDamage(100,mobs[1]),80);assert.equal(h.api.get().combatMotion.kind,'rabbitSalute');h.el('#respect-self').onclick();assert.equal(p.mp,mp-35);
+ h.api.cast('r');h.el('#respect-self').onclick();assert.equal(p.mp,mp-46);assert.equal(p.respectTime,10);assert.equal(core.maxHp(p),Math.round(baseHp*1.2));assert.equal(core.attackPower(p),baseAttack*1.2);assert.equal(core.movementMultiplier(p),1.2);assert.equal(h.api.playerDamage(100,mobs[0]),56);assert.equal(h.api.playerDamage(100,mobs[1]),80);assert.equal(h.api.get().combatMotion.kind,'rabbitSalute');h.el('#respect-self').onclick();assert.equal(p.mp,mp-46);
  h.api.worldMap();advance(h,2);assert.equal(p.respectTime,10);h.api.closeModal();for(const m of mobs)m.x=m.home=2300;advance(h,3.1);assert.equal(mobs[0].respectTime,0);assert.ok(p.respectTime>6);advance(h,7);assert.equal(p.respectTime,0);assert.equal(core.maxHp(p),baseHp);assert.ok(p.hp<=baseHp);assert.equal(core.attackPower(p),baseAttack);assert.equal(core.movementMultiplier(p),1);
 });
 test('respect weakens both bosses and immunity execution still ignores ordinary shields',()=>{
@@ -1411,4 +1411,32 @@ test('rabbit movement, jumps and every skill render distinct frames with directi
  h.api.keys.add('ArrowRight');for(let i=0;i<20;i++){h.api.update(.03);capture();}h.api.keys.clear();h.api.jump();for(let i=0;i<20;i++){h.api.update(.04);capture();}
  for(const key of ['a','q','w','e','r']){key==='a'?h.api.attack():h.api.cast(key);if(key==='r')h.el('#respect-self').onclick();h.api.update(.12);capture();advance(h,1);}
  assert.ok(frames.size>=10,`frames=${frames.size}`);h.api.resetCombat();assert.equal(h.api.get().rabbitOrbs.length,0);assert.equal(h.api.get().rabbitShield,null);
+});
+
+test('rabbit promotion extends Q hit range; basic orb requires and spends exactly two MP',()=>{
+ for(const job of [null,'mage']){
+  const {h,p,mobs}=rabbitHarness(job);mobs[0].x=mobs[0].home=1450;h.api.cast('q');assert.equal(mobs[0].hp<10000,job==='mage');assert.equal(p.mp,core.maxMp(p)-13);
+ }
+ const {h,p}=rabbitHarness();p.mp=1.99;h.api.attack();assert.equal(h.api.get().rabbitOrbs.length,0);assert.equal(p.mp,1.99);advance(h,.3);p.mp=2;h.api.attack();assert.equal(h.api.get().rabbitOrbs.length,1);assert.equal(p.mp,0);assert.equal(h.el('#mp-text').textContent,`0 / ${core.maxMp(p)}`);
+ assert.deepEqual(core.skillsFor(p).map(s=>s.mp),[13,8,29,46]);
+});
+test('E shield is added to HP display and its bar tracks absorption then disappears on expiry',()=>{
+ const {h,p,mobs}=rabbitHarness();for(const m of mobs)m.x=m.home=2300;p.hp=200;h.api.cast('e');const pool=Math.round(core.maxHp(p)*.3);
+ assert.equal(h.el('#hp-text').textContent,`200 + ${pool} / ${core.maxHp(p)}`);assert.equal(h.el('#hp-shield').hidden,false);assert.match(h.el('#hp-text').title,new RegExp(`합계 ${200+pool}`));
+ assert.equal(h.api.playerDamage(30),0);advance(h,.12);assert.equal(h.el('#hp-text').textContent,`200 + ${pool-30} / ${core.maxHp(p)}`);assert.ok(parseFloat(h.el('#hp-shield').style.width)>0);
+ advance(h,3);assert.equal(h.el('#hp-shield').hidden,true);assert.equal(h.el('#hp-text').textContent,`200 / ${core.maxHp(p)}`);
+});
+
+test('Maguri offers rabbit promotion at level ten in either town, then returns to her shop',()=>{
+ for(const map of ['town','gangnam']){
+  const {h,p}=rabbitHarness(null);Object.assign(p,{map,x:1050,y:650,level:9});h.api.start(p);h.api.interact();assert.equal(h.api.get().modal,'shop');h.api.closeModal();
+  p.level=10;h.api.interact();assert.equal(h.api.get().modal,'job');assert.match(h.el('#modal-root').innerHTML,/마구리 · 마법사 전직/);h.api.closeModal();h.api.interact();assert.equal(h.api.get().modal,'job');
+  render(h);assert.ok(h.draws.some(d=>d.asset==='assets/rabbit-novice-motion.png'));
+  h.el('#advance-job').onclick();assert.equal(p.job,'mage');render(h);assert.ok(h.draws.some(d=>d.asset==='assets/rabbit-motion.png'));assert.match(h.el('.avatar').src,/rabbit-motion/);
+  h.api.interact();assert.equal(h.api.get().modal,'shop');assert.match(h.el('#modal-root').innerHTML,/MP 포션/);
+ }
+});
+test('Hyuntori remains a guide for rabbits and other characters keep Maguri shop access',()=>{
+ const {h,p}=rabbitHarness(null);Object.assign(p,{map:'town',x:650,y:621,level:15});h.api.start(p);h.api.interact();assert.equal(h.api.get().modal,'gm');assert.match(h.el('#modal-root').innerHTML,/운영자 현토리/);
+ for(const classId of ['cat','wanderer']){const other=harness(),c=core.createCharacter('상점',classId);Object.assign(c,{level:15,map:'town',x:1050,y:650});other.api.start(c);other.api.interact();assert.equal(other.api.get().modal,'shop');}
 });

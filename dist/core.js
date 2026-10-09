@@ -2,12 +2,12 @@
 export const SAVE_KEY = 'yeoksam-after-hours.v1';
 export const CLASSES = [
  {id:'wanderer',name:'펭귄 모험가',description:'평소에는 동글동글, 결정적인 순간에는 누구보다 든든하게.',hp:100,mp:60,attack:18},
- {id:'rabbit',name:'토끼 모험가',description:'동그란 안경 너머로 빛나는 마법. 현토리에게 마법사의 길을 배워요.',hp:85,mp:90,attack:16},
+ {id:'rabbit',name:'토끼 모험가',description:'동그란 안경 너머로 빛나는 마법. 마구리에게 마법사의 길을 배워요.',hp:85,mp:90,attack:16},
  {id:'cat',name:'고양이 모험가',description:'민첩한 발과 날카로운 발톱. 올림픽공원에서 새로운 길을 찾아요.',hp:90,mp:70,attack:17}
 ];
 export const POWER_DURATION = 12;
 export const JOBS = {
- mage:{id:'mage',name:'마법사',classId:'rabbit',map:'town',e:'마력 방벽',r:'존경!',passive:'W가 순간 이동으로 변경'},
+ mage:{id:'mage',name:'마법사',classId:'rabbit',map:'town',maps:['town','gangnam'],e:'마력 방벽',r:'존경!',passive:'W가 순간 이동으로 변경'},
  bodybuilder:{id:'bodybuilder',name:'바디빌더',map:'gym',e:'회복',r:'근육 각성',passive:'받는 피해 10% 감소'},
  swordsman:{id:'swordsman',name:'검사',map:'dojo',e:'막기',r:'섬광 연참',passive:'기본 이동속도 +10%'},
  protester:{id:'protester',name:'시위대',map:'olympic',classId:'cat',e:'화염병',r:'부정선거',passive:'점프 높이 +20%'}
@@ -178,10 +178,10 @@ export function effectiveSkill(p,key){
  const base=SKILLS.find(s=>s.key===key);if(!base)return null;let skill={...base};
  if(p?.classId==='rabbit'){
   const clean={...skill,heal:0,recovery:0,reduction:0,enhanced:''};
-  if(key==='q')return {...clean,name:'보랏빛 번개',icon:'ϟ',mp:10,cooldown:2.8,damage:2.4,range:360,description:'전방으로 보라색 번개를 쏘아 경로의 적을 공격해요.'};
-  if(key==='w')return {...clean,name:p.job==='mage'?'순간 이동':'앞구르기',icon:'↠',mp:6,cooldown:2,damage:0,range:0,dash:p.job==='mage'?260:180,description:p.job==='mage'?'전방으로 순간 이동해요. 피해는 없으며 재사용은 2초예요.':'앞으로 빠르게 굴러요. 피해는 없으며 재사용은 2초예요.'};
-  if(key==='e')return {...clean,name:'마력 방벽',icon:'◈',mp:22,cooldown:9,damage:2.6,range:240,shield:.3,duration:3,description:'3초간 최대 HP의 30%를 흡수하는 보호막을 얻고 주변에 마력을 방출해요.'};
-  if(key==='r')return {...clean,name:'존경!',icon:'敬',mp:35,cooldown:35,damage:0,range:360,duration:10,description:'대상을 선택하고 경례합니다. 10초간 이동속도·공격력·최대 HP +20%, 받는 피해 20% 감소. 주변 적은 3초간 존경 상태로 공격력이 30% 감소해요.'};
+  if(key==='q')return {...clean,name:'보랏빛 번개',icon:'ϟ',mp:13,cooldown:2.8,damage:2.4,range:p.job==='mage'?540:360,description:p.job==='mage'?'전방으로 보라색 번개를 쏘아 경로의 적을 공격해요. 전직으로 사거리가 50% 늘어납니다.':'전방으로 보라색 번개를 쏘아 경로의 적을 공격해요.'};
+  if(key==='w')return {...clean,name:p.job==='mage'?'순간 이동':'앞구르기',icon:'↠',mp:8,cooldown:2,damage:0,range:0,dash:p.job==='mage'?260:180,description:p.job==='mage'?'전방으로 순간 이동해요. 피해는 없으며 재사용은 2초예요.':'앞으로 빠르게 굴러요. 피해는 없으며 재사용은 2초예요.'};
+  if(key==='e')return {...clean,name:'마력 방벽',icon:'◈',mp:29,cooldown:9,damage:2.6,range:240,shield:.3,duration:3,description:'3초간 최대 HP의 30%를 흡수하는 보호막을 얻고 주변에 마력을 방출해요.'};
+  if(key==='r')return {...clean,name:'존경!',icon:'敬',mp:46,cooldown:35,damage:0,range:360,duration:10,description:'대상을 선택하고 경례합니다. 10초간 이동속도·공격력·최대 HP +20%, 받는 피해 20% 감소. 주변 적은 3초간 존경 상태로 공격력이 30% 감소해요.'};
  }
  if(p?.classId==='cat'){
   if(key==='q')return {...skill,name:'앞발 할퀴기',icon:'爪',mp:9,cooldown:2.4,damage:2.25,range:195,description:'전방의 적을 발톱으로 크게 할퀴어요.',enhanced:''};
@@ -208,7 +208,7 @@ export function advanceJob(p,job){
  if(p.classId!==(target.classId||'wanderer'))return {ok:false,message:'이 캐릭터가 전직할 수 없는 직업이에요.'};
  if(p.job)return {ok:false,message:'이미 전직했어요. 이 캐릭터의 직업은 변경할 수 없어요.'};
  if(p.level<10)return {ok:false,message:'전직은 Lv. 10부터 할 수 있어요.'};
- if(p.map!==target.map)return {ok:false,message:`${MAPS[target.map].name}의 사범에게 전직을 배워요.`};
+ if(!(target.maps||[target.map]).includes(p.map))return {ok:false,message:job==='mage'?'역삼역 또는 강남역의 마구리에게 전직을 배워요.':`${MAPS[target.map].name}의 사범에게 전직을 배워요.`};
  p.job=job;p.powerTime=0;
  return {ok:true,message:`${target.name} 전직 완료! E · ${target.e} 습득${p.level>=15?' / R · '+target.r+' 습득':''}`};
 }
@@ -246,7 +246,7 @@ export function usePotion(p){if(p.potions<=0)return {ok:false,message:'물약이
 export function canUseSkill(p,key,cooldown=p.cooldowns?.[key]??0){
  const s=effectiveSkill(p,key);if(!s)return {ok:false,message:'알 수 없는 스킬이에요.'};
  if(p.level<s.level)return {ok:false,message:`${s.name}은 Lv. ${s.level}에 배울 수 있어요.`};
- if(s.requiresJob&&!JOBS[p.job])return {ok:false,message:p.classId==='rabbit'?'역삼역의 현토리에게 먼저 전직해 주세요.':p.classId==='cat'?'올림픽공원에서 먼저 전직해 주세요.':'헬스장이나 검도장에서 먼저 전직해 주세요.'};
+ if(s.requiresJob&&!JOBS[p.job])return {ok:false,message:p.classId==='rabbit'?'마구리에게 먼저 전직해 주세요.':p.classId==='cat'?'올림픽공원에서 먼저 전직해 주세요.':'헬스장이나 검도장에서 먼저 전직해 주세요.'};
  if(key==='r'&&isPowered(p))return {ok:false,message:'이미 근육 펭귄으로 변신 중이에요.'};
  if(cooldown>0)return {ok:false,message:'스킬이 아직 준비되지 않았어요.'};
  if(p.mp<s.mp)return {ok:false,message:'MP가 부족해요. 잠시 기다리면 회복됩니다.'};
