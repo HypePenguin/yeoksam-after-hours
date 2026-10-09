@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=78';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=78';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=78';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=79';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=79';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=79';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={};let assetsReady=false,assetFailed=false;
@@ -15,7 +15,7 @@ const catAsset=(asset,p=player)=>p?.job==='protester'?asset.replace('cat','cat-p
 const rabbitPortraits={};
 const rabbitAsset=(p=player)=>p?.job==='mage'?'rabbit-motion':'rabbit-novice-motion';
 const characterPortrait=(p,powered=false)=>p?.classId==='chick'?(rabbitPortraits[p.job==='hacker'?'chick-hacker':'chick-motion']||'assets/chick-motion.png'):p?.classId==='rabbit'?(rabbitPortraits[rabbitAsset(p)]||`assets/${rabbitAsset(p)}.png`):p?.classId==='cat'?`assets/${catAsset('cat',p)}.png`:`assets/${characterAsset(powered?'penguin-power-poses':'penguin',p)}.png`;
-const loadAssets=Promise.all(['chick-typing','chick-motion','npc-hyupro','maple-hideout','rabbit-novice-motion','rabbit-motion','type-a','endgame-dungeons','combat-brawler','combat-swordsman','combat-power','soldier-boss','soldier-counter','soldier-walk','gangnam','hansabal-pocha','city','crossroads','station-six','player','robot','penguin','penguin-power','penguin-hurt','penguin-power-poses','districts','high-dungeons','dojo','penguin-walk','penguin-power-walk','penguin-jump','penguin-power-jump','cat','cat-motion','cat-skills','cat-protester','cat-protester-motion','cat-protester-skills','npc-redfox','olympic-park','npc-hyuntori-white','npc-maguri-large-crate','npc-emperor-coach','npc-tiger-master','job-equipment','sword-guard-walk','builder-recovery-walk','power-recovery-walk',...[...UNIFORM_ASSETS].map(name=>`uniform-${name}`)].map(name=>new Promise(resolve=>{const img=new Image();images[name]=img;img.onload=()=>resolve();img.onerror=()=>{assetFailed=true;resolve();};img.src=`assets/${name}.png`;}))).then(()=>{assetsReady=true;prepareRabbitPortrait();});
+const loadAssets=Promise.all(['chick-actions','chick-typing','chick-motion','npc-hyupro','maple-hideout','rabbit-novice-motion','rabbit-motion','type-a','endgame-dungeons','combat-brawler','combat-swordsman','combat-power','soldier-boss','soldier-counter','soldier-walk','gangnam','hansabal-pocha','city','crossroads','station-six','player','robot','penguin','penguin-power','penguin-hurt','penguin-power-poses','districts','high-dungeons','dojo','penguin-walk','penguin-power-walk','penguin-jump','penguin-power-jump','cat','cat-motion','cat-skills','cat-protester','cat-protester-motion','cat-protester-skills','npc-redfox','olympic-park','npc-hyuntori-white','npc-maguri-large-crate','npc-emperor-coach','npc-tiger-master','job-equipment','sword-guard-walk','builder-recovery-walk','power-recovery-walk',...[...UNIFORM_ASSETS].map(name=>`uniform-${name}`)].map(name=>new Promise(resolve=>{const img=new Image();images[name]=img;img.onload=()=>resolve();img.onerror=()=>{assetFailed=true;resolve();};img.src=`assets/${name}.png`;}))).then(()=>{assetsReady=true;prepareRabbitPortrait();});
 let records=[],storageBroken=false;
 try{const saved=localStorage.getItem(SAVE_KEY);if(saved){const parsed=JSON.parse(saved);if(!parsed||parsed.version!==1||!Array.isArray(parsed.characters))throw new Error('invalid save');records=parsed.characters.map(normalizeCharacter).filter(Boolean);}}catch{storageBroken=true;}
 let scene='title',player=null,selectedId=records[0]?.id??null,modal=null,returnFocus=null,keys=new Set(),monsters=[],drops=[],effects=[],texts=[],camera=0,worldTime=0,screenWidth=1440,prev=0,lastHud=0,saveClock=0,toastTimer=null,transitionId=0,lastSavedLabel='',walking=false,walkPhase=0,soundOn=false,audioContext=null;
@@ -886,25 +886,27 @@ function updateChickCombat(dt){
   }else if(u.remaining<=0||!monsters.some(m=>m.id===u.targetId&&!m.dead&&m.hack))cancelChickAim();
  }
 }
+// Per-pose source bounds exclude adjacent rows; generated art is not a uniform grid.
+const CHICK_ACTION_FRAMES=[[61, 50, 269, 320, 181, 370], [405, 35, 292, 317, 543, 352], [769, 42, 267, 342, 905, 384], [1133, 68, 263, 304, 1267, 372], [60, 404, 269, 320, 181, 724], [419, 391, 261, 312, 543, 703], [774, 397, 259, 337, 905, 734], [1133, 423, 264, 306, 1267, 729], [60, 746, 266, 326, 181, 1072], [405, 744, 309, 320, 543, 1064], [759, 746, 268, 321, 905, 1067], [1108, 747, 315, 320, 1267, 1067]];
 function chickFrame(){
  if(hackerUlt)return 12+Math.floor(worldTime*(hackerUlt.phase==='channeling'?28:10))%3;
+ const jumpPose=jumpFrame();if(jumpPose>=0)return 24+(player.job==='hacker'?4:0)+[0,1,1,2,2,3][jumpPose];
  if(combatMotion?.kind==='chickType')return walking?20+Math.floor(walkPhase*4)%4:16+Math.floor(combatMotion.elapsed*16)%4;
  if(chickCharge||combatMotion?.kind==='chickHack')return 11;
  if(hurtTime>0)return 15;
- if(['chickPunch','chickScratch'].includes(combatMotion?.kind))return combatMotion.elapsed/combatMotion.duration<.3?6:7;
- if(jumpFrame()>=0)return jumpPrep>0||jumpLanding>0?4:5;
+ if(['chickPunch','chickScratch'].includes(combatMotion?.kind))return (combatMotion.kind==='chickScratch'?34:32)+(combatMotion.elapsed/combatMotion.duration<.3?0:1);
  if(walking)return player.job==='hacker'?[9,8,10,8][Math.floor(walkPhase*4)%4]:[1,2,3,2][Math.floor(walkPhase*4)%4];
  return player.job==='hacker'?8:0;
 }
 function drawChickPlayer(){
- const pose=chickFrame(),typing=pose>=16,img=images[typing?'chick-typing':'chick-motion'];if(!img?.complete||!img.naturalWidth)return;
+ const pose=chickFrame(),action=pose>=24,typing=pose>=16&&pose<24,img=images[action?'chick-actions':typing?'chick-typing':'chick-motion'];if(!img?.complete||!img.naturalWidth)return;
  const frame=typing?pose-16:pose,cw=img.naturalWidth/4,ch=img.naturalHeight/(typing?2:4),height=138,x=combatDisplayX()-camera,y=player.y;
  ctx.save();ctx.fillStyle='#03162560';ctx.beginPath();ctx.ellipse(x,y+3,28,7,0,0,Math.PI*2);ctx.fill();ctx.translate(x,y-pz);ctx.scale(typing&&walking?facing:combatMotion?.dir??chickCharge?.dir??facing,1);
  ctx.globalAlpha=chickStealth>0?.38:invincible>0&&Math.floor(invincible*13)%2===0?.6:1;
  if(chickStealth>0){ctx.shadowColor='#9affe2';ctx.shadowBlur=10;}
  const furious=hackerUlt?.phase==='channeling';
  const bob=furious?Math.sin(worldTime*45)*1.6:walking?Math.abs(Math.sin(walkPhase*Math.PI*4))*2:0;
- ctx.drawImage(img,frame%4*cw,Math.floor(frame/4)*ch,cw,ch,-height/2,-height+5-bob,height,height);
+ if(action){const [sx,sy,sw,sh,anchorX,feetY]=CHICK_ACTION_FRAMES[pose-24],scale=146/362;ctx.drawImage(img,sx,sy,sw,sh,(sx-anchorX)*scale,(sy-feetY)*scale-bob,sw*scale,sh*scale);}else ctx.drawImage(img,frame%4*cw,Math.floor(frame/4)*ch,cw,ch,-height/2,-height+5-bob,height,height);
  if(furious){
   ctx.fillStyle='#8bdcff';ctx.strokeStyle='#e0fbff';ctx.lineWidth=2;
   for(let i=0;i<4;i++){const t=(worldTime*2.5+i*.23)%1,sx=(i%2?1:-1)*(32+t*15),sy=-107+t*32;ctx.beginPath();ctx.moveTo(sx,sy-7);ctx.quadraticCurveTo(sx+6,sy+5,sx,sy+5);ctx.quadraticCurveTo(sx-6,sy+5,sx,sy-7);ctx.fill();}

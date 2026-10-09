@@ -1654,7 +1654,7 @@ test('E and R control the active soldier without counter reflection and resume a
 });
 test('chick walk, jump, punch, laptop charge and seated typing use different atlas frames',()=>{
  const {h,p}=chickFixture();assert.equal(h.api.chickFrame(),8);h.api.keys.add('ArrowRight');const frames=new Set();for(let i=0;i<40;i++){h.api.update(1/60);frames.add(h.api.chickFrame());}assert.ok(frames.size>=3);h.api.keys.clear();
- h.api.jump();assert.equal(h.api.chickFrame(),4);advance(h,.2);assert.equal(h.api.chickFrame(),5);advance(h,1);
+ h.api.jump();assert.equal(h.api.chickFrame(),28);advance(h,.2);assert.equal(h.api.chickFrame(),29);advance(h,1);
  h.api.attack();assert.equal(h.api.chickFrame(),16);advance(h,.12);assert.equal(h.api.chickFrame(),18);advance(h,.4);
  h.api.startChickCharge('test');assert.equal(h.api.chickFrame(),11);h.api.cancelChickAim();h.api.cast('r');assert.ok(h.api.chickFrame()>=12);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion.png'));
 });
@@ -1714,4 +1714,20 @@ test('hacker types standing still and keeps a full walking cycle during held bas
 test('hacker ultimate keeps its seated typing atlas while basic attacks use the standing atlas',()=>{
  const {h,p}=chickFixture();h.api.cast('r');h.api.confirmHack();render(h);
  assert.ok(h.api.chickFrame()>=12&&h.api.chickFrame()<=14);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion.png'));assert.ok(!h.draws.some(d=>d.asset==='assets/chick-typing.png'));
+});
+
+test('chick jump follows anticipation, rise, fall and landing with a separate laptop set',()=>{
+ for(const job of [null,'hacker']){
+  const {h,p}=chickFixture('maple',job),offset=job?28:24;h.api.jump();assert.equal(h.api.chickFrame(),offset);const seen=new Set();
+  for(let i=0;i<65;i++){h.api.update(1/60);const state=h.api.get();if(state.pz>0||state.jumpPrep>0||state.jumpLanding>0){seen.add(h.api.chickFrame());render(h);const sprite=h.draws.find(d=>d.asset==='assets/chick-actions.png');assert.ok(sprite);assert.ok(sprite.source[1]>=(job?389:0)&&sprite.source[1]<(job?740:389));}}
+  assert.ok(seen.has(offset+1));assert.ok(seen.has(offset+2));assert.ok(seen.has(offset+3));assert.equal(h.api.get().pz,0);
+ }
+});
+test('novice punches and scratches use isolated action frames instead of bleeding atlas rows',()=>{
+ const {h,p}=chickFixture('maple',null);h.api.attack();assert.equal(h.api.chickFrame(),32);advance(h,.12);assert.equal(h.api.chickFrame(),33);render(h);
+ const sprite=h.draws.find(d=>d.asset==='assets/chick-actions.png');assert.ok(sprite);assert.ok(sprite.source[1]>=740);assert.ok(!h.draws.some(d=>d.asset==='assets/chick-motion.png'));
+ advance(h,.4);h.api.cast('q');assert.equal(h.api.chickFrame(),34);advance(h,.15);assert.equal(h.api.chickFrame(),35);
+});
+test('hacker keeps the laptop jump pose when attacking in midair',()=>{
+ const {h,p}=chickFixture('maple');h.api.jump();advance(h,.2);h.api.attack();assert.equal(h.api.chickFrame(),29);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-actions.png'));assert.ok(!h.draws.some(d=>d.asset==='assets/chick-typing.png'));
 });
