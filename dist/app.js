@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=75';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=75';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=75';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=76';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=76';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=76';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={};let assetsReady=false,assetFailed=false;
@@ -20,7 +20,7 @@ let records=[],storageBroken=false;
 try{const saved=localStorage.getItem(SAVE_KEY);if(saved){const parsed=JSON.parse(saved);if(!parsed||parsed.version!==1||!Array.isArray(parsed.characters))throw new Error('invalid save');records=parsed.characters.map(normalizeCharacter).filter(Boolean);}}catch{storageBroken=true;}
 let scene='title',player=null,selectedId=records[0]?.id??null,modal=null,returnFocus=null,keys=new Set(),monsters=[],drops=[],effects=[],texts=[],camera=0,worldTime=0,screenWidth=1440,prev=0,lastHud=0,saveClock=0,toastTimer=null,transitionId=0,lastSavedLabel='',walking=false,walkPhase=0,soundOn=false,audioContext=null;
 let rabbitOrbs=[],rabbitShield=null;
-let chickStealth=0,chickCharge=null,hackerUlt=null;
+let chickStealth=0,chickCharge=null,hackerUlt=null,chickCodes=[];
 let inventorySelection='potions',boss=null,potionCooldown=0,catCharge=null,catCastLock=0,catProjectiles=[],catFires=[],catBallot=null;
 const bossActive=()=>!!boss?.active;
 const canTarget=m=>!m.dead&&(!m.isBoss||(isTypeA(m)?typeATargetable(m):targetableBoss(m)));
@@ -362,7 +362,7 @@ function refreshCombatHUD(){
  else if(guardTime>0){$('#combat-title').textContent='막기';$('#combat-clock').textContent=`${guardTime.toFixed(1)}초`;$('#combat-detail').textContent='공격 차단 · 공격/스킬 사용 불가';$('#combat-bar').style.width=`${guardTime*100}%`;}
  else if(recovery){$('#combat-title').textContent=isPowered(player)?'근육 각성 · 한 번 더!':'한 번 더!';$('#combat-clock').textContent=`${recovery.remaining.toFixed(1)}초`;$('#combat-detail').textContent='HP 회복 · 피해 50% 감소 · 이동 60% · 공격 불가';$('#combat-bar').style.width=`${recovery.remaining/recovery.duration*100}%`;}
  else if(catCharge){$('#combat-title').textContent='화염병 · 사거리 충전';$('#combat-clock').textContent=`${catCharge.elapsed.toFixed(1)} / 1초`;$('#combat-detail').textContent='차징·투척 중 이동 불가 · 1초에 자동 발동';$('#combat-bar').style.width=`${catCharge.elapsed*100}%`;}
- if(hackerUlt||chickCharge||chickStealth>0){const u=hackerUlt;$('#combat-title').textContent=u?'해킹':chickCharge?'시스템 정지 · 차징':'시크릿 모드';$('#combat-clock').textContent=u?`${Math.ceil(u.remaining)}초`:chickCharge?`${chickCharge.elapsed.toFixed(1)} / 2초`:`${chickStealth.toFixed(1)}초`;$('#combat-detail').textContent=u?(u.phase==='selecting'?'← → 대상 선택 · Enter 확정 · Esc 취소 · 피해 80% 감소':'해킹당함! · 5초 경직과 지속 피해 · 피해 80% 감소'):chickCharge?'E를 놓으면 발동 · 차징 중 은신 유지':'이동속도 +30% · 다음 공격 +20%';$('#combat-bar').style.width=`${(u?u.remaining/(u.phase==='selecting'?u.skill.selection:u.skill.duration):chickCharge?chickCharge.elapsed/2:chickStealth/5)*100}%`;}
+ if(hackerUlt||chickCharge||chickStealth>0){const u=hackerUlt;$('#combat-title').textContent=u?'해킹':chickCharge?'시스템 정지 · 차징':'시크릿 모드';$('#combat-clock').textContent=u?`${Math.ceil(u.remaining)}초`:chickCharge?`${chickCharge.elapsed.toFixed(1)} / 2초`:`${chickStealth.toFixed(1)}초`;$('#combat-detail').textContent=u?(u.phase==='selecting'?'← → 대상 선택 · Enter 확정 · Esc 취소 · 피해 80% 감소':'해킹당함! · 5초 경직과 지속 피해 · 피해 80% 감소'):chickCharge?'E를 놓으면 발동 · 차징 중 은신 유지':'이동속도 +50% · 다음 공격 +20%';$('#combat-bar').style.width=`${(u?u.remaining/(u.phase==='selecting'?u.skill.selection:u.skill.duration):chickCharge?chickCharge.elapsed/2:chickStealth/5)*100}%`;}
 }
 function drawCombatIndicators(){
  if(guardTime>0||recovery){ctx.save();ctx.strokeStyle=recovery?'#baffb1':'#abe8ff';ctx.lineWidth=4;ctx.shadowColor=recovery?'#a6ed89':'#64cbff';ctx.shadowBlur=18;ctx.beginPath();ctx.ellipse(player.x-camera,player.y-(isPowered(player)?100:56)-pz,isPowered(player)?82:53,isPowered(player)?110:74,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
@@ -634,7 +634,7 @@ function jumpFrame(){
  return jumpLanding>0?5:-1;
 }
 function textAt(text,x,y,color='#ffe2a7'){texts.push({text,x,y,life:1.15,max:1.15,color});}
-function resetCombat(){catCastLock=0;chickStealth=0;cancelChickAim();for(const m of monsters){m.stunTime=0;m.hack=null;}rabbitOrbs=[];rabbitShield=null;guardTime=0;recovery=null;combatMotion=null;}
+function resetCombat(){catCastLock=0;chickStealth=0;chickCodes=[];cancelChickAim();for(const m of monsters){m.stunTime=0;m.hack=null;}rabbitOrbs=[];rabbitShield=null;guardTime=0;recovery=null;combatMotion=null;}
 function playerDamage(raw,source=null,kind='magic'){
  if(kind==='magic'&&raw>0)chickStealth=0;
  let damage=incomingDamage(player,raw*(source?.respectTime>0?.7:1),(hackerUlt?.skill?1-hackerUlt.skill.reduction:1)*(swordUlt?1-swordUlt.skill.reduction:1)*(recovery?1-recovery.reduction:1));
@@ -788,25 +788,37 @@ function cancelChickAim(){
  hackerUlt=null;keys?.delete('ArrowLeft');keys?.delete('ArrowRight');
 }
 function consumeStealth(){const multiplier=chickStealth>0?1.2:1;chickStealth=0;return multiplier;}
+function chickBurst(m,size=90){
+ effects.push({type:'impact',x:m.x,y:m.y-60,size,life:.32,max:.32,color:'#8bd8ff',accent:'#ffffff',glow:'#238dff',outline:'#286dc2'});
+ effects.push({type:'ring',x:m.x,y:m.y-60,size,life:.3,max:.3,color:'#65baff'});
+}
 function chickPunch(strong){
- const skill=strong?effectiveSkill(player,'q'):null,boost=consumeStealth(),range=skill?.range||130,damage=Math.round(attackPower(player)*(skill?.damage||1)*boost);
- attackTimer=strong?.4:.32;playCombatMotion('chickPunch',attackTimer);
- effects.push({type:'windSwing',x:player.x+facing*45,y:player.y-60-pz,size:range,dir:facing,life:.3,max:.3,color:'#fff5cb',accent:'#ffffff',glow:'#f1dca2',outline:'#857046'});
+ const skill=strong?effectiveSkill(player,'q'):null,boost=consumeStealth(),range=skill?.range||200,damage=Math.round(attackPower(player)*(skill?.damage||1)*boost);
+ attackTimer=strong?.4:.32;playCombatMotion(strong?'chickScratch':'chickPunch',attackTimer);
+ effects.push({type:strong?'claw':'windSwing',x:player.x+facing*(strong?80:45),y:player.y-60-pz,size:strong?95:155,dir:facing,life:.3,max:.3,color:'#fff5cb',accent:'#ffffff',glow:'#f1dca2',outline:'#857046'});
  for(const m of [...monsters])if(canTarget(m)&&Math.abs(m.y-player.y)<(strong?95:72)&&(m.x-player.x)*facing>=-25&&(m.x-player.x)*facing<range&&pz<110){hitMonster(m,damage);if(scene!=='playing'||modal)break;}
  beep(360,.12);refreshHUD();
+}
+function chickCodeAttack(){
+ const tokens=['hp--','0xFF','{ }','sudo','1010','</>','exec()','null'];
+ attackTimer=.32;playCombatMotion('chickType',attackTimer);
+ chickCodes.push({x:player.x,y:player.y,z:pz,origin:player.x,dir:facing,remaining:520,damage:Math.round(attackPower(player)*consumeStealth()),tokens:Array.from({length:3},()=>tokens[Math.floor(Math.random()*tokens.length)])});
+ beep(650,.07);refreshHUD();
 }
 function castChick(key){
  if(key==='e'){startChickCharge('keyboard');return;}
  const check=canUseSkill(player,key,cooldowns[key]);if(!check.ok){toast(check.message);return;}
  const skill=check.skill;
+ const target=key==='q'&&player.job==='hacker'?monsters.filter(m=>canTarget(m)&&Math.hypot(m.x-player.x,m.y-player.y)<=skill.range).sort((a,b)=>Math.hypot(a.x-player.x,a.y-player.y)-Math.hypot(b.x-player.x,b.y-player.y))[0]:null;
+ if(key==='q'&&player.job==='hacker'&&!target){toast('사거리 안에 해킹할 적이 없어요.');return;}
  if(key==='r'){
   const targets=hackCandidates();if(!targets.length){toast('현재 맵에 해킹할 적이 없어요.');return;}
   player.mp-=skill.mp;cooldowns.r=skill.cooldown;resetJump();keys.clear();combatMotion=null;
   hackerUlt={phase:'selecting',targetId:targets[0].id,skill,remaining:skill.selection};walking=false;
  }else{
   player.mp-=skill.mp;cooldowns[key]=skill.cooldown;
-  if(key==='q')chickPunch(true);
-  if(key==='w'){chickStealth=skill.duration;textAt('은신 · 이동속도 +30%',player.x,player.y-160,'#a0efdd');effects.push({type:'ring',x:player.x,y:player.y-40,life:.4,max:.4,color:'#a7ffe2',size:85});}
+  if(key==='q'){if(target){facing=target.x>=player.x?1:-1;attackTimer=.4;playCombatMotion('chickType',.4);chickBurst(target);hitMonster(target,Math.round(attackPower(player)*skill.damage*consumeStealth()));beep(820,.13);}else chickPunch(true);}
+  if(key==='w'){chickStealth=skill.duration;invincible=Math.max(invincible,skill.invulnerable);textAt('은신 · 이동속도 +50%',player.x,player.y-160,'#a0efdd');effects.push({type:'ring',x:player.x,y:player.y-40,life:.4,max:.4,color:'#a7ffe2',size:85});}
  }
  refreshHUD();save();
 }
@@ -849,6 +861,13 @@ function confirmHack(){
 }
 function updateChickCombat(dt){
  chickStealth=Math.max(0,chickStealth-dt);
+ for(const shot of [...chickCodes]){
+  const from=shot.x,step=Math.min(shot.remaining,760*dt);shot.x+=shot.dir*step;shot.remaining-=step;
+  const target=monsters.filter(m=>canTarget(m)&&Math.abs(m.y-shot.y)<60&&shot.z<110&&(m.x-shot.origin)*shot.dir>=0&&(m.x-shot.origin)*shot.dir<=520&&m.x>=Math.min(from,shot.x)-18&&m.x<=Math.max(from,shot.x)+18).sort((a,b)=>(a.x-b.x)*shot.dir)[0];
+  if(target){shot.remaining=0;chickBurst(target,38);hitMonster(target,shot.damage);if(scene!=='playing'||modal)return;}
+ }
+ chickCodes=chickCodes.filter(s=>s.remaining>0&&s.x>=0&&s.x<=MAPS[player.map].width);
+
  for(const m of [...monsters]){
   m.stunTime=Math.max(0,(m.stunTime||0)-dt);
   if(m.dead){m.stunTime=0;m.hack=null;continue;}
@@ -868,10 +887,11 @@ function updateChickCombat(dt){
  }
 }
 function chickFrame(){
- if(hackerUlt)return 12+Math.floor(worldTime*10)%3;
+ if(hackerUlt)return 12+Math.floor(worldTime*(hackerUlt.phase==='channeling'?28:10))%3;
+ if(combatMotion?.kind==='chickType')return 12+Math.floor(combatMotion.elapsed*12)%3;
  if(chickCharge||combatMotion?.kind==='chickHack')return 11;
  if(hurtTime>0)return 15;
- if(combatMotion?.kind==='chickPunch')return combatMotion.elapsed/combatMotion.duration<.3?6:7;
+ if(['chickPunch','chickScratch'].includes(combatMotion?.kind))return combatMotion.elapsed/combatMotion.duration<.3?6:7;
  if(jumpFrame()>=0)return jumpPrep>0||jumpLanding>0?4:5;
  if(walking)return player.job==='hacker'?[9,8,10,8][Math.floor(walkPhase*4)%4]:[1,2,3,2][Math.floor(walkPhase*4)%4];
  return player.job==='hacker'?8:0;
@@ -882,12 +902,23 @@ function drawChickPlayer(){
  ctx.save();ctx.fillStyle='#03162560';ctx.beginPath();ctx.ellipse(x,y+3,28,7,0,0,Math.PI*2);ctx.fill();ctx.translate(x,y-pz);ctx.scale(combatMotion?.dir??chickCharge?.dir??facing,1);
  ctx.globalAlpha=chickStealth>0?.38:invincible>0&&Math.floor(invincible*13)%2===0?.6:1;
  if(chickStealth>0){ctx.shadowColor='#9affe2';ctx.shadowBlur=10;}
- const bob=walking?Math.abs(Math.sin(walkPhase*Math.PI*4))*2:0;
- ctx.drawImage(img,frame%4*cw,Math.floor(frame/4)*ch,cw,ch,-height/2,-height+5-bob,height,height);ctx.restore();
+ const furious=hackerUlt?.phase==='channeling';
+ const bob=furious?Math.sin(worldTime*45)*1.6:walking?Math.abs(Math.sin(walkPhase*Math.PI*4))*2:0;
+ ctx.drawImage(img,frame%4*cw,Math.floor(frame/4)*ch,cw,ch,-height/2,-height+5-bob,height,height);
+ if(furious){
+  ctx.fillStyle='#8bdcff';ctx.strokeStyle='#e0fbff';ctx.lineWidth=2;
+  for(let i=0;i<4;i++){const t=(worldTime*2.5+i*.23)%1,sx=(i%2?1:-1)*(32+t*15),sy=-107+t*32;ctx.beginPath();ctx.moveTo(sx,sy-7);ctx.quadraticCurveTo(sx+6,sy+5,sx,sy+5);ctx.quadraticCurveTo(sx-6,sy+5,sx,sy-7);ctx.fill();}
+  for(let i=0;i<3;i++){const sx=-28+i*23;ctx.beginPath();ctx.moveTo(sx,-43);ctx.lineTo(sx+Math.sin(worldTime*50+i)*9,-32);ctx.stroke();}
+ }
+ ctx.restore();
+ if(furious)label('타다다다닥! 💦',x,y-pz-178,'#b7efff',14);
  drawPlayerName(player.name,x,y-pz-height-14,'#fff2b7');
 }
 function drawChickEffects(){
  ctx.save();
+ ctx.font='bold 16px monospace';ctx.textAlign='center';ctx.shadowColor='#298bff';ctx.shadowBlur=9;
+ for(const shot of chickCodes)shot.tokens.forEach((token,i)=>{ctx.globalAlpha=1-i*.23;ctx.fillStyle=i?'#7ccaff':'#e0f7ff';ctx.fillText(token,shot.x-camera-shot.dir*i*32,shot.y-62-shot.z+(i%2?9:-6));});
+ ctx.globalAlpha=1;ctx.shadowBlur=0;
  if(chickCharge){const a=chickArea();ctx.fillStyle='#7affe32b';ctx.strokeStyle='#9cffe5';ctx.lineWidth=3;ctx.fillRect(a.x-camera-a.width/2,a.y-a.height/2,a.width,a.height);ctx.strokeRect(a.x-camera-a.width/2,a.y-a.height/2,a.width,a.height);label(`시스템 정지 · ${chickCharge.elapsed.toFixed(1)}초`,a.x-camera,a.y-a.height/2-23,'#b4ffe4',14);}
  for(const m of monsters){
   if(!chickStunned(m))continue;const x=m.x-camera,height=m.isBoss?(isTypeA(m)?TYPE_A.height:180):72+m.level*3;
@@ -906,7 +937,7 @@ function attack(){
  if(chickCharge||hackerUlt)return;
  if(scene!=='playing'||modal||swordUlt||guardTime>0||recovery||attackTimer>0)return;
  if(catCharge||catCastLock>0)return;
- if(player.classId==='chick'){chickPunch(false);return;}
+ if(player.classId==='chick'){if(player.job==='hacker')chickCodeAttack();else chickPunch(false);return;}
  if(player.classId==='rabbit'){rabbitAttack();return;}
  if(player.classId==='cat'){
   attackTimer=.31;playCombatMotion('catPunch',.31);effects.push({type:'claw',x:player.x+facing*48,y:player.y-67-pz,size:48,dir:facing,life:.18,max:.18,color:'#f8e9e7'});
@@ -1004,7 +1035,7 @@ function update(dt){
  if(invincible>0)invincible-=dt;if(attackTimer>0)attackTimer-=dt;for(const k in cooldowns)cooldowns[k]=Math.max(0,cooldowns[k]-dt);if(player.powerTime>0){player.powerTime=Math.max(0,player.powerTime-dt);if(player.powerTime===0){toast('평범한 펭귄으로 돌아왔어요.');save();}}shake=Math.max(0,shake-dt*20);if(swordUlt?.phase==='charging')shake=Math.max(shake,2+swordUlt.elapsed*.9);
  let dx=(keys.has('ArrowRight')?1:0)-(keys.has('ArrowLeft')?1:0),dy=(keys.has('ArrowDown')?1:0)-(keys.has('ArrowUp')?1:0);if(swordUlt||combatMotion?.fromX!==undefined){dx=0;dy=0;}if(hackerUlt){dx=0;dy=0;}if(dx)facing=dx;const norm=Math.hypot(dx,dy)||1;
  const stepX=player.x,stepY=player.y,wasGrounded=pz===0&&pvz===0;
- player.x=clamp(player.x+dx/norm*285*movementMultiplier(player)*(chickStealth>0?1.3:1)*moveDt,45,MAPS[player.map].width-45);player.y=clamp(player.y+dy/norm*175*movementMultiplier(player)*(chickStealth>0?1.3:1)*moveDt,580,720);
+ player.x=clamp(player.x+dx/norm*285*movementMultiplier(player)*(chickStealth>0?1.5:1)*moveDt,45,MAPS[player.map].width-45);player.y=clamp(player.y+dy/norm*175*movementMultiplier(player)*(chickStealth>0?1.5:1)*moveDt,580,720);
  updateJump(dt);
  // Count only clamped keyboard movement, before dash, knockback or teleport effects.
  const stepDistance=Math.hypot(player.x-stepX,player.y-stepY);

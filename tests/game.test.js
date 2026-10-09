@@ -31,7 +31,7 @@ function harness(){
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),hidden:false,activeElement:el('#game')};
  const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;this.complete=true;this.naturalWidth=1500;this.naturalHeight=1000;this.onload?.();}},Promise,Math,Date,Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
- vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
+ vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
  return {api:context.gameTest,persistence,draws,labels,strokes,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
 }
 function advance(h,seconds){for(let t=0;t<seconds;t+=1/60)h.api.update(1/60);}
@@ -1588,17 +1588,36 @@ test('chick promotion is available only from Hyupro in Maple hideout at level 10
  h.api.closeModal();render(h);assert.ok(h.draws.some(d=>d.asset==='assets/npc-hyupro.png'));
  h.api.characters([p],p.id);assert.match(h.el('#screens').innerHTML,/background-position:0 66.6667%/);
 });
-test('chick Q adds 40% horizontal range and stealth boosts only the next attack',()=>{
- const {h,p}=chickFixture();const [inside,outside]=h.api.get().monsters;inside.x=p.x+290;outside.x=p.x+300;
- const q=core.effectiveSkill(p,'q');assert.equal(q.range,core.effectiveSkill(core.createCharacter('펭귄'),'q').range*1.4);
- h.api.cast('w');h.api.cast('q');assert.equal(10000-inside.hp,Math.round(core.attackPower(p)*q.damage*1.2));assert.equal(outside.hp,10000);assert.equal(h.api.get().chickStealth,0);
+test('novice chick basic attack has extended reach while Q is a shorter scratch',()=>{
+ const {h,p}=chickFixture('alley',null);const [inside,outside]=h.api.get().monsters;inside.x=p.x+190;outside.x=p.x+201;
+ assert.equal(core.effectiveSkill(p,'q').range,175);h.api.cast('w');h.api.attack();assert.equal(10000-inside.hp,Math.round(core.attackPower(p)*1.2));assert.equal(outside.hp,10000);assert.equal(h.api.get().chickStealth,0);
  advance(h,.5);inside.x=p.x+90;const hp=inside.hp;h.api.attack();assert.equal(hp-inside.hp,core.attackPower(p));
 });
-test('stealth gives 30% movement, prevents tracking/contact, expires, and magic reveals it',()=>{
+test('stealth gives 50% movement, prevents tracking/contact, expires, and magic reveals it',()=>{
  const {h,p}=chickFixture();const m=h.api.get().monsters[0];Object.assign(m,{x:p.x,y:p.y,home:p.x,speed:100});
- h.api.cast('w');const hp=p.hp,x=p.x;h.api.keys.add('ArrowRight');h.api.update(.2);h.api.keys.clear();assert.ok(Math.abs(p.x-x-285*1.3*.2)<1e-8);assert.equal(p.hp,hp);assert.ok(m.x<x,'hidden player does not pull the patrolling enemy toward them');
+ h.api.cast('w');const hp=p.hp,x=p.x;h.api.keys.add('ArrowRight');h.api.update(.2);h.api.keys.clear();assert.ok(Math.abs(p.x-x-285*1.5*.2)<1e-8);assert.equal(p.hp,hp);assert.ok(m.x<x,'hidden player does not pull the patrolling enemy toward them');
  h.api.playerDamage(20,null,'physical');assert.ok(h.api.get().chickStealth>0);h.api.playerDamage(20,null,'magic');assert.equal(h.api.get().chickStealth,0);
  const b=chickFixture();b.h.api.cast('w');advance(b.h,5.1);assert.equal(b.h.api.get().chickStealth,0);
+});
+test('hacker basic attack emits visible code and hits only the first enemy along its path',()=>{
+ const {h,p}=chickFixture();const [near,far]=h.api.get().monsters;near.x=p.x+180;far.x=p.x+260;
+ h.api.attack();assert.equal(near.hp,10000);assert.equal(h.api.get().chickCodes.length,1);assert.equal(h.api.get().chickCodes[0].tokens.length,3);
+ render(h);assert.ok(h.labels.some(l=>h.api.get().chickCodes[0].tokens.includes(l.text)));
+ advance(h,.4);assert.equal(near.hp,10000-core.attackPower(p));assert.equal(far.hp,10000);assert.equal(h.api.get().chickCodes.length,0);
+});
+test('hacker code respects range, travels left, and clears on combat reset',()=>{
+ const {h,p}=chickFixture();h.api.get().monsters.forEach((m,i)=>m.x=p.x+521+i*30);h.api.attack();advance(h,.8);assert.ok(h.api.get().monsters.every(m=>m.hp===10000));
+ h.api.keys.add('ArrowLeft');h.api.update(.01);h.api.keys.clear();const m=h.api.get().monsters[0];m.x=p.x-300;h.api.attack();advance(h,.5);assert.equal(m.hp,10000-core.attackPower(p));
+ h.api.attack();h.api.resetCombat();assert.equal(h.api.get().chickCodes.length,0);
+});
+test('hacker Q damages only the nearest target and does not pay when none are in range',()=>{
+ const {h,p}=chickFixture();const [near,far]=h.api.get().monsters;near.x=p.x-120;far.x=p.x+180;
+ h.api.cast('w');h.api.cast('q');assert.equal(near.hp,10000-Math.round(core.attackPower(p)*2.1*1.2));assert.equal(far.hp,10000);assert.ok(h.api.get().effects.some(e=>e.type==='ring'&&e.color==='#65baff'));assert.equal(h.api.get().chickStealth,0);
+ const b=chickFixture();b.h.api.get().monsters.forEach(m=>m.x=b.p.x+600);const mp=b.p.mp;b.h.api.cast('q');assert.equal(b.p.mp,mp);assert.equal(b.h.api.get().cooldowns.q,0);
+});
+test('W grants half a second of invulnerability even after attacking reveals the chick',()=>{
+ const {h,p}=chickFixture();advance(h,2.1);h.api.cast('w');assert.equal(h.api.get().invincible,.5);h.api.attack();assert.equal(h.api.get().chickStealth,0);
+ const m=h.api.get().monsters[0];m.x=p.x;m.y=p.y;const hp=p.hp;advance(h,.45);assert.equal(p.hp,hp);advance(h,.1);assert.ok(p.hp<hp);
 });
 test('E keeps stealth while charging, moves its rectangle, pays once, freezes and grays enemies',()=>{
  const {h,p}=chickFixture();h.api.cast('w');const mp=p.mp;assert.equal(h.api.startChickCharge('test'),true);const first=h.api.chickArea().x;
@@ -1619,7 +1638,7 @@ test('hacking picks level then remaining HP, cycles with arrows, zooms out and t
  const key=code=>h.events.get('keydown')({code,repeat:false,target:{matches:()=>false},preventDefault(){}});
  key('ArrowRight');assert.equal(h.api.get().hackerUlt.targetId,list[2].id);key('ArrowLeft');assert.equal(h.api.get().hackerUlt.targetId,list[1].id);
  const x=p.x;h.api.keys.add('ArrowUp');advance(h,.3);assert.equal(p.x,x);assert.equal(p.y,650);assert.ok(h.api.get().cameraZoom<.8);assert.ok(h.api.chickFrame()>=12);
- key('Enter');assert.equal(h.api.get().hackerUlt.phase,'channeling');assert.ok(list[1].hack);assert.equal(h.api.playerDamage(100),20);
+ key('Enter');render(h);assert.ok(h.labels.some(l=>l.text.includes('타다다다닥')));assert.equal(h.api.get().hackerUlt.phase,'channeling');assert.ok(list[1].hack);assert.equal(h.api.playerDamage(100),20);
  const hp=list[1].hp,tx=list[1].x;advance(h,4.95);assert.ok(list[1].hack);assert.equal(list[1].x,tx);assert.equal(hp-list[1].hp,9*Math.round(core.attackPower(p)*1.25));
  advance(h,.1);assert.equal(list[1].hack,null);assert.equal(hp-list[1].hp,10*Math.round(core.attackPower(p)*1.25));assert.equal(h.api.get().hackerUlt,null);assert.equal(h.api.playerDamage(100),100);
 });
@@ -1636,7 +1655,7 @@ test('E and R control the active soldier without counter reflection and resume a
 test('chick walk, jump, punch, laptop charge and seated typing use different atlas frames',()=>{
  const {h,p}=chickFixture();assert.equal(h.api.chickFrame(),8);h.api.keys.add('ArrowRight');const frames=new Set();for(let i=0;i<40;i++){h.api.update(1/60);frames.add(h.api.chickFrame());}assert.ok(frames.size>=3);h.api.keys.clear();
  h.api.jump();assert.equal(h.api.chickFrame(),4);advance(h,.2);assert.equal(h.api.chickFrame(),5);advance(h,1);
- h.api.attack();assert.equal(h.api.chickFrame(),6);advance(h,.12);assert.equal(h.api.chickFrame(),7);advance(h,.4);
+ h.api.attack();assert.equal(h.api.chickFrame(),12);advance(h,.12);assert.equal(h.api.chickFrame(),13);advance(h,.4);
  h.api.startChickCharge('test');assert.equal(h.api.chickFrame(),11);h.api.cancelChickAim();h.api.cast('r');assert.ok(h.api.chickFrame()>=12);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion.png'));
 });
 
