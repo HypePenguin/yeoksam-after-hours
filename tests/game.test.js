@@ -1465,3 +1465,21 @@ test('both towns regenerate HP and MP twice as fast without changing other areas
   }
  }
 });
+
+test('every Type A attack adds ten percent of target max HP before defense, including repeated spin hits',()=>{
+ const attacks=[['blade',155],['bullet',62],['dash',195],['bomb',160],['spin',112],['pull',52]];
+ for(const [classId,job] of [['wanderer','bodybuilder'],['cat','protester'],['rabbit','mage']])for(const [kind,base] of attacks){
+  const h=harness(),p=core.createCharacter('추가피해',classId);Object.assign(p,{level:35,job,map:'hangar'});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);h.api.startBossFight();
+  const b=h.api.get().boss;b.phase='recover';b.elapsed=-20;advance(h,1);p.x=b.x-100;p.y=b.y;p.hp=core.maxHp(p)-50;
+  b.elapsed=0;b.strikes=0;
+  if(kind==='blade'){b.phase='blade-charge';b.elapsed=.59;}
+  if(kind==='bullet'){b.phase='recover';b.elapsed=-20;b.projectiles=[{x:p.x+5,y:p.y,dir:-1,life:1,spent:false}];}
+  if(kind==='dash'){b.phase='dash';b.velocity={x:-1000,y:0};b.dashHit=false;}
+  if(kind==='bomb'){b.phase='recover';b.elapsed=-20;b.bombs=[{x:p.x,y:p.y,remaining:.01}];}
+  if(kind==='spin')b.phase='spin';
+  if(kind==='pull'){b.phase='pull-charge';b.elapsed=.69;}
+  const before=p.hp,expected=core.incomingDamage(p,base+core.maxHp(p)*.1);
+  h.api.update(.02);assert.equal(before-p.hp,expected,`${classId} ${kind}`);
+  if(kind==='spin'){const hp=p.hp;advance(h,.4);assert.equal(hp-p.hp,expected,`${classId} next spin hit`);}
+ }
+});

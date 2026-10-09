@@ -1,5 +1,5 @@
 // A-type encounter state is transient; no projectiles or phases survive leaving the room.
-export const TYPE_A={name:'A형',level:35,hp:72000,xp:12000,money:6000,cores:15,height:370,width:1800,
+export const TYPE_A={name:'A형',level:35,hp:72000,maxHpDamage:.1,xp:12000,money:6000,cores:15,height:370,width:1800,
  blade:{windup:.6,range:300,halfLane:65,damage:155},gun:{windup:.65,count:8,interval:.14,speed:1150,damage:62},
  dash:{charge:.85,duration:.5,speed:1700,damage:195},bomb:{count:4,interval:.5,flight:.9,radius:105,damage:160},
  safety:{duration:5,rx:125,ry:55},spin:{duration:4,radius:250,tick:.4,damage:112,speed:85},pull:{radius:570,damage:52},recover:.85};
