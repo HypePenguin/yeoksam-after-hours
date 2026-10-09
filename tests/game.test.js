@@ -1555,3 +1555,21 @@ test('cat bottle buffs explosion damage and independent explosion/fire radii at 
   assert.equal(10000-m.hp,edge<0?Math.round(core.attackPower(p)*(phase==='explosion'?2.75:.43)):0,`${phase} ${axis} ${edge}`);
  }
 });
+
+test('Yeoksam street shop replaces destination scrolls while keeping potions and purchase scroll position',()=>{
+ const h=harness(),p=core.createCharacter('거리상점');Object.assign(p,{map:'yeoksamStreet',money:300});h.api.start(p);h.api.shop();
+ const html=h.el('#modal-root').innerHTML;assert.match(html,/역삼역 주변 거리 귀환 주문서/);assert.doesNotMatch(html,/buy-returnScrolls|buy-gangnamScrolls/);
+ for(const id of ['potions','largePotions','mpPotions'])assert.ok(html.includes(`buy-${id}`));
+ assert.equal(core.buyItem(p,'returnScrolls').ok,false);assert.equal(core.buyItem(p,'gangnamScrolls').ok,false);assert.equal(p.money,300);
+ const body=h.el('.npc-dialog-body');body.scrollTop=110;const button=h.el('#buy-yeoksamStreetScrolls');h.document.activeElement=button;
+ Object.defineProperty(h.el('#modal-root'),'innerHTML',{get:()=>html,set(){assert.fail('purchase rebuilt shop');}});
+ for(let i=1;i<=3;i++){button.onclick();assert.equal(p.yeoksamStreetScrolls,i);assert.equal(p.money,300-i*100);assert.equal(body.scrollTop,110);assert.equal(h.document.activeElement,button);}
+ assert.equal(button.disabled,true);button.onclick();assert.equal(p.yeoksamStreetScrolls,3);
+ for(const map of ['town','gangnam']){p.map=map;assert.equal(core.buyItem(p,'yeoksamStreetScrolls').ok,false);assert.ok(!core.shopItemsFor(p).includes('yeoksamStreetScrolls'));assert.ok(core.shopItemsFor(p).includes('returnScrolls'));assert.ok(core.shopItemsFor(p).includes('gangnamScrolls'));}
+});
+test('street scroll saves and binds, recalls from combat, preserves HP/MP and never consumes at destination',()=>{
+ const h=harness(),p=core.createCharacter('거리귀환');Object.assign(p,{level:35,map:'hangar',yeoksamStreetScrolls:2,hp:200,mp:90,typeATitle:1});h.api.start(p);h.api.inventory('yeoksamStreetScrolls');key(h,'Digit2');h.api.closeModal();h.api.startBossFight();
+ key(h,'Digit2');assert.equal(p.map,'yeoksamStreet');assert.equal(p.yeoksamStreetScrolls,1);assert.equal(p.hp,200);assert.equal(p.mp,90);assert.equal(h.api.get().boss,null);assert.ok(p.visited.includes('yeoksamStreet'));
+ key(h,'Digit2');assert.equal(p.yeoksamStreetScrolls,1);const saved=JSON.parse(h.storage.get(core.SAVE_KEY)).characters[0],restored=core.normalizeCharacter(saved);assert.equal(restored.yeoksamStreetScrolls,1);assert.equal(restored.quickSlots[1],'yeoksamStreetScrolls');assert.equal(restored.map,'yeoksamStreet');
+ const old={...p};delete old.yeoksamStreetScrolls;assert.equal(core.normalizeCharacter(old).yeoksamStreetScrolls,0);
+});

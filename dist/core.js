@@ -19,6 +19,7 @@ export const ITEMS = {
  largePotions:{name:'고급 체력 물약',icon:'❤',description:'HP를 150 회복합니다. 체력이 가득 차면 소모하지 않아요. 보스전에서는 기존 체력 물약과 재사용 대기 10초를 공유합니다.',usable:true,price:500,hpRestore:150},
  returnScrolls:{name:'역삼역 1번 출구 귀환 주문서',icon:'역',description:'역삼역 1번 출구로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'town',x:530,y:648}},
  gangnamScrolls:{name:'강남역 귀환 주문서',icon:'강',description:'강남역 마을로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'gangnam',x:650,y:648}},
+ yeoksamStreetScrolls:{name:'역삼역 주변 거리 귀환 주문서',icon:'거',description:'역삼역주변거리로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'yeoksamStreet',x:850,y:648}},
  scrap:{name:'로봇 부품',icon:'⚙',description:'로봇에게서 얻은 수집 재료입니다.',usable:false},
  typeATitle:{name:'A형',icon:'✧',description:'A형 처치 보상 칭호. 장착하면 닉네임 위에 은색으로 표시되고 공격력이 5% 증가합니다. 군복과 함께 장착할 수 있어요.',usable:false,equippable:true,equipmentType:'칭호'},
  uniform:{name:'군복',icon:'▣',description:'군인 승현의 결투 보상. 장착하면 위장 군복을 입고, 걷기와 공중 이동 속도가 20% 증가합니다.',usable:false,equippable:true},
@@ -34,6 +35,7 @@ export const movementMultiplier=p=>(p?.job==='swordsman'?1.1:1)*(p?.uniform>0&&p
 export const incomingDamage=(p,damage,multiplier=1)=>Math.max(0,Math.round(damage*(p?.job==='bodybuilder'?0.9:1)*(p?.respectTime>0?.8:1)*multiplier));
 export function equipUniform(p){if(!p.uniform)return {ok:false,message:'먼저 군인 승현을 처치해 군복을 얻으세요.'};p.uniformEquipped=!p.uniformEquipped;return {ok:true,message:p.uniformEquipped?'군복 장착 · 이동속도 +20%':'군복을 벗었어요.'};}
 export const validItem=id=>Object.hasOwn(ITEMS,id);
+export const shopItemsFor=p=>['potions','largePotions','mpPotions',...(p.map==='yeoksamStreet'?['yeoksamStreetScrolls']:['returnScrolls','gangnamScrolls'])];
 export const itemPrice=(p,id)=>validItem(id)?id==='gangnamScrolls'&&p.map==='town'?1500:ITEMS[id].price:undefined;
 export function assignQuickSlot(p,index,id){
  if(!Number.isInteger(index)||index<0||index>2)return {ok:false,message:'1~3번 슬롯을 선택해 주세요.'};
@@ -44,7 +46,7 @@ export function assignQuickSlot(p,index,id){
 }
 export function buyItem(p,id){
  const item=validItem(id)?ITEMS[id]:null,price=itemPrice(p,id);
- if(!price)return {ok:false,message:'판매하지 않는 아이템이에요.'};
+ if(!price||!shopItemsFor(p).includes(id))return {ok:false,message:'판매하지 않는 아이템이에요.'};
  if(p.money<price)return {ok:false,message:`소지금이 부족해요. ${item.name}은 ${price.toLocaleString()}원입니다.`};
  p.money-=price;p[id]=(p[id]||0)+1;return {ok:true,message:`${item.name} 1개를 구입했어요.`};
 }
@@ -225,7 +227,7 @@ export function createCharacter(name,classId='wanderer'){
  const clean=String(name).trim();
  if(!/^[\p{L}\p{N}_ ]{1,12}$/u.test(clean))throw new Error('이름은 한글·영문·숫자 1~12자로 입력해 주세요.');
  const stats=CLASSES.find(c=>c.id===classId);if(!stats)throw new Error('선택할 수 없는 캐릭터입니다.');
- return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:maxHp({classId,level:1}),mp:stats.mp,money:500,potions:3,largePotions:0,mpPotions:classId==='rabbit'?1:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,quickSlots:['potions',classId==='rabbit'?'mpPotions':null,null],uniform:0,uniformEquipped:false,typeATitle:0,typeATitleEquipped:false,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],respectTime:0,powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
+ return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:maxHp({classId,level:1}),mp:stats.mp,money:500,potions:3,largePotions:0,mpPotions:classId==='rabbit'?1:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,yeoksamStreetScrolls:0,quickSlots:['potions',classId==='rabbit'?'mpPotions':null,null],uniform:0,uniformEquipped:false,typeATitle:0,typeATitleEquipped:false,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],respectTime:0,powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
 }
 export function normalizeCharacter(raw){
  if(!raw||typeof raw.id!=='string'||typeof raw.name!=='string')return null;
@@ -233,7 +235,7 @@ export function normalizeCharacter(raw){
  // Starter supplies are only granted on creation, never while loading older saves.
  p.mpPotions=0;p.quickSlots=['potions',null,null];
  p.id=raw.id.slice(0,100);
- for(const key of ['level','xp','money','potions','largePotions','mpPotions','returnScrolls','gangnamScrolls','scrap','cores','kills','bossWins','typeAWins'])if(Number.isFinite(raw[key]))p[key]=Math.floor(clamp(raw[key],key==='level'?1:0,key==='level'?99:9999999));
+ for(const key of ['level','xp','money','potions','largePotions','mpPotions','returnScrolls','gangnamScrolls','yeoksamStreetScrolls','scrap','cores','kills','bossWins','typeAWins'])if(Number.isFinite(raw[key]))p[key]=Math.floor(clamp(raw[key],key==='level'?1:0,key==='level'?99:9999999));
  if(Array.isArray(raw.quickSlots))p.quickSlots=Array.from({length:3},(_,i)=>validItem(raw.quickSlots[i])&&ITEMS[raw.quickSlots[i]].usable?raw.quickSlots[i]:null);
  p.uniform=Number.isFinite(raw.uniform)&&raw.uniform>0?1:0;p.uniformEquipped=p.uniform>0&&raw.uniformEquipped===true;
  // Existing victories also unlock the new reward; equipping remains the player's choice.
