@@ -1536,3 +1536,19 @@ test('title migration, ownership checks and attack bonus remain stable across jo
  const c=core.createCharacter('공격칭호',classId);Object.assign(c,{level:35,job,typeATitle:1,respectTime:10,powerTime:12});const base=core.attackPower(c);core.equipTypeATitle(c);assert.equal(core.attackPower(c),base*1.05);assert.equal(core.basicAttackPower(c),Math.round(base*1.05*(job==='bodybuilder'?1.8:1)));core.equipTypeATitle(c);assert.equal(core.attackPower(c),base);
  }
 });
+
+test('cat bottle buffs explosion damage and independent explosion/fire radii at hit boundaries',()=>{
+ for(const phase of ['explosion','fire'])for(const axis of ['x','y'])for(const edge of [-1,1]){
+  const h=harness(),p=core.createCharacter('화염강화','cat');Object.assign(p,{level:15,job:'protester',map:'alley',x:1000});p.mp=core.maxMp(p);h.api.start(p);
+  const skill=core.effectiveSkill(p,'e');assert.equal(skill.damage,2.75);assert.equal(skill.radius,105*1.5);assert.ok(Math.abs(skill.burnRadius-105*.86*1.7)<1e-9);
+  h.api.startCatCharge('test');h.api.releaseCatCharge('test');const bottle=h.api.get().catProjectiles[0];bottle.elapsed=bottle.duration;
+  const monsters=h.api.get().monsters,m=monsters[0];monsters.forEach(m=>{m.x=2300;m.home=m.x;m.speed=0;m.hp=m.maxHp=10000;});
+  const radius=phase==='explosion'?skill.radius:skill.burnRadius;
+  const position=()=>{m.x=bottle.toX+(axis==='x'?radius+edge:0);m.y=bottle.toY+(axis==='y'?(radius+edge)/1.5:0);m.home=m.x;m.knockback=0;m.hp=10000;};
+  if(phase==='explosion')position();h.api.update(.001);
+  const fire=h.api.get().catFires[0];assert.equal(fire.radius,skill.burnRadius);assert.equal(fire.duration,3);
+  assert.equal(h.api.get().effects.find(e=>e.type==='ring'&&e.color==='#ffb565').size,skill.radius);
+  if(phase==='fire'){position();fire.tick=0;h.api.update(.001);}
+  assert.equal(10000-m.hp,edge<0?Math.round(core.attackPower(p)*(phase==='explosion'?2.75:.43)):0,`${phase} ${axis} ${edge}`);
+ }
+});

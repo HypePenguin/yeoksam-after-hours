@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=68';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=68';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=68';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,respawn,buyPotion,usePotion,canUseSkill,makeMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=69';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=69';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=69';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={};let assetsReady=false,assetFailed=false;
@@ -758,7 +758,7 @@ function updateCatCombat(dt){
  if(catCharge){catCharge.elapsed=Math.min(catCharge.skill.charge,catCharge.elapsed+dt);if(catCharge.elapsed>=catCharge.skill.charge)releaseCatCharge(catCharge.input);}
  for(const bottle of catProjectiles){bottle.elapsed+=dt;if(bottle.elapsed<bottle.duration)continue;
   catAreaHit(bottle.toX,bottle.toY,bottle.skill.radius,bottle.skill.damage);
-  catFires.push({x:bottle.toX,y:bottle.toY,radius:bottle.skill.radius*.86,remaining:bottle.skill.burn,duration:bottle.skill.burn,tick:.5});
+  catFires.push({x:bottle.toX,y:bottle.toY,radius:bottle.skill.burnRadius,remaining:bottle.skill.burn,duration:bottle.skill.burn,tick:.5});
   effects.push({type:'ring',x:bottle.toX,y:bottle.toY,life:.48,max:.48,color:'#ffb565',size:bottle.skill.radius});shake=Math.max(shake,4);beep(155,.24,'sawtooth',.025);
  }
  catProjectiles=catProjectiles.filter(b=>b.elapsed<b.duration);
