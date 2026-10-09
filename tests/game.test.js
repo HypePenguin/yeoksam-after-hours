@@ -1484,15 +1484,18 @@ test('every Type A attack adds ten percent of target max HP before defense, incl
  }
 });
 
-test('graduation room portal works before challenge and after victory, but is hidden and blocked during combat',async()=>{
+test('graduation exit requires equipped title before challenge and after victory, and stays blocked in combat',async()=>{
  const h=harness(),p=core.createCharacter('다음거리');Object.assign(p,{level:35,map:'hangar',hp:780});h.api.start(p);
  const out=core.MAPS.hangar.portals.find(p=>p.to==='yeoksamStreet');assert.ok(out);assert.equal(core.MAPS.hangar.name,'수료조건');p.x=out.x;p.y=out.y;
  render(h);assert.ok(h.labels.some(l=>l.text==='역삼역주변거리'));assert.equal(h.api.findInteraction().to,'yeoksamStreet');
+ await h.api.travel(out);assert.equal(p.map,'hangar');assert.equal(h.api.get().scene,'playing');assert.match(h.el('#toast').textContent,/A형 칭호를 장착/);
+ p.typeATitle=1;h.api.interact();assert.equal(p.map,'hangar');assert.equal(h.api.get().scene,'playing');core.equipTypeATitle(p);
  let pending=h.api.travel(out);await h.flush();await pending;assert.equal(p.map,'yeoksamStreet');assert.equal(h.api.get().monsters.length,0);assert.equal(h.api.get().boss,null);
  assert.equal(core.normalizeCharacter(p).map,'yeoksamStreet');p.x=1050;p.y=654;h.api.interact();assert.equal(h.api.get().modal,'shop');const money=p.money;h.el('#buy-mpPotions').onclick();assert.equal(p.money,money-500);assert.equal(p.mpPotions,1);h.api.closeModal();
- const back=core.MAPS.yeoksamStreet.portals.find(p=>p.to==='hangar');pending=h.api.travel(back);await h.flush();await pending;assert.equal(p.map,'hangar');
- h.api.startBossFight();const b=h.api.get().boss;p.x=out.x;p.y=out.y;render(h);assert.ok(!h.labels.some(l=>l.text==='역삼역주변거리'));assert.equal(h.api.findInteraction(),null);await h.api.travel(out);assert.equal(p.map,'hangar');
+ core.equipTypeATitle(p);const back=core.MAPS.yeoksamStreet.portals.find(p=>p.to==='hangar');pending=h.api.travel(back);await h.flush();await pending;assert.equal(p.map,'hangar');
+ core.equipTypeATitle(p);h.api.startBossFight();const b=h.api.get().boss;p.x=out.x;p.y=out.y;render(h);assert.ok(!h.labels.some(l=>l.text==='역삼역주변거리'));assert.equal(h.api.findInteraction(),null);await h.api.travel(out);assert.equal(p.map,'hangar');
  b.safetyUsed=true;b.hp=1;h.api.hitMonster(b,2);assert.equal(b.dead,true);h.api.closeModal();render(h);assert.ok(h.labels.some(l=>l.text==='역삼역주변거리'));assert.equal(h.api.findInteraction().to,'yeoksamStreet');
+ core.equipTypeATitle(p);await h.api.travel(out);assert.equal(p.map,'hangar');assert.equal(h.api.get().scene,'playing');core.equipTypeATitle(p);
  pending=h.api.travel(out);await h.flush();await pending;assert.equal(p.map,'yeoksamStreet');assert.equal(p.typeAWins,1);
  h.api.worldMap();assert.match(h.el('#modal-root').innerHTML,/역삼역주변거리/);assert.match(h.el('#modal-root').innerHTML,/수료조건/);assert.doesNotMatch(h.el('#modal-root').innerHTML,/A형 격납고/);
 });
