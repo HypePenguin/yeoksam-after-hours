@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=89';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=89';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=89';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=90';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=90';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=90';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={};let assetsReady=false,assetFailed=false;
@@ -789,7 +789,10 @@ function drawOtterPlayer(){
  if(walking&&pz===0)ctx.translate(0,-Math.abs(Math.sin(walkPhase*Math.PI*4))*2);
  if(otterConcert){ctx.translate(Math.sin(otterConcert.elapsed*7)*3,-Math.abs(Math.sin(otterConcert.elapsed*7))*3);ctx.rotate(Math.sin(otterConcert.elapsed*5)*.035);}
  ctx.globalAlpha=hurtTime<=0&&invincible>0&&Math.floor(invincible*13)%2===0?.55:1;ctx.imageSmoothingEnabled=true;
- ctx.drawImage(img,sourceX,top,sourceWidth,bottom-top,(sourceX-(column+.5)*cw)*scale,(top-foot)*scale,sourceWidth*scale,(bottom-top)*scale);ctx.restore();
+ ctx.drawImage(img,sourceX,top,sourceWidth,bottom-top,(sourceX-(column+.5)*cw)*scale,(top-foot)*scale,sourceWidth*scale,(bottom-top)*scale);
+ // The fist effect crosses the first tile; only this band is clear of the adjacent Q pose.
+ if(frame===8){const effectTop=680,effectBottom=819,effectWidth=340-cw;ctx.drawImage(img,cw,effectTop,effectWidth,effectBottom-effectTop,cw*.5*scale,(effectTop-foot)*scale,effectWidth*scale,(effectBottom-effectTop)*scale);}
+ ctx.restore();
  drawPlayerName(player.name,x,player.y-pz-160,player.job==='idol'?'#ffd0e8':'#d6efe7');
 }
 function waterBubble(x,y,r=15,alpha=1){

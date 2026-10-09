@@ -1932,3 +1932,15 @@ test('otter Q/W exclude the next row artwork while concert keeps the full head a
   if(job){advance(h,.5);h.api.cast('r');render(h);const r=h.draws.find(d=>d.asset===asset);assert.ok(r.source[1]<=939,'dance includes top of head');assert.ok(Math.abs(r.height/r.source[3]-scale)<.01,'poses keep the same artwork scale');}
  }
 });
+
+test('otter punch includes the complete overflowing fist effect in both outfits and directions',()=>{
+ for(const job of [null,'idol'])for(const direction of ['ArrowRight','ArrowLeft']){
+  const {h}=otterFixture('town',job),asset=job?'assets/otter-idol-skirt-motion.png':'assets/otter-motion.png';
+  h.api.keys.add(direction);h.api.update(.01);h.api.keys.clear();h.api.attack();advance(h,.15);assert.equal(h.api.otterFrame(),8);render(h);
+  const [body,overflow]=h.draws.filter(d=>d.asset===asset);
+  assert.ok(overflow,'effect beyond the tile boundary is drawn');assert.equal(overflow.source[0],body.source[0]+body.source[2]);assert.equal(overflow.source[0]+overflow.source[2],340);
+  assert.equal(overflow.source[1]+overflow.source[3],819,'exclude the neighboring Q tail');
+  assert.equal(Math.sign(overflow.matrix[0]),direction==='ArrowLeft'?-1:1);assert.equal(overflow.matrix[0],body.matrix[0]);
+  assert.ok(Math.abs(overflow.height/overflow.source[3]-body.height/body.source[3])<1e-9,'effect keeps the artwork scale');
+ }
+});
