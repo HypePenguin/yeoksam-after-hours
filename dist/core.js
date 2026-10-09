@@ -8,7 +8,7 @@ export const CLASSES = [
 ];
 export const POWER_DURATION = 12;
 export const JOBS = {
- hacker:{id:'hacker',name:'해커',classId:'chick',map:'maple',e:'시스템 정지',r:'해킹',passive:'노트북으로 적의 행동을 제어'},
+ hacker:{id:'hacker',name:'해커',classId:'chick',map:'maple',e:'시스템 정지',r:'해킹',passive:'경험치 획득량 +30%'},
  mage:{id:'mage',name:'마법사',classId:'rabbit',map:'town',maps:['town','gangnam','yeoksamStreet'],e:'마력 방벽',r:'존경!',passive:'W가 순간 이동으로 변경'},
  bodybuilder:{id:'bodybuilder',name:'바디빌더',map:'gym',e:'회복',r:'근육 각성',passive:'받는 피해 10% 감소'},
  swordsman:{id:'swordsman',name:'검사',map:'dojo',e:'막기',r:'섬광 연참',passive:'기본 이동속도 +10%'},
@@ -196,7 +196,7 @@ export function effectiveSkill(p,key){
   const clean={...skill,heal:0,recovery:0,reduction:0,enhanced:''};
   if(key==='q')return {...clean,name:p.job==='hacker'?'코드 침투':'할퀴기',icon:'✦',mp:8,cooldown:2.4,damage:2.1,range:p.job==='hacker'?520:175,description:p.job==='hacker'?'사거리 안에서 가장 가까운 적 하나를 해킹해 푸른 폭발과 함께 피해를 줍니다.':'앞쪽의 적을 발톱으로 긁습니다.'};
   if(key==='w')return {...clean,name:'시크릿 모드',icon:'◌',mp:14,cooldown:10,damage:0,range:0,duration:5,invulnerable:.5,description:'사용 직후 0.5초 무적 · 최대 5초 은신 · 이동속도 +50%. 적 추적과 접촉 피해를 피하며, 마법 피격 또는 공격 발동 시 해제돼요. 은신 중 다음 공격 +20%. E 차징 중 유지됩니다.'};
-  if(key==='e')return {...clean,name:'시스템 정지',icon:'▧',mp:24,cooldown:14,damage:4.5,range:110,maxRange:600,charge:2,width:288,height:132,stun:3,description:'E를 최대 2초 눌러 사각 범위를 전진시켜요. 놓으면 범위 피해와 3초 경직. 경직된 적은 흑백으로 변해요.'};
+  if(key==='e')return {...clean,name:'시스템 정지',icon:'▧',mp:24,cooldown:14,damage:4.5,range:110,maxRange:600,charge:2,width:332,height:152,stun:3,description:'E를 최대 2초 눌러 사각 범위를 전진시켜요. 놓으면 범위 피해와 3초 경직. 경직된 적은 흑백으로 변해요.'};
   if(key==='r')return {...clean,name:'해킹',icon:'⌘',mp:38,cooldown:40,damage:1.25,tick:.5,duration:5,selection:10,reduction:.8,description:'시야를 넓혀 가장 가까운 적을 먼저 조준합니다. 좌우로 선택, Enter로 확정, Esc로 취소. 5초 경직과 지속 피해. 선택·해킹 중 이동 불가, 받는 피해 80% 감소. 10초 안에 확정하세요.'};
  }
  if(p?.classId==='rabbit'){
@@ -266,7 +266,8 @@ export function normalizeCharacter(raw){
  if(p.level<10)gainXp(p,0);
  return p;
 }
-export function gainXp(p,amount){p.xp+=Math.max(0,amount);let gained=0;while(p.xp>=xpNeeded(p.level)&&p.level<99){p.xp-=xpNeeded(p.level);p.level++;gained++;p.hp=maxHp(p);p.mp=maxMp(p);}return gained;}
+export const xpReward=(p,amount)=>Math.round(Math.max(0,amount)*(p.classId==='chick'&&p.job==='hacker'?1.3:1));
+export function gainXp(p,amount){p.xp+=xpReward(p,amount);let gained=0;while(p.xp>=xpNeeded(p.level)&&p.level<99){p.xp-=xpNeeded(p.level);p.level++;gained++;p.hp=maxHp(p);p.mp=maxMp(p);}return gained;}
 export function respawn(p){p.map='town';p.x=530;p.y=648;p.hp=maxHp(p);p.mp=maxMp(p);p.powerTime=0;p.respectTime=0;p.hp=maxHp(p);p.mpPotionCooldown=0;return p;}
 export function buyPotion(p){return buyItem(p,'potions');}
 export function usePotion(p,id='potions'){const amount=validItem(id)?ITEMS[id].hpRestore:0;if(!amount||!(p[id]>0))return {ok:false,message:'물약이 없어요. 마을의 물약 상인을 찾아보세요.'};if(p.hp>=maxHp(p))return {ok:false,message:'체력이 이미 가득 찼어요.'};const restored=Math.min(amount,maxHp(p)-p.hp);p[id]--;p.hp+=restored;return {ok:true,message:`체력이 ${Math.round(restored)} 회복되었어요.`};}

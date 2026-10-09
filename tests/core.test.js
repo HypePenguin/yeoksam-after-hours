@@ -235,3 +235,11 @@ test('patrol continues smoothly from current position and respects zero movement
  const m=makeMonster('alley',0);Object.assign(m,{home:600,x:1700,y:650,patrolY:650,dir:1,speed:100});patrolMonster(m,'alley',.1);assert.equal(m.x,1707);
  m.speed=0;patrolMonster(m,'alley',1);assert.equal(m.x,1707);assert.equal(m.y,650);
 });
+
+
+test('hacker XP passive applies to new normal and boss rewards without reboosting saved XP',()=>{
+ for(const [classId,job,multiplier] of [['chick','hacker',1.3],['chick',null,1],['wanderer','bodybuilder',1],['cat','protester',1],['rabbit','mage',1]]){
+  for(const reward of [19,100,12000]){const p=createCharacter('경험치',classId);Object.assign(p,{level:50,job,xp:0});let expected=Math.round(reward*multiplier),level=50;while(expected>=xpNeeded(level)){expected-=xpNeeded(level++);}gainXp(p,reward);assert.equal(p.level,level);assert.equal(p.xp,expected);const restored=normalizeCharacter(p);assert.equal(restored.xp,expected);gainXp(p,0);assert.equal(p.xp,expected);}
+ }
+ const p=createCharacter('전직','chick');p.level=10;p.xp=100;gainXp(p,100);assert.equal(p.xp,200);p.job='hacker';gainXp(p,100);assert.equal(p.xp,330);gainXp(p,-100);assert.equal(p.xp,330);
+});

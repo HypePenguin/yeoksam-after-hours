@@ -1692,8 +1692,8 @@ test('dungeon patrol never snaps back to the spawn after chasing, and stun pause
 });
 
 test('expanded hacker E hits the added width and height, but not beyond the preview border',()=>{
- const {h,p}=chickFixture();h.api.startChickCharge('test');const area=h.api.chickArea();assert.equal(area.width,288);assert.equal(area.height,132);
- const [wide,tall,outside]=h.api.get().monsters;Object.assign(wide,{x:area.x+140,y:area.y});Object.assign(tall,{x:area.x,y:area.y+60});Object.assign(outside,{x:area.x+145,y:area.y});
+ const {h,p}=chickFixture();h.api.startChickCharge('test');const area=h.api.chickArea();assert.equal(area.width,332);assert.equal(area.height,152);
+ const [wide,tall,outside]=h.api.get().monsters;Object.assign(wide,{x:area.x+166,y:area.y});Object.assign(tall,{x:area.x,y:area.y+76});Object.assign(outside,{x:area.x+167,y:area.y});
  h.api.releaseChickCharge('test');assert.ok(wide.hp<10000);assert.ok(tall.hp<10000);assert.equal(outside.hp,10000);render(h);assert.ok(h.labels.some(l=>l.text==='> SYSTEM HALTED_'));
 });
 test('hacker initial selection uses both axes and retargets to the nearest living enemy',()=>{
@@ -1742,4 +1742,9 @@ test('novice and laptop carrying walks share the new alternating gait',()=>{
 
 test('a chick planted foot counter-moves at ground speed during its stance',()=>{
  const h=harness(),a=h.api.chickStep(.1),b=h.api.chickStep(.2);assert.ok(Math.abs((b.x-a.x)+80*.1)<1e-9);
+});
+
+
+test('hacker E shares the preview and impact area and remains centered at both lane edges',()=>{
+ for(const y of [580,720]){const {h,p}=chickFixture();p.y=y;h.api.startChickCharge('test');const a=h.api.chickArea();assert.equal(a.y,650);assert.ok(a.y-a.height/2<=580&&a.y+a.height/2>=720);h.api.releaseChickCharge('test');const impact=h.api.get().effects.find(e=>e.type==='hackZone');for(const key of ['x','y','width','height'])assert.equal(impact[key],a[key]);}
 });
