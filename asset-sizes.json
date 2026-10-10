@@ -1,6 +1,6 @@
 {
-  "source_bytes": 213769687,
-  "bytes": 23523632,
+  "source_bytes": 215539076,
+  "bytes": 23541990,
   "assets": [
     {
       "name": "builder-recovery-walk",
@@ -1532,6 +1532,20 @@
       "name": "swordsman-skill-e",
       "source_bytes": 1741209,
       "bytes": 20368,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "swordsman-skill-e-draw",
+      "source_bytes": 1769389,
+      "bytes": 18358,
       "source_size": [
         1254,
         1254

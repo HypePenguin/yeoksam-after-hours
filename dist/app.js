@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=111';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=111';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=111';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=112';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=112';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=112';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -29,7 +29,7 @@ function loadImage(name){
 }
 function characterAssets(p){
  let assets=p.classId==='otter'?[otterAsset(p)]:p.classId==='rabbit'?[rabbitAsset(p)]:p.classId==='chick'?['chick-motion','chick-actions',...(p.job==='hacker'?['chick-typing']:[])]:p.classId==='cat'?['cat','cat-motion','cat-skills'].map(name=>catAsset(name,p)):
-  ['penguin','penguin-hurt','penguin-walk','penguin-jump',...(p.job==='swordsman'?['combat-swordsman','sword-guard-walk']:['combat-brawler']),...(p.job==='bodybuilder'?['builder-recovery-walk','penguin-power','penguin-power-poses','penguin-power-walk','penguin-power-jump','combat-power','power-recovery-walk']:[])];
+  ['penguin','penguin-hurt','penguin-walk','penguin-jump',...(p.job==='swordsman'?['combat-swordsman','sword-guard-walk','swordsman-skill-e-draw']:['combat-brawler']),...(p.job==='bodybuilder'?['builder-recovery-walk','penguin-power','penguin-power-poses','penguin-power-walk','penguin-power-jump','combat-power','power-recovery-walk']:[])];
  if(hasUniform(p))assets=[...assets,...assets.filter(name=>UNIFORM_ASSETS.has(name)).map(name=>'uniform-'+name)];
  if(p.job&&p.classId==='wanderer')assets.push('job-equipment');
  return assets;
@@ -148,7 +148,7 @@ const CAT_SKILL_ART={a:'assets/cat-skill-a.webp',q:'assets/cat-skill-q.webp',w:'
 const OTTER_SKILL_ART={a:'assets/otter-skill-a.webp',q:'assets/otter-skill-q.webp',w:'assets/otter-skill-w.webp',e:'assets/otter-skill-e.webp',r:'assets/otter-skill-r.webp'};
 const HACKER_SKILL_ART={a:'assets/hacker-skill-a.webp',q:'assets/hacker-skill-q.webp',w:'assets/hacker-skill-w.webp',e:'assets/hacker-skill-e.webp',r:'assets/hacker-skill-r.webp'};
 const NOVICE_CHICK_SKILL_ART={a:'assets/chick-skill-a-closeup.webp',q:'assets/chick-skill-q-closeup.webp',w:HACKER_SKILL_ART.w};
-const skillArtFor=key=>player?.classId==='wanderer'?(player.job==='swordsman'?SWORDSMAN_SKILL_ART:player.job==='bodybuilder'?BUILDER_SKILL_ART:PENGUIN_SKILL_ART)[key]:player?.classId==='rabbit'?(player.job==='mage'?MAGE_SKILL_ART:RABBIT_SKILL_ART)[key]:player?.classId==='cat'?CAT_SKILL_ART[key]:player?.classId==='otter'?OTTER_SKILL_ART[key]:player?.classId==='chick'?(player.job==='hacker'?HACKER_SKILL_ART:NOVICE_CHICK_SKILL_ART)[key]:null;
+const skillArtFor=key=>player?.job==='swordsman'&&key==='e'&&guardTime>0?'assets/swordsman-skill-e-draw.webp':player?.classId==='wanderer'?(player.job==='swordsman'?SWORDSMAN_SKILL_ART:player.job==='bodybuilder'?BUILDER_SKILL_ART:PENGUIN_SKILL_ART)[key]:player?.classId==='rabbit'?(player.job==='mage'?MAGE_SKILL_ART:RABBIT_SKILL_ART)[key]:player?.classId==='cat'?CAT_SKILL_ART[key]:player?.classId==='otter'?OTTER_SKILL_ART[key]:player?.classId==='chick'?(player.job==='hacker'?HACKER_SKILL_ART:NOVICE_CHICK_SKILL_ART)[key]:null;
 function skillSymbolMarkup(key,fallback){
  const art=skillArtFor(key);
  return art?`<img class="skill-art" src="${art}" alt="" aria-hidden="true" draggable="false"><span class="skill-cue" hidden></span>`:fallback;
@@ -169,8 +169,8 @@ function refreshHUD(){if(scene!=='playing'||!$('#hud-level'))return;$('#hud-name
  b.setAttribute('aria-label',locked?`${s.key.toUpperCase()} 키, 잠금, 레벨 ${s.level}에 해금${s.requiresJob?', 전직 필요':''}`:`${s.name}, ${s.key.toUpperCase()} 키, 레벨 ${s.level}${s.requiresJob?' 전직 후':''}, MP ${s.mp}`);
  const guardRelease=player.job==='swordsman'&&s.key==='e'&&guardTime>0;
  if(guardRelease){b.title='E 다시 누르기 · 막기 해제 후 전진 발도';b.setAttribute('aria-label',b.title);}
- b.setAttribute('aria-disabled',String(locked));b.classList.toggle('locked',locked);b.classList.toggle('cooldown',!locked&&!guardRelease&&cooldowns[s.key]>0);
- const symbol=b.querySelector('.skill-symbol'),cue=guardRelease?'발도':player.classId==='otter'&&s.key==='w'&&otterWave&&!otterWave.riding&&otterWave.elapsed<=otterWave.skill.rideWindow?'↗':cooldowns[s.key]>0?String(Math.ceil(cooldowns[s.key])):'';
+ b.setAttribute('aria-disabled',String(locked));b.classList.toggle('locked',locked);b.classList.toggle('cooldown',!locked&&!guardRelease&&cooldowns[s.key]>0);b.classList.toggle('guard-ready',!locked&&guardRelease);
+ const symbol=b.querySelector('.skill-symbol'),cue=guardRelease?'':player.classId==='otter'&&s.key==='w'&&otterWave&&!otterWave.riding&&otterWave.elapsed<=otterWave.skill.rideWindow?'↗':cooldowns[s.key]>0?String(Math.ceil(cooldowns[s.key])):'';
  if(skillArtFor(s.key)&&!locked){
   if(symbol.dataset.art!==s.key||symbol.dataset.artSource!==skillArtFor(s.key)){symbol.innerHTML=skillSymbolMarkup(s.key,s.icon);symbol.dataset.art=s.key;symbol.dataset.artSource=skillArtFor(s.key);}
   const overlay=symbol.querySelector('.skill-cue');overlay.textContent=cue;overlay.hidden=!cue;
@@ -1221,8 +1221,7 @@ function releaseSwordGuard(){
  attackTimer=Math.max(attackTimer,skill.releaseDuration);
  playCombatMotion('draw',skill.releaseDuration,{fromX,toX:player.x,guardRelease:true});
  const x=(fromX+player.x)/2,y=player.y-45;
- effects.push({type:'guardDraw',x,y,dir:facing,size:skill.releaseRange,life:.32,max:.32,...FX_PALETTES.electric},
-  {type:'dash',x:fromX,y,toX:player.x,toY:y,life:.32,max:.32,...FX_PALETTES.electric,sword:true,travelDuration:skill.releaseDuration*.82});
+ effects.push({type:'guardDraw',x,y,dir:facing,size:skill.releaseRange,life:.32,max:.32,...FX_PALETTES.electric});
  attackImpactAt(player.x,y,110);shake=Math.max(shake,4);beep(800,.12,'triangle');
  // Sweep around the short dash, including enemies behind the guarding player.
  for(const m of [...monsters])if(canTarget(m)&&Math.hypot(m.x-x,(m.y-player.y)*1.4)<=skill.releaseRange){

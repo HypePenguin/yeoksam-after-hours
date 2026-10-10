@@ -883,16 +883,32 @@ test('second E releases guard through keyboard or HUD, sweeps both sides once an
   const positions=[[center+160,p.y],[center-160,p.y],[center,p.y+100],[center+190,p.y]];
   enemies.forEach((m,i)=>Object.assign(m,{dead:false,x:positions[i][0],y:positions[i][1],hp:10000,maxHp:10000,speed:0}));
   h.api.cast('e');const mp=p.mp,cd=p.cooldowns.e;
-  assert.equal(h.el('[data-skill="e"] .skill-symbol .skill-cue').textContent,'발도');
+  assert.equal(h.el('[data-skill="e"] .skill-symbol .skill-cue').hidden,true);
+  assert.match(h.el('[data-skill="e"] .skill-symbol').innerHTML,/swordsman-skill-e-draw.webp/);
   if(input==='keyboard'){key(h,'KeyE');h.events.get('keyup')({code:'KeyE'});key(h,'KeyE');}
   else{const b=h.el('recast-e');b.dataset.skill='e';h.api.bindSkillButton(b);b.onclick({detail:1});b.onclick({detail:1});}
   assert.equal(h.api.get().guardTime,0);closeTo(p.x,start+dir*core.effectiveSkill(p,'w').dash/2);assert.equal(p.mp,mp);assert.equal(p.cooldowns.e,cd);
   assert.deepEqual(Array.from(enemies,m=>m.hp),[10000,10000,10000,10000].map((hp,i)=>hp-(i<3?Math.round(core.attackPower(p)*skill.releaseDamage):0)));
-  assert.equal(h.api.combatPose().kind,'draw');assert.equal(h.api.combatDisplayX(),start);assert.ok(h.api.get().effects.some(e=>e.type==='guardDraw'));
+  assert.equal(h.api.combatPose().kind,'draw');assert.equal(h.api.combatDisplayX(),start);assert.ok(h.api.get().effects.some(e=>e.type==='guardDraw'));assert.ok(!h.api.get().effects.some(e=>e.type==='dash'));
   const health=enemies.map(m=>m.hp);h.api.attack();h.api.cast('q');assert.equal(h.api.startSwordCharge('pointer:1'),false);assert.equal(p.mp,mp);assert.deepEqual(enemies.map(m=>m.hp),health);
   render(h);assert.ok(h.draws.some(d=>d.asset==='assets/combat-swordsman.webp'));
   h.api.update(.29);h.api.cast('e');assert.equal(h.api.get().guardTime,0,'expired guard cannot recast during its original cooldown');
  }
+});
+
+test('guard switches E to the preloaded quickdraw icon with a ready glow and restores it on release or expiry',()=>{
+ for(const end of ['release','expire']){
+  const {h,p}=combatHarness('swordsman'),classes=new Map(),button=h.el('[data-skill="e"]'),symbol=h.el('[data-skill="e"] .skill-symbol'),overlay=h.el('[data-skill="e"] .skill-symbol .skill-cue');
+  button.classList.toggle=(name,on)=>classes.set(name,on);
+  h.api.refreshHUD();assert.equal(symbol.dataset.artSource,'assets/swordsman-skill-e.webp');assert.equal(classes.get('guard-ready'),false);
+  assert.ok(h.api.sceneAssets(p).includes('swordsman-skill-e-draw'),'ready icon downloads before entering the scene');
+  h.api.cast('e');assert.equal(symbol.dataset.artSource,'assets/swordsman-skill-e-draw.webp');assert.equal(overlay.hidden,true);assert.equal(overlay.textContent,'');assert.equal(classes.get('guard-ready'),true);assert.equal(classes.get('cooldown'),false);
+  assert.match(button['aria-label'],/E 다시 누르기/);
+  if(end==='release')h.api.cast('e');else advance(h,2.01);
+  h.api.refreshHUD();assert.equal(symbol.dataset.artSource,'assets/swordsman-skill-e.webp');assert.equal(classes.get('guard-ready'),false);assert.equal(classes.get('cooldown'),true);assert.equal(overlay.hidden,false);assert.match(overlay.textContent,/^\d+$/);
+ }
+ const builder=combatHarness('bodybuilder');assert.ok(!builder.h.api.sceneAssets(builder.p).includes('swordsman-skill-e-draw'));builder.h.api.cast('e');assert.match(builder.h.api.skillSymbolMarkup('e',''),/builder-skill-e.webp/);
+ const sword=combatHarness('swordsman');sword.h.api.cast('w');assert.ok(sword.h.api.get().effects.some(e=>e.type==='dash'),'W keeps its forward trail');
 });
 
 test('guard release clamps short dash at map edges and removes protection immediately',()=>{
