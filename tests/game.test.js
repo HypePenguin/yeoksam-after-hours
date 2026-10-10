@@ -1499,7 +1499,7 @@ test('A-type safety execution kills outside even with damage reduction, but safe
 });
 test('A-type encounter requires interaction, awards once, and abandonment clears its hazards',()=>{
  const h=harness(),p=core.createCharacter('로봇결투');Object.assign(p,{level:35,job:'swordsman',map:'hangar',x:1150,y:650,returnScrolls:2});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);const b=h.api.get().boss;assert.equal(b.active,false);
- h.api.interact();assert.match(h.el('#modal-root').innerHTML,/Lv.35 A형/);h.el('#challenge-boss').onclick();assert.equal(b.active,true);
+ h.api.interact();assert.match(h.el('#modal-root').innerHTML,/Lv.40 A형/);h.el('#challenge-boss').onclick();assert.equal(b.active,true);
  b.safetyUsed=true;b.hp=1;const money=p.money,cores=p.cores;h.api.hitMonster(b,2);assert.equal(b.dead,true);assert.equal(p.typeAWins,1);assert.equal(p.money,money+6000);assert.equal(p.cores,cores+15);h.api.winBoss();assert.equal(p.typeAWins,1);
  h.api.closeModal();h.api.startBossFight();const rematch=h.api.get().boss;assert.equal(rematch.hp,typeACore.TYPE_A.hp);assert.equal(rematch.safetyUsed,false);h.api.abandonBoss();assert.equal(h.api.get().boss.active,false);
  h.api.startBossFight();h.api.useInventoryItem('returnScrolls');assert.equal(p.map,'hangar');assert.equal(h.api.get().boss.active,true);assert.equal(p.returnScrolls,2);
@@ -1508,7 +1508,7 @@ test('A-type pull changes position inside its radius and spin deals repeated dam
  const h=harness(),p=core.createCharacter('회전시험');Object.assign(p,{level:35,job:'swordsman',map:'hangar',x:1100,y:650});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);h.api.startBossFight();const b=h.api.get().boss;b.phase='recover';b.elapsed=-20;advance(h,1);
  b.enraged=true;b.safetyUsed=true;b.phase='pull-charge';b.elapsed=.69;const before=p.x;h.api.update(.02);assert.ok(p.x>before+200);assert.ok(p.hp<core.maxHp(p));
  b.phase='spin';b.elapsed=0;b.strikes=0;p.x=b.x-120;p.hp=core.maxHp(p);const frames=new Set();for(let i=0;i<120;i++){h.api.update(1/60);render(h);frames.add(h.draws.find(d=>d.asset==='assets/type-a.webp').source.slice(0,2).join(','));}
- assert.ok(frames.size>=2);assert.ok(p.hp<core.maxHp(p)-100);assert.equal(h.el('#boss-name').textContent,'Lv.35 A형 · 광폭화');
+ assert.ok(frames.size>=2);assert.ok(p.hp<core.maxHp(p)-100);assert.equal(h.el('#boss-name').textContent,'Lv.40 A형 · 광폭화');
 });
 
 // Victory clears persistent effects while their damage tick is still resolving.

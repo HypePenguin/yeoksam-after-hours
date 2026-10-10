@@ -5,10 +5,10 @@ import {MAPS,findMapRoute,createCharacter,normalizeCharacter,useItem,makeMonster
 const p={x:600,y:650,z:0,facing:1};
 const active=()=>{const b=createTypeA();beginTypeA(b);return b;};
 function tick(b,seconds,player=p){const out=[];for(let n=0;n<Math.round(seconds*100);n++)out.push(...stepTypeA(b,.01,player));return out;}
-test('new hunting path progresses through level 40 and ends at the level 35 boss room',()=>{
+test('new hunting path progresses through level 40 and ends at the level 40 boss room',()=>{
  assert.deepEqual(findMapRoute('nexus','hangar'),['nexus','accelerator','arsenal','reactor','hangar']);
  for(const [id,min,max] of [['accelerator',31,33],['arsenal',34,36],['reactor',37,40]]){assert.equal(makeMonster(id,0).level,min);assert.equal(makeMonster(id,monsterCount(id)-1).level,max);}
- assert.equal(MAPS.hangar.bossLevel,35);assert.equal(monsterCount('hangar'),0);
+ assert.equal(MAPS.hangar.bossLevel,40);assert.equal(monsterCount('hangar'),0);
 });
 test('blade windup is harmless; forward arc and jump height define the hit',()=>{
  const b=active();b.phase='blade-charge';assert.equal(tick(b,.59).length,0);const e=tick(b,.03).find(e=>e.type==='blade');assert.ok(e);

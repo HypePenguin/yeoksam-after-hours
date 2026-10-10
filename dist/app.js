@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=117';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=117';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=117';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=118';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=118';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=118';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -467,7 +467,7 @@ function updateBossFight(dt){
  }
 }
 function typeATalk(){
- showModal('boss-talk','Lv.35 A형 · 가동 대기',`<div class="boss-intro"><span class="boss-eyebrow">수료조건 · 전투 로봇</span><h3>침입자 감지. 전투 프로토콜 준비.</h3><p>전방 칼날, 기관총 연사, 붉은 충전 후 돌진, 0.5초 간격 4연속 표적 폭격을 사용합니다. 모든 타격에 내 최대 HP의 10%만큼 추가 피해가 적용됩니다.</p><ul><li>HP 40%: ${TYPE_A.safety.duration}초간 무적. 파란 안전지대 밖은 즉사합니다. 무적기나 막기로 회피할 수 있습니다.</li><li>HP 20%: 광폭화. 이동과 패턴이 빨라지고 4초 회전 칼날, 넓은 원형 자기장 흡인이 추가됩니다.</li><li>체력 ${TYPE_A.hp.toLocaleString()} · 회복 아이템 재사용 10초</li></ul><p class="boss-reward">EXP ${xpReward(player,TYPE_A.xp).toLocaleString()} · 6,000원 · 에너지 코어 15개 · A형 칭호</p><button class="primary" id="challenge-boss">${boss.dead?'A형 다시 가동':'A형 가동 · 전투 시작'}</button></div>`,'#challenge-boss');
+ showModal('boss-talk',`Lv.${TYPE_A.level} A형 · 가동 대기`,`<div class="boss-intro"><span class="boss-eyebrow">수료조건 · 전투 로봇</span><h3>침입자 감지. 전투 프로토콜 준비.</h3><p>전방 칼날, 기관총 연사, 붉은 충전 후 돌진, 0.5초 간격 4연속 표적 폭격을 사용합니다. 모든 타격에 내 최대 HP의 10%만큼 추가 피해가 적용됩니다.</p><ul><li>HP 40%: ${TYPE_A.safety.duration}초간 무적. 파란 안전지대 밖은 즉사합니다. 무적기나 막기로 회피할 수 있습니다.</li><li>HP 20%: 광폭화. 이동과 패턴이 빨라지고 4초 회전 칼날, 넓은 원형 자기장 흡인이 추가됩니다.</li><li>체력 ${TYPE_A.hp.toLocaleString()} · 회복 아이템 재사용 10초</li></ul><p class="boss-reward">EXP ${xpReward(player,TYPE_A.xp).toLocaleString()} · 6,000원 · 에너지 코어 15개 · A형 칭호</p><button class="primary" id="challenge-boss">${boss.dead?'A형 다시 가동':'A형 가동 · 전투 시작'}</button></div>`,'#challenge-boss');
  $('#challenge-boss').onclick=startBossFight;
 }
 function winTypeA(){
@@ -532,7 +532,7 @@ function drawTypeABoss(){
  if(b.phase==='gun'&&b.elapsed%TYPE_A.gun.interval<.07){ctx.fillStyle='#fff1ae';ctx.beginPath();ctx.moveTo(120,-220);ctx.lineTo(175,-230);ctx.lineTo(145,-206);ctx.lineTo(178,-198);ctx.lineTo(120,-201);ctx.closePath();ctx.fill();}
  if(b.phase==='bomb-charge'||b.phase==='bomb'&&b.elapsed%.5>=.22){ctx.fillStyle='#242c35';ctx.strokeStyle='#ff546a';ctx.lineWidth=3;ctx.beginPath();ctx.arc(35,-TYPE_A.height+20,19,0,Math.PI*2);ctx.fill();ctx.stroke();}
  if(b.phase==='safety'){ctx.strokeStyle='#a6e6ff';ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(0,-TYPE_A.height*.48,125,TYPE_A.height*.54,0,0,Math.PI*2);ctx.stroke();}
- ctx.restore();label(b.dead?'A형 · 가동 정지':`Lv.35 A형${b.enraged?' · 광폭화':''}`,x,b.y-TYPE_A.height-24,b.enraged?'#ff8b9c':'#f2d2d8',18);
+ ctx.restore();label(b.dead?'A형 · 가동 정지':`Lv.${b.level} A형${b.enraged?' · 광폭화':''}`,x,b.y-TYPE_A.height-24,b.enraged?'#ff8b9c':'#f2d2d8',18);
 }
 function drawTypeATelegraphs(){
  const b=boss;ctx.save();

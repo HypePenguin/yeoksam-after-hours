@@ -1,5 +1,5 @@
 // A-type encounter state is transient; no projectiles or phases survive leaving the room.
-export const TYPE_A={name:'A형',level:35,hp:72000,maxHpDamage:.1,xp:12000,money:6000,cores:15,height:370,width:1800,
+export const TYPE_A={name:'A형',level:40,hp:72000,maxHpDamage:.1,xp:12000,money:6000,cores:15,height:370,width:1800,
  blade:{windup:.6,range:300,halfLane:65,damage:155},gun:{windup:.65,count:8,interval:.14,speed:1150,damage:62},
  dash:{charge:.85,duration:.5,speed:1700,damage:195},bomb:{count:4,interval:.5,flight:.9,radius:105,damage:160},
  safety:{duration:5,rx:125,ry:55},spin:{duration:4,radius:250,tick:.4,damage:112,speed:85},pull:{radius:570,damage:52},recover:.85};
@@ -8,7 +8,7 @@ const phase=(b,name)=>{b.phase=name;b.elapsed=0;b.strikes=0;b.walking=false;};
 export const isTypeA=b=>b?.kind==='type-a';
 export const typeATargetable=b=>b.active&&!b.dead&&b.phase!=='safety';
 export const inTypeASafeZone=(p,s)=>!!s&&((p.x-s.x)/s.rx)**2+((p.y-s.y)/s.ry)**2<=1;
-export function createTypeA(){return {kind:'type-a',id:'type-a',isBoss:true,level:35,x:1150,y:650,z:0,dir:-1,hp:TYPE_A.hp,maxHp:TYPE_A.hp,active:false,dead:false,rewardGranted:false,phase:'waiting',elapsed:0,strikes:0,walking:false,walkPhase:0,hit:0,projectiles:[],bombs:[],safetyUsed:false,safeZone:null,enraged:false};}
+export function createTypeA(){return {kind:'type-a',id:'type-a',isBoss:true,level:TYPE_A.level,x:1150,y:650,z:0,dir:-1,hp:TYPE_A.hp,maxHp:TYPE_A.hp,active:false,dead:false,rewardGranted:false,phase:'waiting',elapsed:0,strikes:0,walking:false,walkPhase:0,hit:0,projectiles:[],bombs:[],safetyUsed:false,safeZone:null,enraged:false};}
 export function beginTypeA(b){if(b.active)return false;Object.assign(b,createTypeA(),{active:true,phase:'approach'});return true;}
 function beginSafety(b,p){
  p=p.safetyTarget||p;
