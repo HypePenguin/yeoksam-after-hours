@@ -602,17 +602,17 @@ function bossHarness(job='swordsman'){
  const h=harness(),p=core.createCharacter('결투');Object.assign(p,{level:20,job,map:'pocha',x:1040,y:650,hp:480,mp:250,potions:20,returnScrolls:2,gangnamScrolls:2});h.api.start(p);return {h,p};
 }
 
-test('both boss rooms show the approach town, save recovery immediately, revive there and retain it on re-entry',async()=>{
- for(const map of ['pocha','hangar'])for(const active of [false,true]){
+test('both boss rooms show their recovery town, save immediately, revive there and retain it on re-entry',async()=>{
+ for(const [map,destination,x,townName] of [['pocha','gangnam',650,'강남역'],['hangar','yeoksamStreet',850,'역삼역주변거리']])for(const active of [false,true]){
   const h=harness(),p=core.createCharacter('부활확인','cat');Object.assign(p,{level:35,job:'protester',map,x:1000,y:650,money:932,xp:125,potions:9,mpPotions:5,uniform:1,uniformEquipped:true});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);
   if(active)h.api.startBossFight();p.hp=0;p.mp=0;p.mpPotionCooldown=8;h.api.die();
-  assert.equal(h.api.get().scene,'dead');assert.match(h.el('#screens').innerHTML,/강남역에서 부활하기/);assert.doesNotMatch(h.el('#screens').innerHTML,/역삼역주변거리/);
-  assert.equal(p.map,'gangnam');assert.equal(p.x,650);assert.equal(p.y,648);assert.equal(h.api.get().boss,null);assert.equal(h.api.get().potionCooldown,0);assert.equal(p.mpPotionCooldown,0);
+  assert.equal(h.api.get().scene,'dead');assert.ok(h.el('#screens').innerHTML.includes(`${townName}에서 부활하기`));
+  assert.equal(p.map,destination);assert.equal(p.x,x);assert.equal(p.y,648);assert.equal(h.api.get().boss,null);assert.equal(h.api.get().potionCooldown,0);assert.equal(p.mpPotionCooldown,0);
   const saved=JSON.parse(h.storage.get(core.SAVE_KEY)).characters[0];
-  for(const [field,value] of Object.entries({map:'gangnam',x:650,y:648,hp:core.maxHp(p),mp:core.maxMp(p),money:932,xp:125,potions:9,mpPotions:5,uniform:1,uniformEquipped:true,job:'protester',typeATitle:0}))assert.equal(saved[field],value,field);
-  h.el('#revive').onclick();assert.equal(h.api.get().scene,'playing');assert.equal(h.api.get().boss,null);assert.equal(h.api.get().monsters.length,0);assert.match(h.el('#game-ui').innerHTML,/강남역/);
+  for(const [field,value] of Object.entries({map:destination,x,y:648,hp:core.maxHp(p),mp:core.maxMp(p),money:932,xp:125,potions:9,mpPotions:5,uniform:1,uniformEquipped:true,job:'protester',typeATitle:0}))assert.equal(saved[field],value,field);
+  h.el('#revive').onclick();assert.equal(h.api.get().scene,'playing');assert.equal(h.api.get().boss,null);assert.equal(h.api.get().monsters.length,0);assert.ok(h.el('#game-ui').innerHTML.includes(townName));
   h.api.selectCharacters();const entry=h.api.enterWorld(p.id);await h.flush();await entry;
-  assert.equal(h.api.get().player.map,'gangnam');assert.equal(h.api.get().scene,'playing');
+  assert.equal(h.api.get().player.map,destination);assert.equal(h.api.get().scene,'playing');
  }
 });
 test('boss waits as an NPC, starts only on confirmation and blocks ordinary room exits',async()=>{

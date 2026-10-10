@@ -87,15 +87,15 @@ test('save roundtrip preserves dungeon coordinates and rejects invalid data',()=
  const safe=normalizeCharacter({...p,map:'missing',x:Infinity,y:-500,hp:NaN,money:-99});assert.equal(safe.map,'town');assert.equal(safe.y,580);assert.equal(safe.hp,100);assert.equal(safe.money,0);
 });
 
-test('boss deaths and dead-save recovery use the approach town for every class without unlocking the gated town',()=>{
- for(const map of ['pocha','hangar'])for(const classId of ['wanderer','cat','rabbit','chick','otter']){
+test('boss deaths and dead-save recovery use each boss recovery town for every class without awarding a title',()=>{
+ for(const [map,destination,x] of [['pocha','gangnam',650],['hangar','yeoksamStreet',850]])for(const classId of ['wanderer','cat','rabbit','chick','otter']){
   const p=createCharacter('보스부활',classId);Object.assign(p,{level:35,xp:251,map,x:950,y:680,hp:0,mp:0,money:834,potions:7,mpPotions:4,uniform:1,uniformEquipped:true,mpPotionCooldown:9,visited:['town',map]});
   const raw=JSON.parse(JSON.stringify(p)),restored=normalizeCharacter(raw);
   for(const revived of [respawn(p),restored]){
-   assert.equal(revived.map,'gangnam');assert.equal(revived.x,650);assert.equal(revived.y,648);
+   assert.equal(revived.map,destination);assert.equal(revived.x,x);assert.equal(revived.y,648);
    assert.equal(revived.hp,maxHp(revived));assert.equal(revived.mp,maxMp(revived));assert.equal(revived.mpPotionCooldown,0);
    for(const key of ['level','xp','money','potions','mpPotions','uniform','uniformEquipped','typeATitle','typeATitleEquipped','bossWins','typeAWins'])assert.equal(revived[key],raw[key],key);
-   assert.ok(revived.visited.includes('gangnam'));assert.ok(!revived.visited.includes('yeoksamStreet'));
+   assert.ok(revived.visited.includes(destination));assert.equal(revived.typeATitle,0);assert.equal(revived.typeATitleEquipped,false);
    assert.deepEqual(normalizeCharacter(JSON.parse(JSON.stringify(revived))),revived);
   }
  }
