@@ -1,7 +1,7 @@
-import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawBallotVortex} from './cat-effects.js?v=130';
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=130';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=130';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=130';
+import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawBallotVortex} from './cat-effects.js?v=131';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=131';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=131';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=131';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -878,11 +878,13 @@ const OTTER_FEET={
  normal:[308,307,309,308,616,586,616,616,904,906,907,915,1219,1219,1219,1219],
  idol:[312,310,312,311,620,578,619,620,915,917,918,914,1240,1239,1238,1241]
 };
+// Uniform reduction preserves every pose and the original artwork.
+const OTTER_DRAW_SCALE=.9;
 function drawOtterPlayer(){
  const asset=otterAsset();if(!images[asset])void loadImage(asset);const img=images[asset];if(!img?.complete||!img.naturalWidth)return;
  const frame=otterFrame(),cw=img.naturalWidth/4,x=player.x-camera,scale=178/(img.naturalHeight/4),[top,bottom]=OTTER_ROWS[Math.floor(frame/4)],foot=OTTER_FEET[player.job==='idol'?'idol':'normal'][frame],column=frame%4,sourceX=Math.max(column*cw,({9:340,10:650,11:916})[frame]||0),sourceWidth=(column+1)*cw-sourceX;
- ctx.save();ctx.fillStyle='#03162560';ctx.beginPath();ctx.ellipse(x,player.y+3,27,7,0,0,Math.PI*2);ctx.fill();ctx.translate(x,player.y-pz);
- const dir=otterWave?.riding?otterWave.dir:otterConcert?facing:(combatMotion?.dir??facing);ctx.scale(dir,1);
+ ctx.save();ctx.fillStyle='#03162560';ctx.beginPath();ctx.ellipse(x,player.y+3,27*OTTER_DRAW_SCALE,7*OTTER_DRAW_SCALE,0,0,Math.PI*2);ctx.fill();ctx.translate(x,player.y-pz);
+ const dir=otterWave?.riding?otterWave.dir:otterConcert?facing:(combatMotion?.dir??facing);ctx.scale(dir*OTTER_DRAW_SCALE,OTTER_DRAW_SCALE);
  if(walking&&pz===0)ctx.translate(0,-Math.abs(Math.sin(walkPhase*Math.PI*4))*2);
  if(otterConcert){ctx.translate(Math.sin(otterConcert.elapsed*7)*3,-Math.abs(Math.sin(otterConcert.elapsed*7))*3);ctx.rotate(Math.sin(otterConcert.elapsed*5)*.035);}
  ctx.globalAlpha=hurtTime<=0&&invincible>0&&Math.floor(invincible*13)%2===0?.55:1;ctx.imageSmoothingEnabled=true;
@@ -890,7 +892,7 @@ function drawOtterPlayer(){
  // The fist effect crosses the first tile; only this band is clear of the adjacent Q pose.
  if(frame===8){const effectTop=680,effectBottom=819,effectWidth=340-cw;ctx.drawImage(img,cw,effectTop,effectWidth,effectBottom-effectTop,cw*.5*scale,(effectTop-foot)*scale,effectWidth*scale,(effectBottom-effectTop)*scale);}
  ctx.restore();
- drawPlayerName(player.name,x,player.y-pz-160,player.job==='idol'?'#ffd0e8':'#d6efe7');
+ drawPlayerName(player.name,x,player.y-pz-160*OTTER_DRAW_SCALE,player.job==='idol'?'#ffd0e8':'#d6efe7');
 }
 function waterBubble(x,y,r=15,alpha=1){
  ctx.save();ctx.globalAlpha=alpha;const g=ctx.createRadialGradient(x-r*.35,y-r*.4,1,x,y,r);g.addColorStop(0,'#eeffff');g.addColorStop(.35,'#98e9ff88');g.addColorStop(1,'#238bcad9');ctx.fillStyle=g;ctx.strokeStyle='#bcf6ff';ctx.lineWidth=2;ctx.shadowColor='#72daff';ctx.shadowBlur=8;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle='#ffffffdd';ctx.beginPath();ctx.ellipse(x-r*.35,y-r*.4,r*.22,r*.12,-.6,0,Math.PI*2);ctx.fill();ctx.restore();
