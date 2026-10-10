@@ -1976,6 +1976,20 @@ test('otter skill art persists under cooldown and ride cues while unlearned skil
  const rabbit=core.createCharacter('그대로','rabbit');h.api.start(rabbit);assert.equal(h.api.skillSymbolMarkup('a','◉'),'◉');
 });
 
+test('otter entry shows only the idle portrait before motion assets finish loading',async()=>{
+ for(const job of [null,'idol']){
+  const h=harness(),p=core.createCharacter('입장수달','otter');Object.assign(p,{level:20,job});h.api.start(p);
+  const pending=h.api.enterWorld(p.id),html=h.el('#screens').innerHTML;
+  assert.equal(h.api.get().scene,'loading');
+  assert.ok(html.includes('class="loading-icon otter-loading-portrait"'));
+  assert.ok(html.includes(`background-image:url(assets/${job==='idol'?'otter-idol-skirt-motion':'otter-motion'}.png)`));
+  assert.ok(!html.includes('<img'),'entry never falls back to the full motion sheet');
+  await h.flush();await pending;assert.equal(h.api.get().scene,'playing');
+ }
+ const css=fs.readFileSync(new URL('../dist/style.css',import.meta.url),'utf8');
+ assert.match(css,/\.loading-icon\.otter-loading-portrait\{[^}]*background-size:400% 400%;background-position:0 0/);
+});
+
 test('renamed inventory items share artwork across shop, bag, quick slots and collectible drops',()=>{
  const h=harness(),p=core.createCharacter('기존아이템');Object.assign(p,{money:2000,mpPotions:2,returnScrolls:3,uniform:1,typeATitle:1,scrap:4,cores:5,quickSlots:['potions','mpPotions','returnScrolls']});h.api.start(p);
  h.api.inventory();let html=h.el('#modal-root').innerHTML;

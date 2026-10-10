@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=95';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=95';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=95';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=96';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=96';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=96';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={};let assetsReady=false,assetFailed=false;
@@ -102,7 +102,7 @@ function createModal(){
 }
 async function enterWorld(id){
  const source=records.find(p=>p.id===id);if(!source||scene==='loading')return;closeModal();player=normalizeCharacter(source);selectedId=id;const token=++transitionId;setScene('loading');
- screens.innerHTML=`<div class="screen-overlay"><img class="loading-icon" src="${characterPortrait(player)}" alt=""><h2 class="screen-title">${MAPS[player.map].name} · 입장 준비 중</h2><div class="loading-track"><i></i></div><p class="screen-subtitle">Space와 방향키를 함께 누르면 대각선으로 점프해요.</p></div>`;
+ screens.innerHTML=`<div class="screen-overlay">${player.classId==='otter'?`<span class="loading-icon otter-loading-portrait" role="img" aria-label="수달 ${player.job==='idol'?'아이돌':'모험가'} 대표 이미지" style="background-image:url(assets/${otterAsset(player)}.png)"></span>`:`<img class="loading-icon" src="${characterPortrait(player)}" alt="">`}<h2 class="screen-title">${MAPS[player.map].name} · 입장 준비 중</h2><div class="loading-track"><i></i></div><p class="screen-subtitle">Space와 방향키를 함께 누르면 대각선으로 점프해요.</p></div>`;
  await Promise.all([loadAssets,new Promise(r=>setTimeout(r,1000))]);if(token!==transitionId)return;if(assetFailed)toast('일부 이미지가 로드되지 않았어요. 새로고침해 주세요.');
  resetWorld();setScene('playing');screens.innerHTML='';buildHUD();canvas.focus();save();toast(player.kills===0?'역삼역에 오신 걸 환영해요! 운영자 현토리에게 F로 말을 걸어보세요.':`${player.name}, 다시 오신 걸 환영해요.`);
 }
