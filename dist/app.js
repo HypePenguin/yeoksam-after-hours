@@ -1,7 +1,7 @@
-import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawBallotVortex} from './cat-effects.js?v=131';
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=131';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=131';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=131';
+import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawBallotVortex} from './cat-effects.js?v=132';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=132';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=132';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=132';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -1439,13 +1439,21 @@ function drawBackground(mapId){
   // Street, actors and all scene extensions share the exact same camera transform.
   const tile=1600,off=-camera,pad=(24+shake)/cameraZoom,width=viewWidth();
   const top=(-viewOffsetY()-pad)/cameraZoom,bottom=(810-viewOffsetY()+pad)/cameraZoom;
-  const start=Math.floor((camera-pad)/tile)*tile-tile;
-  for(let x=start;x+off<width+pad;x+=tile){
-   const edge=Math.max(1,source[3]*.025);
-   // Extend the existing sky/pavement edge textures instead of exposing empty zoom borders.
-   if(top<0)ctx.drawImage(img,source[0],source[1],source[2],edge,x+off,top,tile,-top+1);
-   if(bottom>810)ctx.drawImage(img,source[0],source[1]+source[3]-edge,source[2],edge,x+off,809,tile,bottom-809);
-   ctx.drawImage(img,...source,x+off,0,tile,810);
+  const edge=Math.max(1,source[3]*.025);
+  const paint=(sx,sw,x,w)=>{
+   if(top<0)ctx.drawImage(img,sx,source[1],sw,edge,x,top,w,-top+1);
+   if(bottom>810)ctx.drawImage(img,sx,source[1]+source[3]-edge,sw,edge,x,809,w,bottom-809);
+   ctx.drawImage(img,sx,source[1],sw,source[3],x,0,w,810);
+  };
+  if(map.backgroundMode==='panorama'){
+   // Landmarks are drawn once at map coordinates, keeping each portal at its actual door.
+   paint(source[0],source[2],off,map.width);
+   const left=Math.max(0,pad-camera),right=Math.max(0,width+pad-(map.width-camera));
+   if(left>0&&camera-pad<0)paint(source[0],1,-pad,left);
+   if(right>0)paint(source[0]+source[2]-1,1,map.width-camera,right);
+  }else{
+   const start=Math.floor((camera-pad)/tile)*tile-tile;
+   for(let x=start;x+off<width+pad;x+=tile)paint(source[0],source[2],x+off,tile);
   }
   if(top<0){const skyFade=ctx.createLinearGradient(0,top,0,0);skyFade.addColorStop(0,'#092333');skyFade.addColorStop(.78,'#092333');skyFade.addColorStop(1,'#09233300');ctx.fillStyle=skyFade;ctx.fillRect(-pad,top,width+2*pad,-top);}
   if(map.tint){ctx.fillStyle=map.tint;ctx.fillRect(-pad,top,width+2*pad,bottom-top);}
@@ -1851,10 +1859,9 @@ function draw(){
  if(isPlay){
   if(!bossActive())MAPS[player.map].portals.forEach(drawPortal);
   drawBossTelegraphs();
-  if(player.map==='town')label(MAPS.town.name,290-camera,407,'#d4f4df',20);
-  else if(['gangnam','yeoksamStreet'].includes(player.map))label(MAPS[player.map].name,1070-camera,345,'#d4f4df',20);
+  if(['gangnam','yeoksamStreet'].includes(player.map))label(MAPS[player.map].name,1070-camera,345,'#d4f4df',20);
   else if(player.map==='station6')label(MAPS.station6.name,490-camera,252,'#d4f4df',20);
-  else label(MAPS[player.map].name,820-camera,375,MAPS[player.map].color,20);
+  else if(player.map!=='town')label(MAPS[player.map].name,820-camera,375,MAPS[player.map].color,20);
   const entities=[
    ...monsters.filter(m=>(!m.dead||m.deathFx>0)&&!m.isBoss).map(m=>({y:m.y,draw:()=>drawMonster(m)})),
    ...drops.map(d=>({y:d.y,draw:()=>drawDrop(d)})),

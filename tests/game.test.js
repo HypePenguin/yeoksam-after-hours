@@ -188,9 +188,9 @@ test('town NPCs and station sign stay anchored to the street during movement and
  const h=harness(),p=core.createCharacter('거리');h.api.start(p);h.api.setView(1440);
  const check=()=>{
   render(h);const camera=h.api.get().camera;
-  const street=h.draws.find(d=>d.asset==='assets/city.webp'&&d.height===810&&Math.abs(d.x+camera)<1e-8);
+  const street=h.draws.find(d=>d.asset==='assets/yeoksam-town-v132.webp'&&d.height===810&&Math.abs(d.x+camera)<1e-8);
   assert.ok(street,'the street landmark uses the same camera as actors');
-  for(const [text,x] of [['현토리',650],['마구리',1060],[core.MAPS.town.name,290]]){
+  for(const [text,x] of [['현토리',650],['마구리',1060],['올림픽공원',440]]){
    const label=h.labels.find(l=>l.text===text);assert.ok(label);assert.ok(Math.abs(label.x-street.x-x)<1e-8,`${text} slid against the street`);
   }
  };
@@ -203,9 +203,9 @@ test('town NPCs and station sign stay anchored to the street during movement and
 });
 test('camera shake moves the background, NPCs and sign together',()=>{
  const h=harness(),p=core.createCharacter('흔들림');h.api.start(p);h.api.setView(1440);
- render(h);const beforeStreet=h.draws.find(d=>d.asset==='assets/city.webp'&&d.height===810&&d.x===0),before=h.labels.find(l=>l.text==='현토리');
+ render(h);const beforeStreet=h.draws.find(d=>d.asset==='assets/yeoksam-town-v132.webp'&&d.height===810&&d.x===0),before=h.labels.find(l=>l.text==='현토리');
  h.api.setShake(8);render(h);
- const afterStreet=h.draws.filter(d=>d.asset==='assets/city.webp'&&d.height===810).sort((a,b)=>Math.abs(a.x)-Math.abs(b.x))[0],after=h.labels.find(l=>l.text==='현토리');
+ const afterStreet=h.draws.filter(d=>d.asset==='assets/yeoksam-town-v132.webp'&&d.height===810).sort((a,b)=>Math.abs(a.x)-Math.abs(b.x))[0],after=h.labels.find(l=>l.text==='현토리');
  assert.ok(Math.abs((after.x-afterStreet.x)-(before.x-beforeStreet.x))<1e-8);
  assert.ok(Math.abs((after.y-afterStreet.y)-(before.y-beforeStreet.y))<1e-8);
 });
@@ -540,7 +540,7 @@ test('map gives the next real portal from the player position without a detailed
  assert.match(selection,/방치된 중계소/);assert.match(selection,/포탈 4번/);assert.match(selection,/왼쪽의/);assert.match(selection,/왼쪽부터 1번째 포탈/);assert.match(selection,/달빛 근린공원부터/);
  assert.equal(p.map,'town');assert.equal(p.x,530);assert.equal(h.api.get().modal,'world-map');
  h.api.selectMapDestination('dojo');selection=h.el('#atlas-selection').innerHTML;
- assert.match(selection,/포탈 3번/);assert.match(selection,/오른쪽의/);assert.match(selection,/왼쪽부터 4번째 포탈/);
+ assert.match(selection,/포탈 3번/);assert.match(selection,/오른쪽의/);assert.match(selection,/왼쪽부터 5번째 포탈/);
  h.api.selectMapDestination('nexus');assert.match(h.el('#modal-root').innerHTML,/Lv. 25–30/);
 });
 test('every new dungeon supports combat rewards, respawning and exact saved re-entry',async()=>{
@@ -2436,4 +2436,16 @@ test('Ballot papers circle at different depths without changing the summon or it
   assert.ok(Math.hypot(after[i].x-before[i].x,after[i].y-before[i].y)>0);
  }
  assert.equal(JSON.stringify(b),original);
+});
+
+
+test('town panorama draws each landmark once and covers wider and scrolled viewports',()=>{
+ const h=harness(),p=core.createCharacter('새 마을');h.api.start(p);
+ for(const width of [1000,3400])for(const x of [45,1300,2550]){
+  p.x=x;h.api.setView(width);render(h);
+  const pieces=h.draws.filter(d=>d.asset==='assets/yeoksam-town-v132.webp'&&d.height===810);
+  const panorama=pieces.filter(d=>d.source[2]>1);assert.equal(panorama.length,1);
+  const world=h.api.get();assert.equal(panorama[0].width,core.MAPS.town.width);closeTo(panorama[0].x,-world.camera);
+  for(const sx of [0,width/2,width])assert.ok(pieces.some(d=>sx>=d.x&&sx<=d.x+d.width),'pavement must fill the viewport');
+ }
 });

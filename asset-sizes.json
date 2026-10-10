@@ -1,6 +1,6 @@
 {
-  "source_bytes": 220598891,
-  "bytes": 24634684,
+  "source_bytes": 223369104,
+  "bytes": 25076912,
   "assets": [
     {
       "name": "builder-recovery-walk",
@@ -1847,6 +1847,20 @@
       "size": [
         1774,
         887
+      ],
+      "compact": false
+    },
+    {
+      "name": "yeoksam-town-v132",
+      "source_bytes": 2770213,
+      "bytes": 442228,
+      "source_size": [
+        1998,
+        787
+      ],
+      "size": [
+        1998,
+        787
       ],
       "compact": false
     }
