@@ -1,6 +1,6 @@
 {
-  "source_bytes": 172082786,
-  "bytes": 23092974,
+  "source_bytes": 181083681,
+  "bytes": 23172404,
   "assets": [
     {
       "name": "builder-recovery-walk",
@@ -85,6 +85,76 @@
         724
       ],
       "compact": false
+    },
+    {
+      "name": "cat-skill-a",
+      "source_bytes": 1739870,
+      "bytes": 12808,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "cat-skill-e",
+      "source_bytes": 1838635,
+      "bytes": 17396,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "cat-skill-q",
+      "source_bytes": 1784754,
+      "bytes": 14694,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "cat-skill-r",
+      "source_bytes": 1941776,
+      "bytes": 21128,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "cat-skill-w",
+      "source_bytes": 1695860,
+      "bytes": 13404,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
     },
     {
       "name": "cat-skills",

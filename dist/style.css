@@ -196,18 +196,18 @@ main{width:100%;max-width:1512px;min-height:100svh;margin:0 auto;padding:24px;di
 @media(max-width:650px){.combat-banner.otter-status{top:174px;width:174px;padding:6px 8px;gap:2px 6px;}.combat-banner.otter-status small{display:none;}.combat-banner.otter-status .power-track{margin-top:2px;}.boss-fight .combat-banner.otter-status{top:243px;}}
 
 /* Illustrated otter skills keep their art visible beneath cooldown and ride cues. */
-:is(.otter-skill,.hacker-skill,.chick-skill){overflow:hidden;isolation:isolate}
-:is(.otter-skill,.hacker-skill,.chick-skill):not(.locked) .skill-symbol{position:absolute;inset:0;display:block}
-:is(.otter-skill,.hacker-skill,.chick-skill) .skill-art{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+:is(.otter-skill,.hacker-skill,.chick-skill,.cat-skill){overflow:hidden;isolation:isolate}
+:is(.otter-skill,.hacker-skill,.chick-skill,.cat-skill):not(.locked) .skill-symbol{position:absolute;inset:0;display:block}
+:is(.otter-skill,.hacker-skill,.chick-skill,.cat-skill) .skill-art{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
 /* Wider framing keeps the broken monitor and novice fist readable in compact slots. */
 .hacker-skill[data-skill="e"] .skill-symbol,.chick-skill[data-skill="a"] .skill-symbol{background:#0b202c}
 .hacker-skill[data-skill="e"] .skill-art{object-fit:contain;transform:scale(.8)}
 .chick-skill[data-skill="a"] .skill-art{object-fit:contain;transform:scale(.84)}
-:is(.otter-skill,.hacker-skill,.chick-skill):not(.locked)::after{content:"";position:absolute;inset:55% 0 0;background:linear-gradient(transparent,#04121de6);z-index:1;pointer-events:none}
-:is(.otter-skill,.hacker-skill,.chick-skill) b,:is(.otter-skill,.hacker-skill,.chick-skill) .lock-level{z-index:3;color:#fff;text-shadow:0 1px 2px #000,0 0 3px #000}
-:is(.otter-skill,.hacker-skill,.chick-skill) .skill-cue{position:absolute;inset:0;display:grid;place-items:center;padding-bottom:10px;background:#0716248a;color:#fff;font:600 20px 'Space Grotesk',sans-serif;text-shadow:0 1px 4px #000;z-index:2;pointer-events:none}
-:is(.otter-skill,.hacker-skill,.chick-skill) .skill-cue[hidden]{display:none}
-:is(.otter-skill,.hacker-skill,.chick-skill):hover{border-color:#b5efff}
+:is(.otter-skill,.hacker-skill,.chick-skill,.cat-skill):not(.locked)::after{content:"";position:absolute;inset:55% 0 0;background:linear-gradient(transparent,#04121de6);z-index:1;pointer-events:none}
+:is(.otter-skill,.hacker-skill,.chick-skill,.cat-skill) b,:is(.otter-skill,.hacker-skill,.chick-skill,.cat-skill) .lock-level{z-index:3;color:#fff;text-shadow:0 1px 2px #000,0 0 3px #000}
+:is(.otter-skill,.hacker-skill,.chick-skill,.cat-skill) .skill-cue{position:absolute;inset:0;display:grid;place-items:center;padding-bottom:10px;background:#0716248a;color:#fff;font:600 20px 'Space Grotesk',sans-serif;text-shadow:0 1px 4px #000;z-index:2;pointer-events:none}
+:is(.otter-skill,.hacker-skill,.chick-skill,.cat-skill) .skill-cue[hidden]{display:none}
+:is(.otter-skill,.hacker-skill,.chick-skill,.cat-skill):hover{border-color:#b5efff}
 
 /* Shared item art in the shop, bag, quick slots and world drops. */
 .item-art{display:block;width:100%;height:100%;object-fit:cover;border-radius:4px;pointer-events:none}
