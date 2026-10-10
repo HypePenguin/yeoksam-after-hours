@@ -2344,3 +2344,22 @@ test('NPC hacking remains limited to a promoted chick with R unlocked and suffic
  }
  const h=harness(),p=core.createCharacter('고양이 테스트','cat');Object.assign(p,{level:15,job:'protester',map:'town',x:1060});p.mp=core.maxMp(p);h.api.start(p);h.api.cast('r');assert.equal(h.api.get().hackerUlt,null);assert.equal(h.api.get().maguriHack,null);
 });
+
+
+test('hacker visor follows the selected signal and disappears on confirmation',()=>{
+ const {h,p}=chickFixture();h.api.buildHUD();assert.equal(h.el('#hack-visor').hidden,true);
+ h.api.cast('r');const first=h.api.get().monsters[0];assert.equal(h.el('#hack-visor').hidden,false);
+ assert.equal(h.el('#visor-target-name').textContent,`Lv.${first.level} · 적`);
+ assert.equal(h.el('#visor-range').textContent,'DIST / 250');assert.equal(h.el('#visor-vitals').textContent,'HP / 100%');
+ h.api.cycleHack(1);assert.equal(h.el('#visor-range').textContent,'DIST / 320');
+ h.api.confirmHack();assert.equal(h.el('#hack-visor').hidden,true);assert.equal(h.api.get().hackerUlt.phase,'channeling');
+ assert.equal(h.api.playerDamage(100),20);assert.ok(h.api.get().monsters[1].hack);
+ const town=chickFixture('town');town.p.x=1060;town.h.api.cast('r');assert.equal(town.h.el('#visor-target-name').textContent,'마구리');assert.equal(town.h.el('#visor-vitals').textContent,'NPC SIGNAL');
+});
+test('hacker visor clears immediately on cancellation, modal, blur and timeout',()=>{
+ for(const exit of ['cancel','map','blur','timeout']){
+  const {h}=chickFixture();h.api.cast('r');assert.equal(h.el('#hack-visor').hidden,false);
+  if(exit==='cancel')h.api.cancelChickAim();else if(exit==='map')h.api.worldMap();else if(exit==='blur')h.windowEvents.get('blur').forEach(f=>f());else advance(h,10.1);
+  assert.equal(h.el('#hack-visor').hidden,true);assert.equal(h.api.get().hackerUlt,null);
+ }
+});
