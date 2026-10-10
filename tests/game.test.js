@@ -1981,7 +1981,7 @@ test('otter skill art persists under cooldown and ride cues while unlearned skil
  for(const key of ['q','w','e','r']){assert.equal(symbol(key).dataset.art,key);assert.ok(symbol(key).innerHTML.includes(`otter-skill-${key}.webp`));}
  h.api.cast('q');h.api.refreshHUD();assert.equal(h.el('[data-skill="q"] .skill-symbol .skill-cue').textContent,'3');assert.equal(h.el('[data-skill="q"] .skill-symbol .skill-cue').hidden,false);assert.ok(symbol('q').innerHTML.includes('otter-skill-q.webp'));
  h.api.cast('w');h.api.refreshHUD();assert.equal(h.el('[data-skill="w"] .skill-symbol .skill-cue').textContent,'↗');
- const penguin=core.createCharacter('그대로');h.api.start(penguin);assert.equal(h.api.skillSymbolMarkup('a','╱'),'╱');
+ const penguin=core.createCharacter('그대로');h.api.start(penguin);assert.ok(h.api.skillSymbolMarkup('a','╱').includes('assets/penguin-skill-a.webp'));
 });
 
 test('hacker advancement swaps skill art while novice icons and locked levels stay intact',()=>{

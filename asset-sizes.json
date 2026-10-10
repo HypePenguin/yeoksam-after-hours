@@ -1,6 +1,6 @@
 {
-  "source_bytes": 194063220,
-  "bytes": 23304256,
+  "source_bytes": 213769687,
+  "bytes": 23523632,
   "assets": [
     {
       "name": "builder-recovery-walk",
@@ -15,6 +15,48 @@
         887
       ],
       "compact": false
+    },
+    {
+      "name": "builder-skill-e",
+      "source_bytes": 1667263,
+      "bytes": 19138,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "builder-skill-r",
+      "source_bytes": 2088011,
+      "bytes": 27108,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "builder-skill-w",
+      "source_bytes": 1705334,
+      "bytes": 19370,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
     },
     {
       "name": "cat",
@@ -1151,6 +1193,48 @@
       "compact": false
     },
     {
+      "name": "penguin-skill-a",
+      "source_bytes": 1560499,
+      "bytes": 16728,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "penguin-skill-q",
+      "source_bytes": 1903888,
+      "bytes": 25192,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "penguin-skill-w",
+      "source_bytes": 1650273,
+      "bytes": 17928,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
       "name": "penguin-walk",
       "source_bytes": 1852996,
       "bytes": 261712,
@@ -1429,6 +1513,76 @@
         1024
       ],
       "compact": false
+    },
+    {
+      "name": "swordsman-skill-a",
+      "source_bytes": 1765470,
+      "bytes": 10348,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "swordsman-skill-e",
+      "source_bytes": 1741209,
+      "bytes": 20368,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "swordsman-skill-q",
+      "source_bytes": 1969600,
+      "bytes": 21876,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "swordsman-skill-r",
+      "source_bytes": 1965731,
+      "bytes": 24646,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "swordsman-skill-w",
+      "source_bytes": 1689189,
+      "bytes": 16674,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
     },
     {
       "name": "type-a",
