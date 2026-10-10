@@ -1976,6 +1976,36 @@ test('otter skill art persists under cooldown and ride cues while unlearned skil
  const rabbit=core.createCharacter('그대로','rabbit');h.api.start(rabbit);assert.equal(h.api.skillSymbolMarkup('a','◉'),'◉');
 });
 
+test('hacker advancement swaps skill art while novice icons and locked levels stay intact',()=>{
+ const h=harness(),p=core.createCharacter('해커아이콘','chick');Object.assign(p,{level:10,map:'maple'});h.api.start(p);h.api.buildHUD();
+ for(const key of ['a','q','w'])assert.equal(h.api.skillSymbolMarkup(key,'novice'),'novice');
+ h.api.jobModal('hacker');h.el('#advance-job').onclick();assert.equal(p.job,'hacker');
+ assert.ok(h.el('#game-ui').innerHTML.includes('class="skill hacker-skill"'));
+ for(const key of ['a','q','w','e','r']){
+  const path=`assets/hacker-skill-${key}.png`;
+  assert.ok(h.api.skillSymbolMarkup(key,'novice').includes(path));
+  assert.deepEqual([...fs.readFileSync(new URL(`../dist/${path}`,import.meta.url)).subarray(0,8)],[137,80,78,71,13,10,26,10]);
+ }
+ const symbol=key=>h.el(`[data-skill="${key}"] .skill-symbol`);
+ assert.equal(symbol('r').textContent,'🔒');assert.equal(h.el('[data-skill="r"] .lock-level').textContent,'Lv.15');
+ p.level=15;h.api.refreshHUD();for(const key of ['q','w','e','r'])assert.ok(symbol(key).innerHTML.includes(`hacker-skill-${key}.png`));
+ h.api.cast('w');h.api.refreshHUD();assert.equal(h.el('[data-skill="w"] .skill-symbol .skill-cue').textContent,'10');assert.ok(symbol('w').innerHTML.includes('hacker-skill-w.png'));
+ p.job=null;h.api.buildHUD();for(const key of ['a','q','w'])assert.equal(h.api.skillSymbolMarkup(key,'novice'),'novice');
+});
+
+test('hacker E locks movement and facing while the preview advances, then resumes on release or cancel',()=>{
+ for(const fps of [30,60,120]){
+  const {h,p}=chickFixture('maple');h.api.cast('w');h.api.keys.add('ArrowLeft');h.api.keys.add('ArrowUp');const x=p.x,y=p.y;
+  assert.equal(h.api.startChickCharge('test'),true);const area=h.api.chickArea().x;
+  for(let i=0;i<fps;i++)h.api.update(1/fps);
+  assert.equal(p.x,x);assert.equal(p.y,y);assert.equal(h.api.get().walking,false);assert.ok(h.api.get().chickStealth>0);
+  assert.ok(h.api.chickArea().x>area+200,'only the aiming rectangle moves forward');
+  h.api.releaseChickCharge('test');h.api.update(1/fps);assert.ok(p.x<x);assert.ok(p.y<y);assert.equal(h.api.get().walking,true);
+ }
+ const {h,p}=chickFixture('maple');h.api.keys.add('ArrowRight');h.api.startChickCharge('keyboard');h.api.update(.1);const x=p.x;
+ h.windowEvents.get('blur').forEach(f=>f());h.api.keys.add('ArrowRight');h.api.update(.1);assert.ok(p.x>x);assert.equal(h.api.get().cooldowns.e,0);
+});
+
 test('otter entry shows only the idle portrait before motion assets finish loading',async()=>{
  for(const job of [null,'idol']){
   const h=harness(),p=core.createCharacter('입장수달','otter');Object.assign(p,{level:20,job});h.api.start(p);

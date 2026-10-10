@@ -198,14 +198,14 @@ main{width:100%;max-width:1512px;min-height:100svh;margin:0 auto;padding:24px;di
 @media(max-width:650px){.combat-banner.otter-status{top:174px;width:174px;padding:6px 8px;gap:2px 6px;}.combat-banner.otter-status small{display:none;}.combat-banner.otter-status .power-track{margin-top:2px;}.boss-fight .combat-banner.otter-status{top:243px;}}
 
 /* Illustrated otter skills keep their art visible beneath cooldown and ride cues. */
-.otter-skill{overflow:hidden;isolation:isolate}
-.otter-skill:not(.locked) .skill-symbol{position:absolute;inset:0;display:block}
-.otter-skill .skill-art{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
-.otter-skill:not(.locked)::after{content:"";position:absolute;inset:55% 0 0;background:linear-gradient(transparent,#04121de6);z-index:1;pointer-events:none}
-.otter-skill b,.otter-skill .lock-level{z-index:3;color:#fff;text-shadow:0 1px 2px #000,0 0 3px #000}
-.otter-skill .skill-cue{position:absolute;inset:0;display:grid;place-items:center;padding-bottom:10px;background:#0716248a;color:#fff;font:600 20px 'Space Grotesk',sans-serif;text-shadow:0 1px 4px #000;z-index:2;pointer-events:none}
-.otter-skill .skill-cue[hidden]{display:none}
-.otter-skill:hover{border-color:#b5efff}
+:is(.otter-skill,.hacker-skill){overflow:hidden;isolation:isolate}
+:is(.otter-skill,.hacker-skill):not(.locked) .skill-symbol{position:absolute;inset:0;display:block}
+:is(.otter-skill,.hacker-skill) .skill-art{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+:is(.otter-skill,.hacker-skill):not(.locked)::after{content:"";position:absolute;inset:55% 0 0;background:linear-gradient(transparent,#04121de6);z-index:1;pointer-events:none}
+:is(.otter-skill,.hacker-skill) b,:is(.otter-skill,.hacker-skill) .lock-level{z-index:3;color:#fff;text-shadow:0 1px 2px #000,0 0 3px #000}
+:is(.otter-skill,.hacker-skill) .skill-cue{position:absolute;inset:0;display:grid;place-items:center;padding-bottom:10px;background:#0716248a;color:#fff;font:600 20px 'Space Grotesk',sans-serif;text-shadow:0 1px 4px #000;z-index:2;pointer-events:none}
+:is(.otter-skill,.hacker-skill) .skill-cue[hidden]{display:none}
+:is(.otter-skill,.hacker-skill):hover{border-color:#b5efff}
 
 /* Shared item art in the shop, bag, quick slots and world drops. */
 .item-art{display:block;width:100%;height:100%;object-fit:cover;border-radius:4px;pointer-events:none}
