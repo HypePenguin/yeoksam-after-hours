@@ -199,7 +199,7 @@ export function effectiveSkill(p,key){
   if(key==='q')return {...clean,name:'물 뿜기',icon:'💦',mp:10,cooldown:3,damage:2.4,range:420,halfLane:60,description:'입에서 물을 뿜어 전방 사거리 안의 가장 가까운 적 하나를 공격합니다.'};
   if(key==='w')return {...clean,name:'작은 파도',icon:'≈',mp:14,cooldown:6,damage:1.6,range:560,speed:560,halfLane:96,rideWindow:.6,description:'앞으로 파도를 보냅니다. 0.6초 안에 W를 다시 누르면 남은 거리를 파도에 타고 이동합니다. 추가 MP 소모는 없고 무적은 아닙니다.'};
   if(key==='e')return {...clean,name:'물방울 가드',icon:'◉',mp:22,cooldown:10,damage:1.8,shield:.3,duration:5,orbit:100,description:'최대 HP의 30% 보호막과 3개의 물방울을 5초간 얻습니다. 각 물방울은 적 하나에게 닿으면 피해를 주고 따로 사라집니다. 보호막이 깨져도 남은 물방울은 유지됩니다.'};
-  if(key==='r')return {...clean,name:'콘서트',icon:'♡',mp:40,cooldown:40,damage:1,tick:.5,duration:5,buff:.2,heal:.1,reduction:.5,description:'5초간 제자리에서 춤을 춥니다. 시전할 때 화면에 보이는 적들에게 지속 피해를 주고, 해당 무대 안의 자신과 아군은 공격력·이동속도 +20%, 초당 최대 HP 10% 회복. 춤추는 동안 받는 피해 50% 감소. 다른 공격·점프는 사용할 수 없습니다.'};
+  if(key==='r')return {...clean,name:'콘서트',icon:'♡',mp:40,cooldown:40,damage:1,tick:.5,duration:5,buff:.2,heal:.1,reduction:.5,description:'5초간 춤을 춥니다. 춤추는 동안 이동할 수 있습니다. 시전할 때 화면에 보이는 적들에게 지속 피해를 주고, 해당 무대 안의 자신과 아군은 공격력·이동속도 +20%, 초당 최대 HP 10% 회복. 춤추는 동안 받는 피해 50% 감소. 다른 공격·점프는 사용할 수 없습니다.'};
  }
  if(p?.classId==='chick'){
   const clean={...skill,heal:0,recovery:0,reduction:0,enhanced:''};

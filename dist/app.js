@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=91';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=91';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=91';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=92';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=92';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=92';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={};let assetsReady=false,assetFailed=false;
@@ -1249,7 +1249,7 @@ function update(dt){
  if(bossActive())potionCooldown=Math.max(0,potionCooldown-dt);
  guardTime=Math.max(0,guardTime-dt);updateCombat(dt);hurtTime=Math.max(0,hurtTime-dt);updateSword(dt);if(modal||scene!=='playing')return;
  if(invincible>0)invincible-=dt;if(attackTimer>0)attackTimer-=dt;for(const k in cooldowns)cooldowns[k]=Math.max(0,cooldowns[k]-dt);if(player.powerTime>0){player.powerTime=Math.max(0,player.powerTime-dt);if(player.powerTime===0){toast('평범한 펭귄으로 돌아왔어요.');save();}}shake=Math.max(0,shake-dt*20);if(swordUlt?.phase==='charging')shake=Math.max(shake,2+swordUlt.elapsed*.9);
- let dx=(keys.has('ArrowRight')?1:0)-(keys.has('ArrowLeft')?1:0),dy=(keys.has('ArrowDown')?1:0)-(keys.has('ArrowUp')?1:0);if(swordUlt||combatMotion?.fromX!==undefined){dx=0;dy=0;}if(hackerUlt||otterConcert||otterWave?.riding){dx=0;dy=0;}if(dx)facing=dx;const norm=Math.hypot(dx,dy)||1;
+ let dx=(keys.has('ArrowRight')?1:0)-(keys.has('ArrowLeft')?1:0),dy=(keys.has('ArrowDown')?1:0)-(keys.has('ArrowUp')?1:0);if(swordUlt||combatMotion?.fromX!==undefined){dx=0;dy=0;}if(hackerUlt||otterWave?.riding){dx=0;dy=0;}if(dx)facing=dx;const norm=Math.hypot(dx,dy)||1;
  const stepX=player.x,stepY=player.y,wasGrounded=pz===0&&pvz===0;
  player.x=clamp(player.x+dx/norm*285*movementMultiplier(player)*(chickStealth>0?1.5:1)*moveDt,45,MAPS[player.map].width-45);player.y=clamp(player.y+dy/norm*175*movementMultiplier(player)*(chickStealth>0?1.5:1)*moveDt,580,720);
  updateJump(dt);

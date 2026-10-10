@@ -1891,10 +1891,10 @@ test('concert damages only visible enemies for ten ticks, heals 10 percent HP pe
  assert.equal(core.attackPower(p),base*1.2);assert.equal(core.movementMultiplier(p),speed*1.2);h.api.update(.49);assert.equal(a.hp,10000);h.api.update(.02);assert.equal(a.hp,10000-Math.round(base*1.2));
  advance(h,4.51);assert.equal(h.api.get().otterConcert,null);assert.equal(a.hp,10000-10*Math.round(base*1.2));assert.equal(b.hp,a.hp);assert.equal(outside.hp,10000);assert.ok(Math.abs(p.hp-(10+core.maxHp(p)*.5))<1e-8);assert.equal(core.attackPower(p),base);assert.equal(core.movementMultiplier(p),speed);
 });
-test('concert prevents movement, jump and other attacks while reducing incoming damage by 50 percent',()=>{
+test('concert allows movement while retaining dance, attack locks and 50 percent damage reduction',()=>{
  const {h,p}=otterFixture();advance(h,2.1);h.api.cast('r');const x=p.x,y=p.y,mp=p.mp;assert.equal(h.api.playerDamage(100),50);assert.ok(h.api.get().invincible<=0);
  h.api.keys.add('ArrowRight');h.api.keys.add('ArrowUp');h.api.keys.add('KeyA');h.api.jump();for(const key of ['q','w','e','r'])h.api.cast(key);assert.equal(p.mp,mp);assert.equal(h.api.get().jumpPrep,0);
- advance(h,.7);assert.equal(p.x,x);assert.equal(p.y,y);assert.equal(h.api.get().otterWave,null);assert.equal(h.api.get().otterShield,null);assert.ok([13,14].includes(h.api.otterFrame()));
+ advance(h,.7);assert.ok(p.x>x);assert.ok(p.y<y);assert.ok(h.api.get().walking);assert.equal(h.api.get().otterWave,null);assert.equal(h.api.get().otterShield,null);assert.ok([13,14].includes(h.api.otterFrame()));
  h.api.keys.clear();advance(h,4.4);h.api.keys.add('ArrowRight');h.api.update(.1);assert.ok(p.x>x);assert.equal(h.api.playerDamage(100),100);
 });
 test('concert support is limited to the stage, and leaving it removes healing and ally buffs',()=>{
@@ -1952,5 +1952,15 @@ test('otter wave hits the expanded vertical boundary in both directions and stop
   const target=placeOtterEnemy(h,0,p.x+dir*200,p.y+dy);
   h.api.cast('w');const damage=h.api.get().otterWave.damage;advance(h,.4);
   assert.equal(target.hp,10000-(Math.abs(dy)<=96?damage:0));
+ }
+});
+
+test('concert keeps running while walking in either direction with the normal movement speed buff',()=>{
+ for(const dir of [1,-1]){
+  const {h,p}=otterFixture('town');h.api.cast('r');const c=h.api.get().otterConcert,x=p.x,mp=p.mp;
+  h.api.keys.add(dir===1?'ArrowRight':'ArrowLeft');h.api.update(.2);
+  assert.ok(Math.abs(p.x-x-dir*285*1.2*.2)<1e-8);assert.equal(h.api.get().otterConcert,c);assert.equal(c.remaining,4.8);assert.ok(p.mp>=mp);
+  assert.ok([13,14].includes(h.api.otterFrame()));render(h);const pose=h.draws.find(d=>d.asset==='assets/otter-idol-skirt-motion.png');assert.equal(Math.sign(pose.matrix[0]),dir);
+  h.api.keys.clear();const stopped=p.x;h.api.update(.2);assert.equal(p.x,stopped);assert.equal(h.api.get().otterConcert,c);
  }
 });
