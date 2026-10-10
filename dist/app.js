@@ -1,7 +1,7 @@
-import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawBallotVortex} from './cat-effects.js?v=129';
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=129';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=129';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=129';
+import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawBallotVortex} from './cat-effects.js?v=130';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=130';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=130';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=130';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -1185,6 +1185,8 @@ function updateChickCombat(dt){
 }
 // Per-pose source bounds exclude adjacent rows; generated art is not a uniform grid.
 const CHICK_ACTION_FRAMES=[[61, 50, 269, 320, 181, 370], [405, 35, 292, 317, 543, 352], [769, 42, 267, 342, 905, 384], [1133, 68, 263, 304, 1267, 372], [60, 404, 269, 320, 181, 724], [419, 391, 261, 312, 543, 703], [774, 397, 259, 337, 905, 734], [1133, 423, 264, 306, 1267, 729], [60, 746, 266, 326, 181, 1072], [405, 744, 309, 320, 543, 1064], [759, 746, 268, 321, 905, 1067], [1108, 747, 315, 320, 1267, 1067]];
+// Match the normal penguin's 118-unit size without changing any atlas or motion.
+const CHICK_DRAW_SCALE=118/138;
 function chickFrame(){
  if(hackerUlt)return 12+Math.floor(worldTime*(hackerUlt.phase==='channeling'?28:10))%3;
  const jumpPose=jumpFrame();if(jumpPose>=0)return 24+(player.job==='hacker'?4:0)+[0,1,1,2,2,3][jumpPose];
@@ -1198,7 +1200,7 @@ function chickFrame(){
 function drawChickPlayer(){
  const pose=chickFrame(),action=pose>=24,typing=pose>=16&&pose<24,asset=action?'chick-actions':typing?'chick-typing':'chick-motion';if(!images[asset])void loadImage(asset);const img=images[asset];if(!img?.complete||!img.naturalWidth)return;
  const frame=typing?pose-16:pose,cw=img.naturalWidth/4,ch=img.naturalHeight/(typing?2:4),height=138,x=combatDisplayX()-camera,y=player.y;
- ctx.save();ctx.fillStyle='#03162560';ctx.beginPath();ctx.ellipse(x,y+3,28,7,0,0,Math.PI*2);ctx.fill();ctx.translate(x,y-pz);ctx.scale(typing&&walking?facing:combatMotion?.dir??chickCharge?.dir??facing,1);
+ ctx.save();ctx.fillStyle='#03162560';ctx.beginPath();ctx.ellipse(x,y+3,28*CHICK_DRAW_SCALE,7*CHICK_DRAW_SCALE,0,0,Math.PI*2);ctx.fill();ctx.translate(x,y-pz);ctx.scale((typing&&walking?facing:combatMotion?.dir??chickCharge?.dir??facing)*CHICK_DRAW_SCALE,CHICK_DRAW_SCALE);
  ctx.globalAlpha=chickStealth>0?.38:invincible>0&&Math.floor(invincible*13)%2===0?.6:1;
  if(chickStealth>0){ctx.shadowColor='#9affe2';ctx.shadowBlur=10;}
  const furious=hackerUlt?.phase==='channeling';
@@ -1210,8 +1212,8 @@ function drawChickPlayer(){
   for(let i=0;i<3;i++){const sx=-28+i*23;ctx.beginPath();ctx.moveTo(sx,-43);ctx.lineTo(sx+Math.sin(worldTime*50+i)*9,-32);ctx.stroke();}
  }
  ctx.restore();
- if(furious)label('타다다다닥! 💦',x,y-pz-178,'#b7efff',14);
- drawPlayerName(player.name,x,y-pz-height-14,'#fff2b7');
+ if(furious)label('타다다다닥! 💦',x,y-pz-178*CHICK_DRAW_SCALE,'#b7efff',14);
+ drawPlayerName(player.name,x,y-pz-height*CHICK_DRAW_SCALE-14,'#fff2b7');
 }
 // The frame always matches the actual hit rectangle; particles only decorate its edges.
 function drawHackGrid(width,height,progress,charging){
