@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createCharacter,normalizeCharacter,gainXp,maxHp,maxMp,xpNeeded,buyPotion,usePotion,canUseSkill,respawn,makeMonster,patrolMonster,MAPS,advanceJob,effectiveSkill,isPowered,monsterCount,findMapRoute,recommendedMap,MAP_ROUTES,WORLD_MAP_LAYOUT,worldMapConnections} from '../dist/core.js';
+import {createCharacter,normalizeCharacter,gainXp,xpReward,maxHp,maxMp,xpNeeded,buyPotion,usePotion,canUseSkill,respawn,makeMonster,patrolMonster,MAPS,advanceJob,effectiveSkill,isPowered,monsterCount,findMapRoute,recommendedMap,MAP_ROUTES,WORLD_MAP_LAYOUT,worldMapConnections} from '../dist/core.js';
 import {incomingDamage} from '../dist/core.js';
 
 test('active defense multiplies passive defense before one final rounding',()=>{
@@ -267,4 +267,23 @@ test('all movement devices are refused in every boss room without changing chara
   const p=createCharacter('이동제한');Object.assign(p,{map:map.id,x:710,y:680,hp:24,mp:11,[id]:2});
   const before=JSON.stringify(p),result=useItem(p,id);assert.equal(result.ok,false);assert.match(result.message,/보스방에서는 이동장치를 사용할 수 없어요/);assert.equal(JSON.stringify(p),before);
  }
+});
+
+
+test('monster XP applies exact 10 and 20 level gap thresholds with hacker bonus',()=>{
+ for(const [classId,job,bonus] of [['wanderer',null,1],['chick','hacker',1.3]]){
+  for(const [monsterLevel,multiplier] of [[51,1],[50,1],[41,1],[40,.5],[31,.5],[30,.1],[1,.1]]){
+   const p=createCharacter('레벨차 경험치',classId);Object.assign(p,{level:50,job});
+   const expected=Math.round(101*multiplier*bonus);
+   assert.equal(xpReward(p,101,monsterLevel),expected);
+   gainXp(p,101,monsterLevel);assert.equal(p.xp,expected);assert.equal(p.level,50);
+  }
+ }
+});
+test('XP is reduced once using the level before a kill, and saved XP stays unchanged',()=>{
+ const p=createCharacter('경계 레벨업');Object.assign(p,{level:29,xp:xpNeeded(29)-50});
+ gainXp(p,100,20);assert.equal(p.level,30);assert.equal(p.xp,50);
+ gainXp(p,100,20);assert.equal(p.xp,100);
+ const saved=normalizeCharacter(p);assert.equal(saved.xp,100);
+ assert.equal(xpReward(p,100),100,'non-monster XP has no level penalty');
 });

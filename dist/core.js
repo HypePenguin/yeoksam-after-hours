@@ -276,8 +276,11 @@ export function normalizeCharacter(raw){
  if(p.level<10)gainXp(p,0);
  return p;
 }
-export const xpReward=(p,amount)=>Math.round(Math.max(0,amount)*(p.classId==='chick'&&p.job==='hacker'?1.3:1));
-export function gainXp(p,amount){p.xp+=xpReward(p,amount);let gained=0;while(p.xp>=xpNeeded(p.level)&&p.level<99){p.xp-=xpNeeded(p.level);p.level++;gained++;p.hp=maxHp(p);p.mp=maxMp(p);}return gained;}
+export function xpReward(p,amount,monsterLevel=p.level){
+ const gap=p.level-monsterLevel,levelMultiplier=gap>=20 ? .1 : gap>=10 ? .5 : 1;
+ return Math.round(Math.max(0,amount)*levelMultiplier*(p.classId==='chick'&&p.job==='hacker'?1.3:1));
+}
+export function gainXp(p,amount,monsterLevel){p.xp+=xpReward(p,amount,monsterLevel);let gained=0;while(p.xp>=xpNeeded(p.level)&&p.level<99){p.xp-=xpNeeded(p.level);p.level++;gained++;p.hp=maxHp(p);p.mp=maxMp(p);}return gained;}
 export function respawn(p){
  // Each boss room specifies its recovery location independently of portal requirements.
  const destination=MAPS[p.map]?.respawn||{map:'town',x:530,y:648};

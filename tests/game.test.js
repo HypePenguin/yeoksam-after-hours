@@ -2363,3 +2363,30 @@ test('hacker visor clears immediately on cancellation, modal, blur and timeout',
   assert.equal(h.el('#hack-visor').hidden,true);assert.equal(h.api.get().hackerUlt,null);
  }
 });
+
+
+test('normal monster kills grant reduced XP exactly once for low-level enemies',()=>{
+ for(const [gap,multiplier] of [[9,1],[10,.5],[19,.5],[20,.1]]){
+  for(const [classId,job,bonus] of [['wanderer',null,1],['chick','hacker',1.3]]){
+   const h=harness(),p=core.createCharacter('처치 경험치',classId);Object.assign(p,{level:40,job,map:'alley'});h.api.start(p);
+   const m=h.api.get().monsters[0];m.level=p.level-gap;m.hp=1;
+   h.api.hitMonster(m,100);const expected=Math.round((12+m.level*7)*multiplier*bonus);
+   assert.equal(p.xp,expected);h.api.hitMonster(m,100);assert.equal(p.xp,expected);
+   assert.equal(JSON.parse(h.storage.get(core.SAVE_KEY)).characters[0].xp,expected);
+  }
+ }
+});
+test('both bosses show and grant level-adjusted XP, including a level-up across a threshold',()=>{
+ for(const [map,info] of [['pocha',bossCore.SOLDIER],['hangar',typeACore.TYPE_A]]){
+  for(const [gap,multiplier] of [[10,.5],[20,.1]]){
+   const h=harness(),p=core.createCharacter('보스 경험치');Object.assign(p,{map,level:info.level+gap});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);
+   h.api.bossTalk();const reward=Math.round(info.xp*multiplier);assert.ok(h.el('#modal-root').innerHTML.includes(`EXP ${reward.toLocaleString()}`));
+   h.api.startBossFight();const b=h.api.get().boss;if(map==='hangar')Object.assign(b,{safetyUsed:true,hp:1});h.api.hitMonster(b,999999);
+   let remaining=reward,level=info.level+gap;while(remaining>=core.xpNeeded(level)){remaining-=core.xpNeeded(level++);}
+   assert.equal(p.level,level);assert.equal(p.xp,remaining);assert.ok(h.el('#modal-root').innerHTML.includes(`EXP +${reward.toLocaleString()}`));
+   h.api.winBoss();assert.equal(p.xp,remaining);
+  }
+ }
+ const h=harness(),p=core.createCharacter('보상 표시');Object.assign(p,{map:'pocha',level:34,xp:core.xpNeeded(34)-1});h.api.start(p);h.api.startBossFight();h.api.hitMonster(h.api.get().boss,999999);
+ assert.ok(p.level>=35);assert.ok(h.el('#modal-root').innerHTML.includes('EXP +3,500'));
+});
