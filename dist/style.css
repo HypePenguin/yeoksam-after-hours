@@ -129,7 +129,7 @@ main{width:100%;max-width:1512px;min-height:100svh;margin:0 auto;padding:24px;di
 .atlas-location-dot{width:9px;height:9px;display:inline-block;background:#ffdb7a;border-radius:50%;box-shadow:0 0 9px #ffdb7a77;}
 .atlas-scroll{overflow:auto;border:1px solid #9aac9366;border-radius:10px;background:#192f39;scrollbar-width:thin;scrollbar-color:#739288 #142a34;}
 .atlas-board{position:relative;width:100%;min-width:880px;aspect-ratio:1120/610;isolation:isolate;}
-.atlas-background{position:absolute;inset:0;background:linear-gradient(#112b3029,#0c183250),url('assets/world-map.png') center/100% 100%;z-index:-1;}
+.atlas-background{position:absolute;inset:0;background:linear-gradient(#112b3029,#0c183250),url('assets/world-map.webp') center/100% 100%;z-index:-1;}
 .atlas-roads{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;}
 .atlas-road-border{fill:none;stroke:#19252ec4;stroke-width:11;stroke-linecap:round;vector-effect:non-scaling-stroke;}
 .atlas-road{fill:none;stroke:#e1d8b8;stroke-width:4;stroke-linecap:round;vector-effect:non-scaling-stroke;transition:stroke .15s;}

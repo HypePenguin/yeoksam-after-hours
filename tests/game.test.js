@@ -7,9 +7,9 @@ import * as bossCore from '../dist/boss.js';
 import * as typeACore from '../dist/type-a.js';
 
 // Runs the actual game loop against lightweight DOM/timer adapters. No live browser state.
-function harness(){
+function harness({manualImages=false}={}){
  const elements=new Map(),events=new Map(),windowEvents=new Map(),storage=new Map(),timeouts=[];
- const persistence={fail:false};
+ const persistence={fail:false},requestedImages=[];
  const draws=[],labels=[],strokes=[],arcs=[],transforms=[];let matrix=[1,0,0,1,0,0],path=[];
  const point=(x,y)=>({x:matrix[0]*x+matrix[2]*y+matrix[4],y:matrix[1]*x+matrix[3]*y+matrix[5]});
  const gradient=()=>({addColorStop(){}});
@@ -29,10 +29,10 @@ function harness(){
  },{get:(obj,key)=>key in obj?obj[key]:()=>{}});
  function el(selector){if(elements.has(selector))return elements.get(selector);const obj={parentElement:{},style:{},dataset:{},classList:{add(){},remove(){},toggle(){}},textContent:'',innerHTML:'',hidden:false,isConnected:true,disabled:false,onclick:null,listeners:new Map(),setPointerCapture(){},focus(){},setAttribute(k,v){this[k]=v;},getAttribute(k){return this[k]??null;},getBoundingClientRect(){return {width:1448,height:818};},addEventListener(n,f){this.listeners.set(n,f);},querySelector:child=>el(`${selector} ${child}`),querySelectorAll:()=>[],getContext:()=>drawing};elements.set(selector,obj);return obj;}
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),hidden:false,activeElement:el('#game')};
- const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;this.complete=true;this.naturalWidth=v.includes('otter-')?1215:1500;this.naturalHeight=v.includes('otter-')?1295:1000;this.onload?.();}},Promise,Math,Date,Number,String,Set});
+ const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;requestedImages.push(this);this.complete=!manualImages;this.naturalWidth=v.includes('otter-')?1215:1500;this.naturalHeight=v.includes('otter-')?1295:1000;if(!manualImages)this.onload?.();}},Promise,Math,Date,Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
- vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,createModal,characterPortrait,buildHUD,refreshHUD,refreshItemSlots,drawDrop,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,refreshHealthHUD,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
- return {api:context.gameTest,persistence,draws,labels,strokes,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
+ vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,createModal,characterPortrait,sceneAssets,mapAssets,loadSceneAssets,loadImage,images,imageLoads,buildHUD,refreshHUD,refreshItemSlots,drawDrop,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,refreshHealthHUD,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
+ return {api:context.gameTest,persistence,requestedImages,finishImages(except){for(const img of requestedImages)if(!img.complete&&img.asset!==except){img.complete=true;img.onload?.();}},draws,labels,strokes,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
 }
 function advance(h,seconds){for(let t=0;t<seconds;t+=1/60)h.api.update(1/60);}
 
@@ -60,14 +60,14 @@ test('ballot ultimate hits within the doubled radius and leaves targets beyond i
 
 test('only advanced cats use the integrated ribbon artwork in portraits and movement',()=>{
  const h=harness(),p=core.createCharacter('복장','cat');h.api.start(p);
- render(h);assert.ok(h.draws.some(d=>d.asset==='assets/cat.png'));
- h.api.keys.add('ArrowLeft');h.api.update(1/60);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/cat-motion.png'));
+ render(h);assert.ok(h.draws.some(d=>d.asset==='assets/cat.webp'));
+ h.api.keys.add('ArrowLeft');h.api.update(1/60);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/cat-motion.webp'));
  p.level=10;p.map='olympic';assert.equal(core.advanceJob(p,'protester').ok,true);
- h.api.update(1/60);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/cat-protester-motion.png'));
- h.api.characters([p],p.id);assert.ok(h.el('#screens').innerHTML.includes('assets/cat-protester.png'));
+ h.api.update(1/60);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/cat-protester-motion.webp'));
+ h.api.characters([p],p.id);assert.ok(h.el('#screens').innerHTML.includes('assets/cat-protester.webp'));
  for(const suffix of ['','-motion','-skills']){
-  const original=fs.readFileSync(new URL(`../dist/assets/cat${suffix}.png`,import.meta.url));
-  const dressed=fs.readFileSync(new URL(`../dist/assets/cat-protester${suffix}.png`,import.meta.url));
+  const original=fs.readFileSync(new URL(`../art-source/cat${suffix}.png`,import.meta.url));
+  const dressed=fs.readFileSync(new URL(`../art-source/cat-protester${suffix}.png`,import.meta.url));
   assert.deepEqual(dressed.subarray(16,24),original.subarray(16,24),'frame geometry stays aligned');
  }
 });
@@ -90,25 +90,25 @@ test('cat punches, claws and backsteps with a brief invulnerable jump',()=>{
 });
 test('cat walk, jump and every attack use distinct full-body motion poses',()=>{
  const h=harness(),p=core.createCharacter('동작','cat');p.level=15;p.job='protester';p.mp=core.maxMp(p);h.api.start(p);
- const current=()=>{render(h);return h.draws.find(d=>['assets/cat-protester-motion.png','assets/cat-protester-skills.png','assets/cat-protester.png'].includes(d.asset));};
- assert.equal(current().asset,'assets/cat-protester.png');
- const walk=new Set();h.api.keys.add('ArrowRight');for(let i=0;i<42;i++){h.api.update(1/60);const pose=current();assert.equal(pose.asset,'assets/cat-protester-motion.png');walk.add(pose.source.slice(0,2).join(','));assert.ok(Math.abs(pose.y+pose.height-p.y)<3);}
+ const current=()=>{render(h);return h.draws.find(d=>['assets/cat-protester-motion.webp','assets/cat-protester-skills.webp','assets/cat-protester.webp'].includes(d.asset));};
+ assert.equal(current().asset,'assets/cat-protester.webp');
+ const walk=new Set();h.api.keys.add('ArrowRight');for(let i=0;i<42;i++){h.api.update(1/60);const pose=current();assert.equal(pose.asset,'assets/cat-protester-motion.webp');walk.add(pose.source.slice(0,2).join(','));assert.ok(Math.abs(pose.y+pose.height-p.y)<3);}
  assert.ok(walk.size>=3,'walking alternates visible arm and leg poses');h.api.keys.clear();
- h.api.jump();assert.equal(current().source[1],1000/3,'jump starts with a crouch');advance(h,.2);assert.equal(current().source[1],1000/3,'airborne pose stays on the jump row');advance(h,1.1);assert.equal(current().asset,'assets/cat-protester.png');
- h.api.attack();assert.equal(current().asset,'assets/cat-protester-motion.png');advance(h,.08);assert.equal(current().source[1],2000/3,'A shows the extended punch');advance(h,.3);
+ h.api.jump();assert.equal(current().source[1],1000/3,'jump starts with a crouch');advance(h,.2);assert.equal(current().source[1],1000/3,'airborne pose stays on the jump row');advance(h,1.1);assert.equal(current().asset,'assets/cat-protester.webp');
+ h.api.attack();assert.equal(current().asset,'assets/cat-protester-motion.webp');advance(h,.08);assert.equal(current().source[1],2000/3,'A shows the extended punch');advance(h,.3);
  h.api.cast('q');advance(h,.08);assert.equal(current().source[1],2000/3,'Q shows the wide claw swipe');advance(h,.4);
  h.api.cast('w');assert.equal(current().source[1],2000/3,'W uses the backward-leap pose');advance(h,1);
- p.mp=core.maxMp(p);assert.equal(h.api.startCatCharge('test'),true);assert.equal(current().asset,'assets/cat-protester-skills.png');assert.equal(current().source[0],95,'E holds the bottle while charging');
+ p.mp=core.maxMp(p);assert.equal(h.api.startCatCharge('test'),true);assert.equal(current().asset,'assets/cat-protester-skills.webp');assert.equal(current().source[0],95,'E holds the bottle while charging');
  h.api.releaseCatCharge('test');assert.equal(current().source[0],736,'E shows the throw on release');advance(h,.35);
  p.mp=core.maxMp(p);h.api.cast('r');assert.equal(current().source[0],1518,'R places the ballot box');
- for(const asset of ['cat-motion','cat-skills']){const png=fs.readFileSync(new URL(`../dist/assets/${asset}.png`,import.meta.url)),width=png.readUInt32BE(16),height=png.readUInt32BE(20);assert.equal(width,asset==='cat-motion'?1145:2172);assert.equal(height,asset==='cat-motion'?1374:724);}
+ for(const asset of ['cat-motion','cat-skills']){const png=fs.readFileSync(new URL(`../art-source/${asset}.png`,import.meta.url)),width=png.readUInt32BE(16),height=png.readUInt32BE(20);assert.equal(width,asset==='cat-motion'?1145:2172);assert.equal(height,asset==='cat-motion'?1374:724);}
 });
 test('cat artwork consistently faces travel and attack direction across mirrored atlas frames',()=>{
  // These headings describe the source artwork, independently of the renderer's transforms.
  const motionHeading=[-1,-1,1,-1,-1,-1,-1,-1,-1];
  for(const dir of [-1,1]){
   const h=harness(),p=core.createCharacter('방향','cat');Object.assign(p,{level:15,job:'protester',x:1100});p.mp=core.maxMp(p);h.api.start(p);
-  const heading=()=>{render(h);const d=h.draws.find(d=>['assets/cat-protester.png','assets/cat-protester-motion.png','assets/cat-protester-skills.png'].includes(d.asset));assert.ok(d);const sourceDir=d.asset==='assets/cat-protester.png'?-1:d.asset==='assets/cat-protester-skills.png'?(d.source[0]===95?-1:1):motionHeading[Math.round(d.source[1]/(1000/3))*3+Math.round(d.source[0]/500)];return sourceDir*Math.sign(d.matrix[0]);};
+  const heading=()=>{render(h);const d=h.draws.find(d=>['assets/cat-protester.webp','assets/cat-protester-motion.webp','assets/cat-protester-skills.webp'].includes(d.asset));assert.ok(d);const sourceDir=d.asset==='assets/cat-protester.webp'?-1:d.asset==='assets/cat-protester-skills.webp'?(d.source[0]===95?-1:1):motionHeading[Math.round(d.source[1]/(1000/3))*3+Math.round(d.source[0]/500)];return sourceDir*Math.sign(d.matrix[0]);};
   h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');const startX=p.x;
   for(let i=0;i<50;i++){h.api.update(1/60);assert.equal(heading(),dir,'every walking frame faces the movement direction');}
   assert.ok((p.x-startX)*dir>0);h.api.keys.clear();h.api.update(1/60);assert.equal(heading(),dir,'idle keeps the same heading');
@@ -186,7 +186,7 @@ test('town NPCs and station sign stay anchored to the street during movement and
  const h=harness(),p=core.createCharacter('거리');h.api.start(p);h.api.setView(1440);
  const check=()=>{
   render(h);const camera=h.api.get().camera;
-  const street=h.draws.find(d=>d.asset==='assets/city.png'&&d.height===810&&Math.abs(d.x+camera)<1e-8);
+  const street=h.draws.find(d=>d.asset==='assets/city.webp'&&d.height===810&&Math.abs(d.x+camera)<1e-8);
   assert.ok(street,'the street landmark uses the same camera as actors');
   for(const [text,x] of [['현토리',650],['마구리',1060],[core.MAPS.town.name,290]]){
    const label=h.labels.find(l=>l.text===text);assert.ok(label);assert.ok(Math.abs(label.x-street.x-x)<1e-8,`${text} slid against the street`);
@@ -201,9 +201,9 @@ test('town NPCs and station sign stay anchored to the street during movement and
 });
 test('camera shake moves the background, NPCs and sign together',()=>{
  const h=harness(),p=core.createCharacter('흔들림');h.api.start(p);h.api.setView(1440);
- render(h);const beforeStreet=h.draws.find(d=>d.asset==='assets/city.png'&&d.height===810&&d.x===0),before=h.labels.find(l=>l.text==='현토리');
+ render(h);const beforeStreet=h.draws.find(d=>d.asset==='assets/city.webp'&&d.height===810&&d.x===0),before=h.labels.find(l=>l.text==='현토리');
  h.api.setShake(8);render(h);
- const afterStreet=h.draws.filter(d=>d.asset==='assets/city.png'&&d.height===810).sort((a,b)=>Math.abs(a.x)-Math.abs(b.x))[0],after=h.labels.find(l=>l.text==='현토리');
+ const afterStreet=h.draws.filter(d=>d.asset==='assets/city.webp'&&d.height===810).sort((a,b)=>Math.abs(a.x)-Math.abs(b.x))[0],after=h.labels.find(l=>l.text==='현토리');
  assert.ok(Math.abs((after.x-afterStreet.x)-(before.x-beforeStreet.x))<1e-8);
  assert.ok(Math.abs((after.y-afterStreet.y)-(before.y-beforeStreet.y))<1e-8);
 });
@@ -212,7 +212,7 @@ test('background tiles cover map boundaries, tile transitions and viewports wide
  for(const [map,width,positions] of [['rooftop',1000,[45,2049,2051,3555]],['gym',2000,[45,1555]]]){
   const p=core.createCharacter('연결');p.map=map;h.api.start(p);
   for(const x of positions){p.x=x;h.api.setView(width);render(h);
-   const tiles=h.draws.filter(d=>d.asset==='assets/districts.png'&&d.height===810).sort((a,b)=>a.x-b.x);
+   const tiles=h.draws.filter(d=>d.asset==='assets/districts.webp'&&d.height===810).sort((a,b)=>a.x-b.x);
    assert.ok(tiles[0].x<=0);assert.ok(tiles.at(-1).x+tiles.at(-1).width>=width);
    for(let i=1;i<tiles.length;i++)assert.ok(Math.abs(tiles[i-1].x+tiles[i-1].width-tiles[i].x)<1e-8);
    const camera=h.api.get().camera;for(const tile of tiles)assert.ok(Math.abs((tile.x+camera)/tile.width-Math.round((tile.x+camera)/tile.width))<1e-8);
@@ -334,7 +334,7 @@ test('reload cancels pending sword attacks but retains profession, MP cost and c
 test('normal and muscular penguins use distinct walking frames driven by actual ground travel',()=>{
  for(const powered of [false,true]){
   const h=harness(),p=core.createCharacter('걸음');Object.assign(p,{level:15,job:'bodybuilder',powerTime:powered?12:0});h.api.start(p);
-  const sheet=powered?'assets/penguin-power-walk.png':'assets/penguin-walk.png',poses=new Set();h.api.keys.add('ArrowRight');
+  const sheet=powered?'assets/penguin-power-walk.webp':'assets/penguin-walk.webp',poses=new Set();h.api.keys.add('ArrowRight');
   for(let i=0;i<40;i++){h.api.update(1/60);render(h);const sprite=h.draws.find(d=>d.asset===sheet);assert.ok(sprite);poses.add(JSON.stringify(sprite.source));assert.ok(Math.abs(sprite.y+sprite.height-p.y)<3);}
   assert.ok(poses.size>=5,'arms and legs advance through several actual sprite poses');
   h.api.keys.clear();const phase=h.api.get().walkPhase;advance(h,.5);render(h);assert.equal(h.api.get().walkPhase,phase);assert.equal(h.api.get().walking,false);assert.equal(h.draws.some(d=>d.asset===sheet),false);
@@ -343,7 +343,7 @@ test('normal and muscular penguins use distinct walking frames driven by actual 
 test('outward wall input is idle; sliding along a wall walks, and jumping never runs in midair',()=>{
  const h=harness(),p=core.createCharacter('벽');p.x=45;h.api.start(p);h.api.keys.add('ArrowLeft');advance(h,.2);assert.equal(h.api.get().walkPhase,0);assert.equal(h.api.get().walking,false);
  h.api.keys.add('ArrowDown');advance(h,.2);assert.ok(h.api.get().walkPhase>0);assert.equal(h.api.get().walking,true);
- h.api.jump();const phase=h.api.get().walkPhase;advance(h,.3);render(h);assert.equal(h.api.get().walkPhase,phase);assert.equal(h.api.get().walking,false);assert.equal(h.draws.some(d=>d.asset==='assets/penguin-walk.png'),false);
+ h.api.jump();const phase=h.api.get().walkPhase;advance(h,.3);render(h);assert.equal(h.api.get().walkPhase,phase);assert.equal(h.api.get().walking,false);assert.equal(h.draws.some(d=>d.asset==='assets/penguin-walk.webp'),false);
 });
 test('dash, sword teleport and knockback do not count as footsteps',()=>{
  const {h,p,monsters}=swordHarness();h.api.cast('w');h.api.update(.01);assert.equal(h.api.get().walkPhase,0);assert.equal(h.api.get().walking,false);
@@ -352,7 +352,7 @@ test('dash, sword teleport and knockback do not count as footsteps',()=>{
 });
 test('walking pauses in menus/hidden tabs, clears on blur and resets between scenes',async()=>{
  const h=harness(),p=core.createCharacter('휴식');h.api.start(p);h.api.keys.add('ArrowRight');advance(h,.15);const phase=h.api.get().walkPhase;
- h.api.worldMap();advance(h,.4);render(h);assert.equal(h.api.get().walkPhase,phase);assert.equal(h.api.get().walking,false);assert.equal(h.draws.some(d=>d.asset==='assets/penguin-walk.png'),false);
+ h.api.worldMap();advance(h,.4);render(h);assert.equal(h.api.get().walkPhase,phase);assert.equal(h.api.get().walking,false);assert.equal(h.draws.some(d=>d.asset==='assets/penguin-walk.webp'),false);
  h.api.closeModal();h.api.keys.add('ArrowRight');h.document.hidden=true;h.events.get('visibilitychange')();advance(h,.3);assert.equal(h.api.get().walkPhase,phase);
  h.document.hidden=false;h.api.keys.add('ArrowRight');advance(h,.1);h.windowEvents.get('blur').forEach(f=>f());assert.equal(h.api.get().walking,false);
  const pending=h.api.travel(core.MAPS.town.portals.find(x=>x.to==='gym'));await h.flush();await pending;assert.equal(h.api.get().walkPhase,0);assert.equal(h.api.get().walking,false);
@@ -423,11 +423,11 @@ test('both recall scrolls appear in the bag, bind independently and work between
 });
 test('profession equipment follows idle, walking and airborne player while town uses new NPC sprites',()=>{
  const h=harness(),p=core.createCharacter('장비');p.level=15;h.api.start(p);render(h);
- assert.ok(h.draws.some(d=>d.asset==='assets/npc-hyuntori-white.png'));assert.ok(h.draws.some(d=>d.asset==='assets/npc-maguri-large-crate.png'));assert.equal(h.draws.some(d=>d.asset==='assets/job-equipment.png'),false);
+ assert.ok(h.draws.some(d=>d.asset==='assets/npc-hyuntori-white.webp'));assert.ok(h.draws.some(d=>d.asset==='assets/npc-maguri-large-crate.webp'));assert.equal(h.draws.some(d=>d.asset==='assets/job-equipment.webp'),false);
  for(const job of ['bodybuilder','swordsman'])for(const power of [0,12]){
-  p.job=job;p.powerTime=power;h.api.start(p);render(h);const idle=h.draws.find(d=>d.asset==='assets/job-equipment.png');assert.ok(idle);assert.equal(idle.source[0],job==='bodybuilder'?72:688);
-  h.api.keys.add('ArrowRight');h.api.update(.12);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/job-equipment.png'));h.api.keys.clear();h.api.update(.01);render(h);const ground=h.draws.find(d=>d.asset==='assets/job-equipment.png');
-  h.api.jump();advance(h,.3);render(h);const air=h.draws.find(d=>d.asset==='assets/job-equipment.png');assert.ok(air.y<ground.y-40);h.api.keys.clear();
+  p.job=job;p.powerTime=power;h.api.start(p);render(h);const idle=h.draws.find(d=>d.asset==='assets/job-equipment.webp');assert.ok(idle);assert.equal(idle.source[0],job==='bodybuilder'?72:688);
+  h.api.keys.add('ArrowRight');h.api.update(.12);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/job-equipment.webp'));h.api.keys.clear();h.api.update(.01);render(h);const ground=h.draws.find(d=>d.asset==='assets/job-equipment.webp');
+  h.api.jump();advance(h,.3);render(h);const air=h.draws.find(d=>d.asset==='assets/job-equipment.webp');assert.ok(air.y<ground.y-40);h.api.keys.clear();
  }
 });
 
@@ -452,7 +452,7 @@ test('sword camera stays centered through teleports and returns smoothly after c
 test('zoomed background extensions cover canvas edges and pointer inverse matches the rendered world',()=>{
  for(const width of [750,1440,2400])for(const x of [80,1650,3200]){
   const {h,p}=cameraHarness(width,x);h.api.startSwordCharge();advance(h,.7);render(h);const s=h.api.get();
-  const background=h.draws.filter(d=>d.asset==='assets/districts.png');assert.ok(Math.min(...background.map(d=>d.x))<=0);assert.ok(Math.max(...background.map(d=>d.x+d.width))>=width);
+  const background=h.draws.filter(d=>d.asset==='assets/districts.webp');assert.ok(Math.min(...background.map(d=>d.x))<=0);assert.ok(Math.max(...background.map(d=>d.x+d.width))>=width);
   for(const screenX of [0,width/2,width])for(const screenY of [0,400,809])assert.ok(background.some(d=>screenX>=d.x&&screenX<=d.x+d.width&&screenY>=d.y&&screenY<=d.y+d.height),`uncovered ${screenX},${screenY}`);
   const screenX=(p.x-s.camera)*s.cameraZoom+s.viewShakeX,screenY=p.y*s.cameraZoom+650*(1-s.cameraZoom)+s.viewShakeY,world=h.api.screenToWorld(screenX,screenY);assert.ok(Math.abs(world.x-p.x)<1e-8);assert.ok(Math.abs(world.y-p.y)<1e-8);
  }
@@ -481,11 +481,11 @@ test('actual contact briefly winces in both forms, keeps movement responsive and
   const group=h.api.get().monsters;group.forEach(m=>{m.dead=true;m.respawnIn=100;});advance(h,2.1);
   const m=group[0];Object.assign(m,{dead:false,x:p.x,y:p.y,speed:0});const before=p.hp;h.api.update(.01);
   assert.ok(p.hp<before);assert.equal(h.api.get().hurtTime,.32);render(h);
-  const asset=powered?'assets/penguin-power-poses.png':'assets/penguin-hurt.png',crop=powered?[974,9,676,870]:[274,156,726,965];
+  const asset=powered?'assets/penguin-power-poses.webp':'assets/penguin-hurt.webp',crop=powered?[974,9,676,870]:[274,156,726,965];
   assert.ok(h.draws.some(d=>d.asset===asset&&JSON.stringify(d.source)===JSON.stringify(crop)));
   m.dead=true;const x=p.x;h.api.keys.add('ArrowRight');advance(h,.1);assert.ok(p.x>x);assert.ok(h.api.get().hurtTime>0);
   h.api.cast('q');assert.ok(p.cooldowns.q>0,'hurt is a visual reaction, not a stun');advance(h,.45);assert.equal(h.api.get().hurtTime,0);render(h);
-  assert.ok(h.draws.some(d=>d.asset===(powered?'assets/penguin-power-walk.png':'assets/penguin-walk.png')));
+  assert.ok(h.draws.some(d=>d.asset===(powered?'assets/penguin-power-walk.webp':'assets/penguin-walk.webp')));
   h.api.keys.clear();h.api.update(.01);render(h);
   if(powered)assert.ok(h.draws.some(d=>d.asset===asset&&JSON.stringify(d.source)===JSON.stringify([145,9,676,870])));
  }
@@ -538,7 +538,7 @@ test('every new dungeon supports combat rewards, respawning and exact saved re-e
 });
 test('new dungeon backgrounds use four distinct in-bounds atlas quadrants',()=>{
  const h=harness(),p=core.createCharacter('배경');const sources=new Set();
- for(const id of ['relay','canal','foundry','nexus']){p.map=id;h.api.start(p);const draws=render(h).filter(d=>d.asset==='assets/high-dungeons.png'&&d.height===810);assert.ok(draws.length);const source=draws[0].source;assert.equal(source[2],750);assert.equal(source[3],500);assert.ok(source[0]>=0&&source[0]+source[2]<=1500);assert.ok(source[1]>=0&&source[1]+source[3]<=1000);sources.add(source.join(','));}
+ for(const id of ['relay','canal','foundry','nexus']){p.map=id;h.api.start(p);const draws=render(h).filter(d=>d.asset==='assets/high-dungeons.webp'&&d.height===810);assert.ok(draws.length);const source=draws[0].source;assert.equal(source[2],750);assert.equal(source[3],500);assert.ok(source[0]>=0&&source[0]+source[2]<=1500);assert.ok(source[1]>=0&&source[1]+source[3]<=1000);sources.add(source.join(','));}
  assert.equal(sources.size,4);
 });
 
@@ -546,7 +546,7 @@ test('new dungeon backgrounds use four distinct in-bounds atlas quadrants',()=>{
 test('jump animates distinct crouch, ascent, apex, descent and landing poses in both forms',()=>{
  for(const powered of [false,true]){
   const h=harness(),p=core.createCharacter('도약');Object.assign(p,{job:'bodybuilder',level:15,powerTime:powered?12:0});h.api.start(p);
-  const asset=powered?'assets/penguin-power-jump.png':'assets/penguin-jump.png',poses=new Set(),x=p.x,y=p.y;
+  const asset=powered?'assets/penguin-power-jump.webp':'assets/penguin-jump.webp',poses=new Set(),x=p.x,y=p.y;
   h.api.keys.add('ArrowRight');key(h,'Space');const prep=h.api.get().jumpPrep;
   key(h,'Space',true);h.api.jump();assert.equal(h.api.get().jumpPrep,prep,'repeated input must not restart preparation');
   let highest=0,sawLanding=false;
@@ -555,12 +555,12 @@ test('jump animates distinct crouch, ascent, apex, descent and landing poses in 
    if(sprite)poses.add(JSON.stringify(sprite.source));
    assert.equal(p.y,y);highest=Math.max(highest,h.api.get().pz);
    if(h.api.get().jumpLanding>0){sawLanding=true;assert.equal(h.api.get().pz,0);}
-   if(sprite)assert.equal(h.draws.some(d=>d.asset.includes('-walk.png')),false);
+   if(sprite)assert.equal(h.draws.some(d=>d.asset.includes('-walk.webp')),false);
    h.api.update(1/60);
   }
   assert.equal(poses.size,6);assert.ok(highest>90&&highest<120);assert.ok(sawLanding);assert.ok(p.x>x+200);
   assert.equal(h.api.get().jumpPrep,0);assert.equal(h.api.get().jumpLanding,0);assert.equal(h.api.get().pz,0);
-  render(h);assert.ok(h.draws.some(d=>d.asset===(powered?'assets/penguin-power-walk.png':'assets/penguin-walk.png')));
+  render(h);assert.ok(h.draws.some(d=>d.asset===(powered?'assets/penguin-power-walk.webp':'assets/penguin-walk.webp')));
  }
 });
 test('jump pauses in menus, cannot double-jump and clears on travel and recall',async()=>{
@@ -574,10 +574,10 @@ test('jump pauses in menus, cannot double-jump and clears on travel and recall',
 });
 test('airborne form changes preserve the jump and sword charge cancels all jump poses',()=>{
  const h=harness(),p=core.createCharacter('공중변신');Object.assign(p,{job:'bodybuilder',level:15,mp:200});h.api.start(p);h.api.jump();advance(h,.25);
- const z=h.api.get().pz;h.api.cast('r');assert.equal(h.api.get().pz,z);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/penguin-power-jump.png'));
- p.powerTime=.01;h.api.update(.02);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/penguin-jump.png'));advance(h,1);assert.equal(h.api.get().pz,0);
+ const z=h.api.get().pz;h.api.cast('r');assert.equal(h.api.get().pz,z);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/penguin-power-jump.webp'));
+ p.powerTime=.01;h.api.update(.02);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/penguin-jump.webp'));advance(h,1);assert.equal(h.api.get().pz,0);
  const sword=swordHarness();sword.h.api.jump();advance(sword.h,.2);sword.h.api.startSwordCharge();render(sword.h);
- assert.equal(sword.h.api.get().pz,0);assert.equal(sword.h.api.get().jumpPrep,0);assert.equal(sword.h.api.get().jumpLanding,0);assert.equal(sword.h.draws.some(d=>d.asset.endsWith('-jump.png')),false);
+ assert.equal(sword.h.api.get().pz,0);assert.equal(sword.h.api.get().jumpPrep,0);assert.equal(sword.h.api.get().jumpLanding,0);assert.equal(sword.h.draws.some(d=>d.asset.endsWith('-jump.webp')),false);
 });
 
 function bossHarness(job='swordsman'){
@@ -642,28 +642,28 @@ test('map-wide sword targeting respects an inactive or airborne boss and reaches
  h.api.releaseSword('keyboard');advance(h,.3);assert.equal(b.hp,bossCore.SOLDIER.hp-core.attackPower(p)*14);
 });
 test('boss sprites and warning lanes render on the same world camera as the room',()=>{
- const {h,p}=bossHarness();h.api.setView(1000);render(h);const bg=h.draws.find(d=>d.asset==='assets/hansabal-pocha.png'&&Math.abs(d.x+h.api.get().camera)<1e-8),soldier=h.draws.find(d=>d.asset==='assets/soldier-boss.png');assert.ok(bg);assert.ok(soldier);assert.equal(soldier.source.length,4);
- h.api.startBossFight();const b=h.api.get().boss;for(const phase of ['slash-windup','palm-charge','leap','landing','flurry','palm-release']){b.phase=phase;b.target={x:800,y:650,dir:1};b.z=phase==='leap'?200:0;render(h);assert.ok(h.draws.some(d=>d.asset==='assets/soldier-boss.png'));}
- for(const phase of ['counter-windup','counter']){b.phase=phase;b.elapsed=.3;b.z=0;render(h);assert.ok(h.draws.some(d=>d.asset==='assets/soldier-counter.png'));}
+ const {h,p}=bossHarness();h.api.setView(1000);render(h);const bg=h.draws.find(d=>d.asset==='assets/hansabal-pocha.webp'&&Math.abs(d.x+h.api.get().camera)<1e-8),soldier=h.draws.find(d=>d.asset==='assets/soldier-boss.webp');assert.ok(bg);assert.ok(soldier);assert.equal(soldier.source.length,4);
+ h.api.startBossFight();const b=h.api.get().boss;for(const phase of ['slash-windup','palm-charge','leap','landing','flurry','palm-release']){b.phase=phase;b.target={x:800,y:650,dir:1};b.z=phase==='leap'?200:0;render(h);assert.ok(h.draws.some(d=>d.asset==='assets/soldier-boss.webp'));}
+ for(const phase of ['counter-windup','counter']){b.phase=phase;b.elapsed=.3;b.z=0;render(h);assert.ok(h.draws.some(d=>d.asset==='assets/soldier-counter.webp'));}
 });
 test('boss pursuit animates eight valid walking poses, keeps feet on the ground and mirrors with the camera',()=>{
- const atlas=fs.readFileSync(new URL('../dist/assets/soldier-walk.png',import.meta.url)),width=atlas.readUInt32BE(16),height=atlas.readUInt32BE(20);
+ const atlas=fs.readFileSync(new URL('../art-source/soldier-walk.png',import.meta.url)),width=atlas.readUInt32BE(16),height=atlas.readUInt32BE(20);
  for(const dir of [-1,1]){
   const {h,p}=bossHarness();h.api.setView(1000);h.api.startBossFight();const b=h.api.get().boss;
   Object.assign(b,{x:dir<0?1200:400,y:650});p.x=dir<0?300:1400;const crops=new Set();
   for(let i=0;i<8;i++){
    h.api.update(.08);assert.equal(b.phase,'approach');assert.equal(b.walking,true);assert.equal(b.dir,dir);render(h);
-   const sprite=h.draws.find(d=>d.asset==='assets/soldier-walk.png');assert.ok(sprite);
+   const sprite=h.draws.find(d=>d.asset==='assets/soldier-walk.webp');assert.ok(sprite);
    const [x,y,w,hgt]=sprite.source;assert.ok(x>=0&&y>=0&&w>0&&hgt>0&&x+w<=width&&y+hgt<=height);
    crops.add(sprite.source.join(','));assert.ok(Math.abs(sprite.y+sprite.height-b.y)<12,'the sprite stays registered to the floor');
   }
   assert.equal(crops.size,8,'a complete stride displays eight distinct poses');
-  b.dir=-1;render(h);const left=h.draws.find(d=>d.asset==='assets/soldier-walk.png');
-  b.dir=1;render(h);const right=h.draws.find(d=>d.asset==='assets/soldier-walk.png');
+  b.dir=-1;render(h);const left=h.draws.find(d=>d.asset==='assets/soldier-walk.webp');
+  b.dir=1;render(h);const right=h.draws.find(d=>d.asset==='assets/soldier-walk.webp');
   assert.ok(Math.abs(left.x+left.width+right.x-2*(b.x-h.api.get().camera))<1e-8,'facing mirrors around the same body anchor');
   assert.equal(left.y,right.y);assert.ok(Math.abs(left.width-right.width)<1e-8);
-  p.x=200;h.api.updateCamera(1);render(h);const before=h.draws.find(d=>d.asset==='assets/soldier-walk.png'),camera=h.api.get().camera;
-  p.x=1300;h.api.updateCamera(1);render(h);const after=h.draws.find(d=>d.asset==='assets/soldier-walk.png'),cameraDelta=h.api.get().camera-camera;
+  p.x=200;h.api.updateCamera(1);render(h);const before=h.draws.find(d=>d.asset==='assets/soldier-walk.webp'),camera=h.api.get().camera;
+  p.x=1300;h.api.updateCamera(1);render(h);const after=h.draws.find(d=>d.asset==='assets/soldier-walk.webp'),cameraDelta=h.api.get().camera-camera;
   assert.ok(cameraDelta>100);assert.ok(Math.abs(after.x-before.x+cameraDelta)<1e-8);assert.equal(after.y,before.y);
  }
 });
@@ -672,8 +672,8 @@ test('boss walking art never overrides stationary, waiting, dead, airborne or co
  const cases=[{walking:false},{active:false},{dead:true},{z:100},...['waiting','defeated','slash-windup','slash','palm-charge','palm-release','leap-charge','leap','landing','flurry','counter-windup','counter','recover'].map(phase=>({phase}))];
  for(const state of cases){
   Object.assign(b,{active:true,dead:false,phase:'approach',walking:true,walkPhase:.4,z:0,...state});render(h);
-  assert.equal(h.draws.some(d=>d.asset==='assets/soldier-walk.png'),false,JSON.stringify(state));
-  assert.ok(h.draws.some(d=>d.asset===`assets/${b.phase.startsWith('counter')?'soldier-counter':'soldier-boss'}.png`));
+  assert.equal(h.draws.some(d=>d.asset==='assets/soldier-walk.webp'),false,JSON.stringify(state));
+  assert.ok(h.draws.some(d=>d.asset===`assets/${b.phase.startsWith('counter')?'soldier-counter':'soldier-boss'}.webp`));
  }
 });
 test('counter preparation and reflection use white wind strokes and glow throughout their animations',()=>{
@@ -687,16 +687,16 @@ test('counter preparation and reflection use white wind strokes and glow through
  b.active=false;h.strokes.length=0;h.api.drawBossAura(b);assert.equal(h.strokes.length,0);
 });
 test('all six counter poses have valid crops and remain fixed to the room while the camera moves',()=>{
- const atlas=fs.readFileSync(new URL('../dist/assets/soldier-counter.png',import.meta.url)),width=atlas.readUInt32BE(16),height=atlas.readUInt32BE(20);
+ const atlas=fs.readFileSync(new URL('../art-source/soldier-counter.png',import.meta.url)),width=atlas.readUInt32BE(16),height=atlas.readUInt32BE(20);
  for(const dir of [-1,1]){
   const {h,p}=bossHarness();h.api.setView(1000);h.api.startBossFight();const b=h.api.get().boss;b.dir=dir;
   const crops=new Set();
   for(const [phase,times] of [['counter-windup',[0,.24,.47]],['counter',[0,.13,.25]]])for(const elapsed of times){
-   Object.assign(b,{phase,elapsed});render(h);const sprite=h.draws.find(d=>d.asset==='assets/soldier-counter.png');assert.ok(sprite);
+   Object.assign(b,{phase,elapsed});render(h);const sprite=h.draws.find(d=>d.asset==='assets/soldier-counter.webp');assert.ok(sprite);
    const [x,y,w,hgt]=sprite.source;assert.equal(sprite.source.length,4);assert.ok(x>=0&&y>=0&&w>0&&hgt>0&&x+w<=width&&y+hgt<=height);crops.add(sprite.source.join(','));
   }
-  assert.equal(crops.size,6);p.x=200;h.api.updateCamera(1);render(h);const before=h.draws.find(d=>d.asset==='assets/soldier-counter.png'),camera=h.api.get().camera;
-  p.x=1300;h.api.updateCamera(1);render(h);const after=h.draws.find(d=>d.asset==='assets/soldier-counter.png'),cameraDelta=h.api.get().camera-camera;
+  assert.equal(crops.size,6);p.x=200;h.api.updateCamera(1);render(h);const before=h.draws.find(d=>d.asset==='assets/soldier-counter.webp'),camera=h.api.get().camera;
+  p.x=1300;h.api.updateCamera(1);render(h);const after=h.draws.find(d=>d.asset==='assets/soldier-counter.webp'),cameraDelta=h.api.get().camera-camera;
   assert.ok(cameraDelta>100);assert.ok(Math.abs(after.x-before.x+cameraDelta)<1e-8);assert.equal(after.y,before.y);assert.ok(Math.abs(after.width-before.width)<1e-8);assert.ok(Math.abs(after.height-before.height)<1e-8);
  }
 });
@@ -960,10 +960,10 @@ test('every hunting monster recoils visibly, fades once on death and restores a 
  for(const map of Object.values(core.MAPS).filter(m=>core.monsterCount(m.id)>0)){
   const h=harness(),p=core.createCharacter('로봇피격');Object.assign(p,{level:30,map:map.id,x:1000,y:650,hp:680,mp:350});h.api.start(p);const m=h.api.get().monsters[0];Object.assign(m,{x:1100,home:1100,y:650,speed:0,hp:10000,maxHp:10000});
   h.api.hitMonster(m,1);assert.equal(m.hit,.28);assert.equal(m.hitDir,1);assert.equal(m.hp,9999);assert.equal(h.api.get().effects.length,0,'untrained hits keep the robot recoil without elemental effects');
-  h.api.update(.08);h.draws.length=0;h.api.drawMonster(m);const recoil=h.draws.find(d=>d.asset==='assets/robot.png');assert.ok(Math.abs(recoil.matrix[1])>0,`${map.id} has visible recoil rotation`);
-  h.api.update(.25);assert.equal(m.hit,0);h.draws.length=0;h.api.drawMonster(m);closeTo(h.draws.find(d=>d.asset==='assets/robot.png').matrix[1],0);
+  h.api.update(.08);h.draws.length=0;h.api.drawMonster(m);const recoil=h.draws.find(d=>d.asset==='assets/robot.webp');assert.ok(Math.abs(recoil.matrix[1])>0,`${map.id} has visible recoil rotation`);
+  h.api.update(.25);assert.equal(m.hit,0);h.draws.length=0;h.api.drawMonster(m);closeTo(h.draws.find(d=>d.asset==='assets/robot.webp').matrix[1],0);
   m.hp=1;h.api.hitMonster(m,1);assert.equal(m.dead,true);assert.equal(m.deathFx,.28);const kills=p.kills,xp=p.xp,drops=h.api.get().drops.length;h.api.hitMonster(m,999);assert.equal(p.kills,kills);assert.equal(p.xp,xp);assert.equal(h.api.get().drops.length,drops);
-  h.api.update(.14);h.draws.length=0;h.api.drawMonster(m);const fading=h.draws.find(d=>d.asset==='assets/robot.png');assert.ok(fading.alpha>0&&fading.alpha<1);h.api.update(.15);h.draws.length=0;h.api.drawMonster(m);assert.equal(h.draws.length,0);
+  h.api.update(.14);h.draws.length=0;h.api.drawMonster(m);const fading=h.draws.find(d=>d.asset==='assets/robot.webp');assert.ok(fading.alpha>0&&fading.alpha<1);h.api.update(.15);h.draws.length=0;h.api.drawMonster(m);assert.equal(h.draws.length,0);
   p.x=45;m.respawnIn=.01;h.api.update(.02);assert.equal(m.dead,false);assert.equal(m.hp,m.maxHp);assert.equal(m.hit,0);assert.equal(m.deathFx,0);
  }
  const {h,p}=bossHarness();h.api.startBossFight();const b=h.api.get().boss;h.api.hitMonster(b,1);assert.equal(b.hit,.16);assert.equal(b.hitDir,undefined);assert.equal(b.deathFx,undefined);assert.equal(b.hp,b.maxHp-1);
@@ -975,11 +975,11 @@ test('class attack and guard poses select valid atlas rows, mirror correctly and
   const {h,p}=combatHarness(job,power);h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');h.api.update(.01);h.api.keys.clear();skill==='a'?h.api.attack():h.api.cast(skill);assert.equal(h.api.combatPose().kind,kind);
   const duration=h.api.get().combatMotion?.duration,samples=duration?[0,.2,.6,.9]:[0,.2];let elapsed=0;const seen=[];
   for(const fraction of samples){if(fraction)h.api.update((duration||1)*fraction-elapsed);elapsed=(duration||1)*fraction;h.api.setShake(0);render(h);
-   const pose=h.api.combatPose(),draws=h.draws.filter(d=>d.asset===`assets/${asset}.png`);assert.equal(draws.length,1,`${job} ${skill}`);const body=draws[0],frame=h.api.COMBAT_SHEETS[asset].frames[row*4+pose.frame];assert.deepEqual(body.source,Array.from(frame.slice(0,4)));assert.equal(Math.sign(body.matrix[0]),dir);assert.equal(h.draws.filter(d=>d.asset==='assets/job-equipment.png').length,0);assert.ok(Number.isFinite(body.x)&&Number.isFinite(body.y));seen.push(body.source.join(','));
+   const pose=h.api.combatPose(),draws=h.draws.filter(d=>d.asset===`assets/${asset}.webp`);assert.equal(draws.length,1,`${job} ${skill}`);const body=draws[0],frame=h.api.COMBAT_SHEETS[asset].frames[row*4+pose.frame];assert.deepEqual(body.source,Array.from(frame.slice(0,4)));assert.equal(Math.sign(body.matrix[0]),dir);assert.equal(h.draws.filter(d=>d.asset==='assets/job-equipment.webp').length,0);assert.ok(Number.isFinite(body.x)&&Number.isFinite(body.y));seen.push(body.source.join(','));
   }
   if(duration)assert.equal(new Set(seen).size,4,`${asset} ${skill} has windup, contact, followthrough and recovery poses`);
  }
- const {h}=combatHarness();for(const [asset,sheet] of Object.entries(h.api.COMBAT_SHEETS)){const data=fs.readFileSync(new URL(`../dist/assets/${asset}.png`,import.meta.url)),width=data.readUInt32BE(16),height=data.readUInt32BE(20);for(const [x,y,w,h] of sheet.frames){assert.ok(x>=0&&y>=0&&w>0&&h>0&&x+w<=width&&y+h<=height,`${asset}: ${x},${y},${w},${h} outside ${width}×${height}`);}}
+ const {h}=combatHarness();for(const [asset,sheet] of Object.entries(h.api.COMBAT_SHEETS)){const data=fs.readFileSync(new URL(`../art-source/${asset}.png`,import.meta.url)),width=data.readUInt32BE(16),height=data.readUInt32BE(20);for(const [x,y,w,h] of sheet.frames){assert.ok(x>=0&&y>=0&&w>0&&h>0&&x+w<=width&&y+h<=height,`${asset}: ${x},${y},${w},${h} outside ${width}×${height}`);}}
 });
 
 test('W keeps immediate combat distance while rendering a directional dash and excluding keyboard movement from its pose',()=>{
@@ -1029,11 +1029,11 @@ const UNIFORM_PLAYER_ASSETS=new Set([
  'penguin-jump','penguin-power-jump','combat-brawler','combat-swordsman','combat-power'
 ]);
 function uniformPlayerDraws(h){
- return h.draws.filter(d=>typeof d.asset==='string'&&UNIFORM_PLAYER_ASSETS.has(d.asset.replace(/^assets\/(?:uniform-)?/,'').replace(/\.png$/,'')));
+ return h.draws.filter(d=>typeof d.asset==='string'&&UNIFORM_PLAYER_ASSETS.has(d.asset.replace(/^assets\/(?:uniform-)?/,'').replace(/\.webp$/,'')));
 }
 function assertUniformRender(h,asset,equipped){
  h.api.setShake(0);render(h);
- const expected=`assets/${equipped?'uniform-':''}${asset}.png`,draws=uniformPlayerDraws(h);
+ const expected=`assets/${equipped?'uniform-':''}${asset}.webp`,draws=uniformPlayerDraws(h);
  assert.ok(draws.length>0,`${expected}: a player body must be drawn`);
  // Includes the small hand restored over the dumbbell: no original sleeve may leak.
  for(const d of draws)assert.equal(d.asset,expected,'body and restored hand must use the same outfit');
@@ -1065,7 +1065,7 @@ test('uniform renders only when owned and equipped, and the inventory toggle upd
  for(const equipped of [true,false,true]){
   h.api.inventory('uniform');h.el('#bag-use').onclick();
   assert.equal(p.uniformEquipped,equipped);assertUniformRender(h,'penguin',equipped);
-  assert.equal(h.el('.avatar').getAttribute('src'),`assets/${equipped?'uniform-':''}penguin.png`);
+  assert.equal(h.el('.avatar').getAttribute('src'),`assets/${equipped?'uniform-':''}penguin.webp`);
   assert.equal(JSON.parse(h.storage.get(core.SAVE_KEY)).characters[0].uniformEquipped,equipped);
   h.api.closeModal();
  }
@@ -1080,11 +1080,11 @@ test('uniform switches idle and hurt sprites in both jobs and muscle form withou
    assert.ok(h.api.get().hurtTime>0,'real contact triggers the hurt pose');
   }
   const asset=power?'penguin-power-poses':reaction==='hurt'?'penguin-hurt':'penguin';
-  const original=assertUniformRender(h,asset,false),equipment=h.draws.filter(d=>d.asset==='assets/job-equipment.png');
+  const original=assertUniformRender(h,asset,false),equipment=h.draws.filter(d=>d.asset==='assets/job-equipment.webp');
   assert.equal(Math.sign(original.matrix[0]),dir);
   for(const equipped of [true,false,true]){
    assert.equal(core.equipUniform(p).ok,true);const body=assertUniformRender(h,asset,equipped);assertUniformGeometry(body,original);
-   const current=h.draws.filter(d=>d.asset==='assets/job-equipment.png');assert.equal(current.length,equipment.length);
+   const current=h.draws.filter(d=>d.asset==='assets/job-equipment.webp');assert.equal(current.length,equipment.length);
    current.forEach((d,i)=>assertUniformGeometry(d,equipment[i]));
    assert.equal(uniformPlayerDraws(h).length,job==='bodybuilder'?2:1,'only bodybuilders redraw a hand over held equipment');
   }
@@ -1111,7 +1111,7 @@ test('uniform follows all six jump phases in both jobs and muscle form and can b
   const asset=power?'penguin-power-jump':'penguin-jump',poses=new Set();let airborne=false,landing=false;
   for(let i=0;i<75;i++){
    const state=h.api.get();airborne||=state.pz>0;landing||=state.jumpLanding>0;render(h);
-   if(h.draws.some(d=>d.asset===`assets/${asset}.png`&&d.source[2]>100)){
+   if(h.draws.some(d=>d.asset===`assets/${asset}.webp`&&d.source[2]>100)){
     const plain=assertUniformRender(h,asset,false);poses.add(plain.source.join(','));const z=state.pz;
     core.equipUniform(p);const dressed=assertUniformRender(h,asset,true);assertUniformGeometry(dressed,plain);
     assert.equal(Math.sign(dressed.matrix[0]),dir);assert.equal(h.api.get().pz,z,'equipping cannot restart or advance the jump');
@@ -1138,7 +1138,7 @@ test('uniform covers every class attack, guard and recovery row without revertin
    const plain=assertUniformRender(h,asset,false);
    for(const equipped of [true,false]){
     core.equipUniform(p);const body=assertUniformRender(h,asset,equipped);assertUniformGeometry(body,plain);assert.equal(Math.sign(body.matrix[0]),dir);
-    assert.equal(h.draws.filter(d=>d.asset==='assets/job-equipment.png').length,0,'combat atlas already contains the held equipment');
+    assert.equal(h.draws.filter(d=>d.asset==='assets/job-equipment.webp').length,0,'combat atlas already contains the held equipment');
    }
   }
  }
@@ -1161,7 +1161,7 @@ test('isolated combat canvases are cached separately for each outfit and reused 
   }
   h.api.update(.1);assertUniformRender(h,asset,false);assert.equal(canvases.length,3,'a different frame needs its own crop');
   core.equipUniform(p);assertUniformRender(h,asset,true);assert.equal(canvases.length,4);
-  assert.deepEqual(canvases.map(c=>c.asset),[`assets/${asset}.png`,`assets/uniform-${asset}.png`,`assets/${asset}.png`,`assets/uniform-${asset}.png`]);
+  assert.deepEqual(canvases.map(c=>c.asset),[`assets/${asset}.webp`,`assets/uniform-${asset}.webp`,`assets/${asset}.webp`,`assets/uniform-${asset}.webp`]);
  }
 });
 
@@ -1169,26 +1169,26 @@ test('uniform changes the HUD and each saved character portrait independently an
  const h=harness(),dressed=core.createCharacter('입은펭귄'),owned=core.createCharacter('벗은펭귄'),fresh=core.createCharacter('새펭귄');
  Object.assign(dressed,{level:20,job:'bodybuilder',uniform:1,uniformEquipped:true,powerTime:12});owned.uniform=1;
  h.api.characters([dressed,owned,fresh],dressed.id);assert.equal(h.api.get().player,null);
- assert.deepEqual([...uniformCardSources(h)],[[dressed.id,'assets/uniform-penguin.png'],[owned.id,'assets/penguin.png'],[fresh.id,'assets/penguin.png']]);
- h.el('#new-character').onclick();assert.match(h.el('#modal-root').innerHTML,/src="assets\/penguin\.png"/);assert.doesNotMatch(h.el('#modal-root').innerHTML,/assets\/uniform-/);h.api.closeModal();
- const enter=h.api.enterWorld(dressed.id);assert.match(h.el('#screens').innerHTML,/src="assets\/uniform-penguin\.png"/);await h.flush();await enter;
- const p=h.api.get().player;assert.equal(h.el('.avatar').getAttribute('src'),'assets/uniform-penguin.png');
- p.powerTime=12;h.api.update(.11);assert.equal(h.el('.avatar').getAttribute('src'),'assets/uniform-penguin-power-poses.png');
- h.api.inventory('uniform');h.el('#bag-use').onclick();assert.equal(h.el('.avatar').getAttribute('src'),'assets/penguin-power-poses.png');h.api.closeModal();
- p.powerTime=.01;h.api.update(.11);assert.equal(h.el('.avatar').getAttribute('src'),'assets/penguin.png');
+ assert.deepEqual([...uniformCardSources(h)],[[dressed.id,'assets/uniform-penguin.webp'],[owned.id,'assets/penguin.webp'],[fresh.id,'assets/penguin.webp']]);
+ h.el('#new-character').onclick();assert.match(h.el('#modal-root').innerHTML,/src="assets\/penguin\.webp"/);assert.doesNotMatch(h.el('#modal-root').innerHTML,/assets\/uniform-/);h.api.closeModal();
+ const enter=h.api.enterWorld(dressed.id);assert.match(h.el('#screens').innerHTML,/src="assets\/uniform-penguin\.webp"/);await h.flush();await enter;
+ const p=h.api.get().player;assert.equal(h.el('.avatar').getAttribute('src'),'assets/uniform-penguin.webp');
+ p.powerTime=12;h.api.update(.11);assert.equal(h.el('.avatar').getAttribute('src'),'assets/uniform-penguin-power-poses.webp');
+ h.api.inventory('uniform');h.el('#bag-use').onclick();assert.equal(h.el('.avatar').getAttribute('src'),'assets/penguin-power-poses.webp');h.api.closeModal();
+ p.powerTime=.01;h.api.update(.11);assert.equal(h.el('.avatar').getAttribute('src'),'assets/penguin.webp');
  h.api.inventory('uniform');h.el('#bag-use').onclick();h.api.closeModal();h.api.selectCharacters();
- assert.equal(uniformCardSources(h).get(dressed.id),'assets/uniform-penguin.png');assert.equal(uniformCardSources(h).get(owned.id),'assets/penguin.png');
+ assert.equal(uniformCardSources(h).get(dressed.id),'assets/uniform-penguin.webp');assert.equal(uniformCardSources(h).get(owned.id),'assets/penguin.webp');
 });
 
 test('equipping a uniform does not change town NPCs, trainers, the soldier, robots or their anchors',()=>{
  const maps={town:['npc-hyuntori-white','npc-maguri-large-crate'],gangnam:['npc-maguri-large-crate'],gym:['npc-emperor-coach'],dojo:['npc-tiger-master'],pocha:['soldier-boss'],alley:['robot']};
  for(const [map,assets] of Object.entries(maps)){
   const h=harness(),p=core.createCharacter('군복과이웃');Object.assign(p,{map,level:20,uniform:1});h.api.start(p);render(h);
-  const expected=h.draws.filter(d=>assets.some(a=>d.asset===`assets/${a}.png`));assert.ok(expected.length>0,map);
+  const expected=h.draws.filter(d=>assets.some(a=>d.asset===`assets/${a}.webp`));assert.ok(expected.length>0,map);
   core.equipUniform(p);assertUniformRender(h,'penguin',true);
-  const actual=h.draws.filter(d=>assets.some(a=>d.asset===`assets/${a}.png`));assert.equal(actual.length,expected.length,map);
+  const actual=h.draws.filter(d=>assets.some(a=>d.asset===`assets/${a}.webp`));assert.equal(actual.length,expected.length,map);
   actual.forEach((d,i)=>{assert.equal(d.asset,expected[i].asset);assertUniformGeometry(d,expected[i]);});
-  for(const a of assets)assert.equal(h.draws.some(d=>d.asset===`assets/uniform-${a}.png`),false);
+  for(const a of assets)assert.equal(h.draws.some(d=>d.asset===`assets/uniform-${a}.webp`),false);
  }
 });
 
@@ -1214,7 +1214,7 @@ test('moving sword guard cycles eight poses in both outfits and directions, then
    const before=p.x;h.api.update(1/60);assert.ok((p.x-before)*dir>0);assert.ok(h.api.get().guardTime>0);assert.equal(h.api.combatPose().kind,'guard');
    const plain=assertUniformRender(h,'sword-guard-walk',false);seen.add(plain.source.join(','));
    core.equipUniform(p);const dressed=assertUniformRender(h,'sword-guard-walk',true);assertUniformGeometry(dressed,plain);assert.equal(Math.sign(dressed.matrix[0]),dir);
-   assert.equal(h.draws.some(d=>d.asset==='assets/job-equipment.png'),false,'guard atlas already carries the sword');core.equipUniform(p);
+   assert.equal(h.draws.some(d=>d.asset==='assets/job-equipment.webp'),false,'guard atlas already carries the sword');core.equipUniform(p);
   }
   assert.equal(seen.size,8);core.equipUniform(p);h.api.update(.201);assert.equal(h.api.get().guardTime,0);assert.equal(h.api.combatPose(),null);assertUniformRender(h,'penguin-walk',true);
   h.api.keys.clear();h.api.update(.01);assertUniformRender(h,'penguin',true);
@@ -1228,8 +1228,8 @@ test('builder recovery walks through eight crossed-arm poses in both forms, outf
   for(let i=0;i<84;i++){
    h.api.update(1/60);assert.ok(h.api.get().recovery);const plain=assertUniformRender(h,asset,false);seen.add(plain.source.join(','));
    core.equipUniform(p);const dressed=assertUniformRender(h,asset,true);assertUniformGeometry(dressed,plain);assert.equal(Math.sign(dressed.matrix[0]),dir);core.equipUniform(p);
-   assert.equal(h.draws.some(d=>d.asset==='assets/job-equipment.png'),false);
-   const data=fs.readFileSync(new URL(`../dist/assets/${asset}.png`,import.meta.url)),[x,y,w,height]=plain.source;
+   assert.equal(h.draws.some(d=>d.asset==='assets/job-equipment.webp'),false);
+   const data=fs.readFileSync(new URL(`../art-source/${asset}.png`,import.meta.url)),[x,y,w,height]=plain.source;
    assert.ok(x>=0&&y>=0&&x+w<=data.readUInt32BE(16)&&y+height<=data.readUInt32BE(20),'walk frame stays in atlas');
   }
   assert.equal(seen.size,8);h.api.update(.11);assert.equal(h.api.get().recovery,null);assertUniformRender(h,power?'penguin-power-walk':'penguin-walk',false);
@@ -1256,7 +1256,7 @@ test('guard gait follows clamped ground travel, stops in menus and air, and keep
   const mp=p.mp,enemyHp=m.hp;h.api.attack();h.api.cast('q');h.api.cast('w');h.api.startSwordCharge();assert.equal(p.mp,mp);assert.equal(m.hp,enemyHp);assert.equal(h.api.get().combatMotion,null);assert.equal(h.api.get().swordUlt,null);
   h.api.worldMap();assertUniformRender(h,'combat-swordsman',equipped);h.api.closeModal();h.api.keys.clear();h.api.update(.02);const stopped=h.api.get().walkPhase;
   assertUniformRender(h,'combat-swordsman',equipped);h.api.update(.1);assert.equal(h.api.get().walkPhase,stopped);
-  h.api.keys.add('ArrowRight');h.api.jump();h.api.update(.2);assert.ok(h.api.get().pz>0);assert.equal(h.api.get().walking,false);render(h);assert.equal(h.draws.some(d=>d.asset.endsWith('sword-guard-walk.png')),false);
+  h.api.keys.add('ArrowRight');h.api.jump();h.api.update(.2);assert.ok(h.api.get().pz>0);assert.equal(h.api.get().walking,false);render(h);assert.equal(h.draws.some(d=>d.asset.endsWith('sword-guard-walk.webp')),false);
  }
 });
 
@@ -1366,7 +1366,7 @@ test('A-type encounter requires interaction, awards once, and abandon/recall cle
 test('A-type pull changes position inside its radius and spin deals repeated damage with visible animation frames',()=>{
  const h=harness(),p=core.createCharacter('회전시험');Object.assign(p,{level:35,job:'swordsman',map:'hangar',x:1100,y:650});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);h.api.startBossFight();const b=h.api.get().boss;b.phase='recover';b.elapsed=-20;advance(h,1);
  b.enraged=true;b.safetyUsed=true;b.phase='pull-charge';b.elapsed=.69;const before=p.x;h.api.update(.02);assert.ok(p.x>before+200);assert.ok(p.hp<core.maxHp(p));
- b.phase='spin';b.elapsed=0;b.strikes=0;p.x=b.x-120;p.hp=core.maxHp(p);const frames=new Set();for(let i=0;i<120;i++){h.api.update(1/60);render(h);frames.add(h.draws.find(d=>d.asset==='assets/type-a.png').source.slice(0,2).join(','));}
+ b.phase='spin';b.elapsed=0;b.strikes=0;p.x=b.x-120;p.hp=core.maxHp(p);const frames=new Set();for(let i=0;i<120;i++){h.api.update(1/60);render(h);frames.add(h.draws.find(d=>d.asset==='assets/type-a.webp').source.slice(0,2).join(','));}
  assert.ok(frames.size>=2);assert.ok(p.hp<core.maxHp(p)-100);assert.equal(h.el('#boss-name').textContent,'Lv.35 A형 · 광폭화');
 });
 
@@ -1408,7 +1408,7 @@ test('respect weakens both bosses and immunity execution still ignores ordinary 
  const {h,p}=rabbitHarness();p.map='hangar';h.api.start(p);h.api.startBossFight();const b=h.api.get().boss;b.phase='recover';b.elapsed=-20;advance(h,1);h.api.hitMonster(b,999999);advance(h,4.7);h.api.cast('e');advance(h,.4);assert.equal(h.api.get().scene,'dead');
 });
 test('rabbit movement, jumps and every skill render distinct frames with direction and cleanup',()=>{
- const {h,p}=rabbitHarness();const frames=new Set();const capture=()=>{render(h);const d=h.draws.find(d=>d.asset==='assets/rabbit-motion.png');assert.ok(d);frames.add(d.source.slice(0,2).join(','));};capture();
+ const {h,p}=rabbitHarness();const frames=new Set();const capture=()=>{render(h);const d=h.draws.find(d=>d.asset==='assets/rabbit-motion.webp');assert.ok(d);frames.add(d.source.slice(0,2).join(','));};capture();
  h.api.keys.add('ArrowRight');for(let i=0;i<20;i++){h.api.update(.03);capture();}h.api.keys.clear();h.api.jump();for(let i=0;i<20;i++){h.api.update(.04);capture();}
  for(const key of ['a','q','w','e','r']){key==='a'?h.api.attack():h.api.cast(key);if(key==='r')h.el('#respect-self').onclick();h.api.update(.12);capture();advance(h,1);}
  assert.ok(frames.size>=10,`frames=${frames.size}`);h.api.resetCombat();assert.equal(h.api.get().rabbitOrbs.length,0);assert.equal(h.api.get().rabbitShield,null);
@@ -1432,8 +1432,8 @@ test('Maguri offers rabbit promotion at level ten in either town, then returns t
  for(const map of ['town','gangnam']){
   const {h,p}=rabbitHarness(null);Object.assign(p,{map,x:1050,y:650,level:9});h.api.start(p);h.api.interact();assert.equal(h.api.get().modal,'shop');h.api.closeModal();
   p.level=10;h.api.interact();assert.equal(h.api.get().modal,'job');assert.match(h.el('#modal-root').innerHTML,/마구리 · 마법사 전직/);h.api.closeModal();h.api.interact();assert.equal(h.api.get().modal,'job');
-  render(h);assert.ok(h.draws.some(d=>d.asset==='assets/rabbit-novice-motion.png'));
-  h.el('#advance-job').onclick();assert.equal(p.job,'mage');render(h);assert.ok(h.draws.some(d=>d.asset==='assets/rabbit-motion.png'));assert.match(h.el('.avatar').src,/rabbit-mage-portrait/);
+  render(h);assert.ok(h.draws.some(d=>d.asset==='assets/rabbit-novice-motion.webp'));
+  h.el('#advance-job').onclick();assert.equal(p.job,'mage');render(h);assert.ok(h.draws.some(d=>d.asset==='assets/rabbit-motion.webp'));assert.match(h.el('.avatar').src,/rabbit-mage-portrait/);
   h.api.interact();assert.equal(h.api.get().modal,'shop');assert.match(h.el('#modal-root').innerHTML,/아이스아메리카노/);
  }
 });
@@ -1585,8 +1585,8 @@ test('chick promotion is available only from Hyupro in Maple hideout at level 10
  assert.ok(core.MAPS.town.portals.some(g=>g.to==='maple'));assert.ok(core.MAPS.maple.portals.some(g=>g.to==='town'));
  p.map='maple';h.api.interact();assert.match(h.el('#modal-root').innerHTML,/휴프로/);assert.match(h.el('#modal-root').innerHTML,/해커/);
  assert.equal(core.advanceJob(p,'hacker').ok,true);assert.equal(core.equipmentName(p),'노트북');assert.equal(core.normalizeCharacter(p).job,'hacker');
- h.api.closeModal();render(h);assert.ok(h.draws.some(d=>d.asset==='assets/npc-hyupro.png'));
- h.api.characters([p],p.id);assert.match(h.el('#screens').innerHTML,/chick-hacker-portrait.png/);
+ h.api.closeModal();render(h);assert.ok(h.draws.some(d=>d.asset==='assets/npc-hyupro.webp'));
+ h.api.characters([p],p.id);assert.match(h.el('#screens').innerHTML,/chick-hacker-portrait.webp/);
 });
 test('novice chick basic attack has extended reach while Q is a shorter scratch',()=>{
  const {h,p}=chickFixture('alley',null);const [inside,outside]=h.api.get().monsters;inside.x=p.x+190;outside.x=p.x+201;
@@ -1625,7 +1625,7 @@ test('E keeps stealth while charging, moves its rectangle, pays once, freezes an
  const m=h.api.get().monsters[0],a=h.api.chickArea();Object.assign(m,{x:a.x,y:a.y,home:a.x});const start=m.x,before=p.mp;
  assert.equal(h.api.releaseChickCharge('test'),true);assert.equal(before-p.mp,24);assert.equal(h.api.releaseChickCharge('test'),false);assert.equal(h.api.get().cooldowns.e,14);
  assert.equal(10000-m.hp,Math.round(core.attackPower(p)*4.5*1.2));assert.equal(m.stunTime,2);assert.equal(h.api.get().chickStealth,0);advance(h,1);assert.equal(m.x,start);
- render(h);assert.ok(h.draws.some(d=>d.asset==='assets/robot.png'&&d.filter.includes('grayscale')));advance(h,2.1);assert.equal(m.stunTime,0);
+ render(h);assert.ok(h.draws.some(d=>d.asset==='assets/robot.webp'&&d.filter.includes('grayscale')));advance(h,2.1);assert.equal(m.stunTime,0);
 });
 test('E auto fires after 1.5 seconds, blocks other attacks, and cancels safely on blur',()=>{
  const {h,p}=chickFixture();h.api.startChickCharge('keyboard');const mp=p.mp;h.api.cast('q');h.api.attack();assert.equal(p.mp,mp);assert.equal(h.api.get().attackTimer,0);
@@ -1656,7 +1656,7 @@ test('chick walk, jump, punch, laptop charge and seated typing use different atl
  const {h,p}=chickFixture();assert.equal(h.api.chickFrame(),8);h.api.keys.add('ArrowRight');const frames=new Set();for(let i=0;i<40;i++){h.api.update(1/60);frames.add(h.api.chickFrame());}assert.ok(frames.size>=3);h.api.keys.clear();
  h.api.jump();assert.equal(h.api.chickFrame(),28);advance(h,.2);assert.equal(h.api.chickFrame(),29);advance(h,1);
  h.api.attack();assert.equal(h.api.chickFrame(),16);advance(h,.12);assert.equal(h.api.chickFrame(),18);advance(h,.4);
- h.api.startChickCharge('test');assert.equal(h.api.chickFrame(),11);h.api.cancelChickAim();h.api.cast('r');assert.ok(h.api.chickFrame()>=12);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion.png'));
+ h.api.startChickCharge('test');assert.equal(h.api.chickFrame(),11);h.api.cancelChickAim();h.api.cast('r');assert.ok(h.api.chickFrame()>=12);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion.webp'));
 });
 
 test('cat E roots charge and throw, then allows movement while the projectile and fire persist',()=>{
@@ -1703,37 +1703,37 @@ test('hacker initial selection uses both axes and retargets to the nearest livin
 });
 
 test('hacker types standing still and keeps a full walking cycle during held basic attack',()=>{
- const {h,p}=chickFixture('maple');h.api.attack();assert.equal(h.api.chickFrame(),16);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-typing.png'&&d.source[1]===0));advance(h,.4);
+ const {h,p}=chickFixture('maple');h.api.attack();assert.equal(h.api.chickFrame(),16);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-typing.webp'&&d.source[1]===0));advance(h,.4);
  const x=p.x,frames=new Set();h.api.keys.add('ArrowRight');h.api.keys.add('KeyA');
  for(let i=0;i<50;i++){h.api.update(1/60);assert.equal(h.api.get().walking,true);frames.add(h.api.chickFrame());}
  assert.ok(p.x>x+200);assert.deepEqual([...frames].sort(),[20,21,22,23]);
- h.api.keys.delete('ArrowRight');h.api.keys.add('ArrowLeft');h.api.update(1/60);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-typing.png'&&d.matrix[0]<0));
+ h.api.keys.delete('ArrowRight');h.api.keys.add('ArrowLeft');h.api.update(1/60);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-typing.webp'&&d.matrix[0]<0));
  h.api.keys.delete('ArrowLeft');h.api.update(1/60);assert.ok(h.api.chickFrame()>=16&&h.api.chickFrame()<20);
  h.api.keys.clear();advance(h,.4);assert.equal(h.api.chickFrame(),8);
 });
 test('hacker ultimate keeps its seated typing atlas while basic attacks use the standing atlas',()=>{
  const {h,p}=chickFixture();h.api.cast('r');h.api.confirmHack();render(h);
- assert.ok(h.api.chickFrame()>=12&&h.api.chickFrame()<=14);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion.png'));assert.ok(!h.draws.some(d=>d.asset==='assets/chick-typing.png'));
+ assert.ok(h.api.chickFrame()>=12&&h.api.chickFrame()<=14);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion.webp'));assert.ok(!h.draws.some(d=>d.asset==='assets/chick-typing.webp'));
 });
 
 test('chick jump follows anticipation, rise, fall and landing with a separate laptop set',()=>{
  for(const job of [null,'hacker']){
   const {h,p}=chickFixture('maple',job),offset=job?28:24;h.api.jump();assert.equal(h.api.chickFrame(),offset);const seen=new Set();
-  for(let i=0;i<65;i++){h.api.update(1/60);const state=h.api.get();if(state.pz>0||state.jumpPrep>0||state.jumpLanding>0){seen.add(h.api.chickFrame());render(h);const sprite=h.draws.find(d=>d.asset==='assets/chick-actions.png');assert.ok(sprite);assert.ok(sprite.source[1]>=(job?389:0)&&sprite.source[1]<(job?740:389));}}
+  for(let i=0;i<65;i++){h.api.update(1/60);const state=h.api.get();if(state.pz>0||state.jumpPrep>0||state.jumpLanding>0){seen.add(h.api.chickFrame());render(h);const sprite=h.draws.find(d=>d.asset==='assets/chick-actions.webp');assert.ok(sprite);assert.ok(sprite.source[1]>=(job?389:0)&&sprite.source[1]<(job?740:389));}}
   assert.ok(seen.has(offset+1));assert.ok(seen.has(offset+2));assert.ok(seen.has(offset+3));assert.equal(h.api.get().pz,0);
  }
 });
 test('novice punches and scratches use isolated action frames instead of bleeding atlas rows',()=>{
  const {h,p}=chickFixture('maple',null);h.api.attack();assert.equal(h.api.chickFrame(),32);advance(h,.12);assert.equal(h.api.chickFrame(),33);render(h);
- const sprite=h.draws.find(d=>d.asset==='assets/chick-actions.png');assert.ok(sprite);assert.ok(sprite.source[1]>=740);assert.ok(!h.draws.some(d=>d.asset==='assets/chick-motion.png'));
+ const sprite=h.draws.find(d=>d.asset==='assets/chick-actions.webp');assert.ok(sprite);assert.ok(sprite.source[1]>=740);assert.ok(!h.draws.some(d=>d.asset==='assets/chick-motion.webp'));
  advance(h,.4);h.api.cast('q');assert.equal(h.api.chickFrame(),34);advance(h,.15);assert.equal(h.api.chickFrame(),35);
 });
 test('hacker keeps the laptop jump pose when attacking in midair',()=>{
- const {h,p}=chickFixture('maple');h.api.jump();advance(h,.2);h.api.attack();assert.equal(h.api.chickFrame(),29);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-actions.png'));assert.ok(!h.draws.some(d=>d.asset==='assets/chick-typing.png'));
+ const {h,p}=chickFixture('maple');h.api.jump();advance(h,.2);h.api.attack();assert.equal(h.api.chickFrame(),29);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-actions.webp'));assert.ok(!h.draws.some(d=>d.asset==='assets/chick-typing.webp'));
 });
 
 test('chick restores the original chunky walk sequences with the original pre-edit artwork',()=>{
- for(const job of [null,'hacker']){const {h,p}=chickFixture('maple',job);h.api.keys.add('ArrowRight');const seen=new Set();for(let i=0;i<40;i++){h.api.update(.01);const phase=h.api.get().walkPhase;assert.equal(h.api.chickFrame(),(job?[9,8,10,8]:[1,2,3,2])[Math.floor(phase*4)%4]);seen.add(h.api.chickFrame());}assert.ok(seen.size>=2);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion.png'));h.api.keys.clear();h.api.update(.02);assert.equal(h.api.chickFrame(),job?8:0);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion.png'));}
+ for(const job of [null,'hacker']){const {h,p}=chickFixture('maple',job);h.api.keys.add('ArrowRight');const seen=new Set();for(let i=0;i<40;i++){h.api.update(.01);const phase=h.api.get().walkPhase;assert.equal(h.api.chickFrame(),(job?[9,8,10,8]:[1,2,3,2])[Math.floor(phase*4)%4]);seen.add(h.api.chickFrame());}assert.ok(seen.size>=2);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion.webp'));h.api.keys.clear();h.api.update(.02);assert.equal(h.api.chickFrame(),job?8:0);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/chick-motion.webp'));}
 });
 test('chick walk cadence uses the original 165-unit cycle instead of the rushed 80-unit rig',()=>{
  const {h,p}=chickFixture('maple',null);const x=p.x;h.api.keys.add('ArrowRight');h.api.update(.1);assert.ok(Math.abs(h.api.get().walkPhase-(p.x-x)/165)<1e-9);
@@ -1913,7 +1913,7 @@ test('concert can finish either boss safely without accessing a cleared concert'
 });
 test('otter walk, jump, punch, water, wave, shield and dance use directionally consistent dedicated poses',()=>{
  for(const job of [null,'idol']){
-  const {h,p}=otterFixture('town',job);const asset=job?'assets/otter-idol-skirt-motion.png':'assets/otter-motion.png';render(h);assert.ok(h.draws.some(d=>d.asset===asset));assert.equal(h.api.otterFrame(),0);
+  const {h,p}=otterFixture('town',job);const asset=job?'assets/otter-idol-skirt-motion.webp':'assets/otter-motion.webp';render(h);assert.ok(h.draws.some(d=>d.asset===asset));assert.equal(h.api.otterFrame(),0);
   h.api.keys.add('ArrowLeft');const seen=new Set();for(let i=0;i<48;i++){h.api.update(1/60);seen.add(h.api.otterFrame());}assert.deepEqual([...seen].sort(),[1,2,3]);render(h);assert.ok(h.draws.find(d=>d.asset===asset).matrix[0]<0);
   h.api.keys.clear();h.api.jump();assert.equal(h.api.otterFrame(),4);advance(h,.18);assert.equal(h.api.otterFrame(),5);advance(h,1);h.api.attack();assert.equal(h.api.otterFrame(),7);advance(h,.15);assert.equal(h.api.otterFrame(),8);advance(h,.4);
   h.api.cast('q');assert.equal(h.api.otterFrame(),9);h.api.cast('w');assert.equal(h.api.otterFrame(),10);h.api.cast('w');assert.equal(h.api.otterFrame(),11);advance(h,1.1);
@@ -1923,20 +1923,20 @@ test('otter walk, jump, punch, water, wave, shield and dance use directionally c
 test('saved character portraits use standalone idle images in every outfit',()=>{
  for(const [classId,jobs] of [['rabbit',[null,'mage']],['chick',[null,'hacker']],['otter',[null,'idol']]])for(const job of jobs){
   const h=harness(),p=core.createCharacter('선택',classId);Object.assign(p,{job,level:15});h.api.characters([p],p.id);
-  const name=`${classId}-${job||'novice'}-portrait.png`,html=h.el('#screens').innerHTML;
-  assert.ok(html.includes(`<img src="assets/${name}"`));assert.ok(!html.includes('-motion.png'));
-  const png=fs.readFileSync(new URL('../dist/assets/'+name,import.meta.url));
+  const name=`${classId}-${job||'novice'}-portrait.webp`,html=h.el('#screens').innerHTML;
+  assert.ok(html.includes(`<img decoding="async" src="assets/${name}"`));assert.ok(!html.includes('-motion.webp'));
+  const png=fs.readFileSync(new URL('../art-source/'+name.replace('.webp','.png'),import.meta.url));
   assert.equal(png.readUInt32BE(16),256);assert.equal(png.readUInt32BE(20),256);assert.equal(png[25],6,'portrait retains transparency');
  }
 });
 test('new adventurer choices do not depend on motion assets completing their load',()=>{
  const h=harness();h.api.createModal();const html=h.el('#modal-root').innerHTML;
- for(const classId of ['rabbit','chick','otter'])assert.ok(html.includes(`src="assets/${classId}-novice-portrait.png"`));
- assert.ok(!html.includes('-motion.png'),'first render cannot expose a complete motion sheet');
+ for(const classId of ['rabbit','chick','otter'])assert.ok(html.includes(`src="assets/${classId}-novice-portrait.webp"`));
+ assert.ok(!html.includes('-motion.webp'),'first render cannot expose a complete motion sheet');
 });
 test('otter Q/W exclude the next row artwork while concert keeps the full head at the same scale',()=>{
  for(const job of [null,'idol']){
-  const {h}=otterFixture('town',job),asset=job?'assets/otter-idol-skirt-motion.png':'assets/otter-motion.png';
+  const {h}=otterFixture('town',job),asset=job?'assets/otter-idol-skirt-motion.webp':'assets/otter-motion.webp';
   h.api.cast('q');render(h);const q=h.draws.find(d=>d.asset===asset);assert.ok(q.source[1]<=650);assert.ok(q.source[1]+q.source[3]<939,'Q cannot include row 4 head pixels');
   const scale=q.height/q.source[3];advance(h,.5);h.api.cast('w');render(h);const w=h.draws.find(d=>d.asset===asset);assert.ok(w.source[1]+w.source[3]<939);
   if(job){advance(h,.5);h.api.cast('r');render(h);const r=h.draws.find(d=>d.asset===asset);assert.ok(r.source[1]<=939,'dance includes top of head');assert.ok(Math.abs(r.height/r.source[3]-scale)<.01,'poses keep the same artwork scale');}
@@ -1945,7 +1945,7 @@ test('otter Q/W exclude the next row artwork while concert keeps the full head a
 
 test('otter punch includes the complete overflowing fist effect in both outfits and directions',()=>{
  for(const job of [null,'idol'])for(const direction of ['ArrowRight','ArrowLeft']){
-  const {h}=otterFixture('town',job),asset=job?'assets/otter-idol-skirt-motion.png':'assets/otter-motion.png';
+  const {h}=otterFixture('town',job),asset=job?'assets/otter-idol-skirt-motion.webp':'assets/otter-motion.webp';
   h.api.keys.add(direction);h.api.update(.01);h.api.keys.clear();h.api.attack();advance(h,.15);assert.equal(h.api.otterFrame(),8);render(h);
   const [body,overflow]=h.draws.filter(d=>d.asset===asset);
   assert.ok(overflow,'effect beyond the tile boundary is drawn');assert.equal(overflow.source[0],body.source[0]+body.source[2]);assert.equal(overflow.source[0]+overflow.source[2],340);
@@ -1970,40 +1970,40 @@ test('concert keeps running while walking in either direction with the normal mo
   const {h,p}=otterFixture('town');h.api.cast('r');const c=h.api.get().otterConcert,x=p.x,mp=p.mp;
   h.api.keys.add(dir===1?'ArrowRight':'ArrowLeft');h.api.update(.2);
   assert.ok(Math.abs(p.x-x-dir*285*1.2*.2)<1e-8);assert.equal(h.api.get().otterConcert,c);assert.equal(c.remaining,4.8);assert.ok(p.mp>=mp);
-  assert.ok([13,14].includes(h.api.otterFrame()));render(h);const pose=h.draws.find(d=>d.asset==='assets/otter-idol-skirt-motion.png');assert.equal(Math.sign(pose.matrix[0]),dir);
+  assert.ok([13,14].includes(h.api.otterFrame()));render(h);const pose=h.draws.find(d=>d.asset==='assets/otter-idol-skirt-motion.webp');assert.equal(Math.sign(pose.matrix[0]),dir);
   h.api.keys.clear();const stopped=p.x;h.api.update(.2);assert.equal(p.x,stopped);assert.equal(h.api.get().otterConcert,c);
  }
 });
 
 test('otter skill art persists under cooldown and ride cues while unlearned skills show only locks',()=>{
  const {h,p}=otterFixture('town',null,1);h.api.buildHUD();const symbol=key=>h.el(`[data-skill="${key}"] .skill-symbol`);
- for(const key of ['a','q','w','e','r'])assert.ok(h.api.skillSymbolMarkup(key,'fallback').includes(`assets/otter-skill-${key}.png`));
+ for(const key of ['a','q','w','e','r'])assert.ok(h.api.skillSymbolMarkup(key,'fallback').includes(`assets/otter-skill-${key}.webp`));
  for(const key of ['q','w','e','r']){assert.equal(symbol(key).textContent,'🔒');assert.equal(symbol(key).dataset.art,undefined);}
  Object.assign(p,{level:15,job:'idol',mp:core.maxMp(p)});h.api.refreshHUD();
- for(const key of ['q','w','e','r']){assert.equal(symbol(key).dataset.art,key);assert.ok(symbol(key).innerHTML.includes(`otter-skill-${key}.png`));}
- h.api.cast('q');h.api.refreshHUD();assert.equal(h.el('[data-skill="q"] .skill-symbol .skill-cue').textContent,'3');assert.equal(h.el('[data-skill="q"] .skill-symbol .skill-cue').hidden,false);assert.ok(symbol('q').innerHTML.includes('otter-skill-q.png'));
+ for(const key of ['q','w','e','r']){assert.equal(symbol(key).dataset.art,key);assert.ok(symbol(key).innerHTML.includes(`otter-skill-${key}.webp`));}
+ h.api.cast('q');h.api.refreshHUD();assert.equal(h.el('[data-skill="q"] .skill-symbol .skill-cue').textContent,'3');assert.equal(h.el('[data-skill="q"] .skill-symbol .skill-cue').hidden,false);assert.ok(symbol('q').innerHTML.includes('otter-skill-q.webp'));
  h.api.cast('w');h.api.refreshHUD();assert.equal(h.el('[data-skill="w"] .skill-symbol .skill-cue').textContent,'↗');
  const rabbit=core.createCharacter('그대로','rabbit');h.api.start(rabbit);assert.equal(h.api.skillSymbolMarkup('a','◉'),'◉');
 });
 
 test('hacker advancement swaps skill art while novice icons and locked levels stay intact',()=>{
  const h=harness(),p=core.createCharacter('해커아이콘','chick');Object.assign(p,{level:10,map:'maple'});h.api.start(p);h.api.buildHUD();
- for(const key of ['a','q'])assert.ok(h.api.skillSymbolMarkup(key,'novice').includes(`assets/chick-skill-${key}-closeup.png`));
- const noviceW=h.api.skillSymbolMarkup('w','novice');assert.ok(noviceW.includes('assets/hacker-skill-w.png'));
- for(const key of ['a','q'])assert.deepEqual([...fs.readFileSync(new URL(`../dist/assets/chick-skill-${key}-closeup.png`,import.meta.url)).subarray(0,8)],[137,80,78,71,13,10,26,10]);
+ for(const key of ['a','q'])assert.ok(h.api.skillSymbolMarkup(key,'novice').includes(`assets/chick-skill-${key}-closeup.webp`));
+ const noviceW=h.api.skillSymbolMarkup('w','novice');assert.ok(noviceW.includes('assets/hacker-skill-w.webp'));
+ for(const key of ['a','q'])assert.deepEqual([...fs.readFileSync(new URL(`../art-source/chick-skill-${key}-closeup.png`,import.meta.url)).subarray(0,8)],[137,80,78,71,13,10,26,10]);
  h.api.jobModal('hacker');h.el('#advance-job').onclick();assert.equal(p.job,'hacker');
  assert.ok(h.el('#game-ui').innerHTML.includes('class="skill hacker-skill"'));
  assert.equal(h.api.skillSymbolMarkup('w','novice'),noviceW,'W shares the exact same image before and after advancement');
  for(const key of ['a','q','w','e','r']){
-  const path=`assets/hacker-skill-${key}.png`;
+  const path=`assets/hacker-skill-${key}.webp`;
   assert.ok(h.api.skillSymbolMarkup(key,'novice').includes(path));
-  assert.deepEqual([...fs.readFileSync(new URL(`../dist/${path}`,import.meta.url)).subarray(0,8)],[137,80,78,71,13,10,26,10]);
+  const data=fs.readFileSync(new URL(`../dist/${path}`,import.meta.url));assert.equal(data.toString('ascii',0,4),'RIFF');assert.equal(data.toString('ascii',8,12),'WEBP');
  }
  const symbol=key=>h.el(`[data-skill="${key}"] .skill-symbol`);
  assert.equal(symbol('r').textContent,'🔒');assert.equal(h.el('[data-skill="r"] .lock-level').textContent,'Lv.15');
- p.level=15;h.api.refreshHUD();for(const key of ['q','w','e','r'])assert.ok(symbol(key).innerHTML.includes(`hacker-skill-${key}.png`));
- h.api.cast('w');h.api.refreshHUD();assert.equal(h.el('[data-skill="w"] .skill-symbol .skill-cue').textContent,'10');assert.ok(symbol('w').innerHTML.includes('hacker-skill-w.png'));
- p.job=null;h.api.buildHUD();for(const key of ['a','q'])assert.ok(h.api.skillSymbolMarkup(key,'novice').includes(`assets/chick-skill-${key}-closeup.png`));
+ p.level=15;h.api.refreshHUD();for(const key of ['q','w','e','r'])assert.ok(symbol(key).innerHTML.includes(`hacker-skill-${key}.webp`));
+ h.api.cast('w');h.api.refreshHUD();assert.equal(h.el('[data-skill="w"] .skill-symbol .skill-cue').textContent,'10');assert.ok(symbol('w').innerHTML.includes('hacker-skill-w.webp'));
+ p.job=null;h.api.buildHUD();for(const key of ['a','q'])assert.ok(h.api.skillSymbolMarkup(key,'novice').includes(`assets/chick-skill-${key}-closeup.webp`));
  p.level=1;h.api.refreshHUD();for(const key of ['q','w','e','r']){assert.equal(symbol(key).textContent,'🔒');assert.equal(symbol(key).dataset.art,undefined);}
 });
 
@@ -2025,8 +2025,8 @@ test('entry shows a standalone portrait before motion assets finish loading',asy
   const h=harness(),p=core.createCharacter('입장',classId);Object.assign(p,{level:20,job});h.api.start(p);
   const pending=h.api.enterWorld(p.id),html=h.el('#screens').innerHTML;
   assert.equal(h.api.get().scene,'loading');
-  assert.ok(html.includes(`class="loading-icon" src="assets/${classId}-${job||'novice'}-portrait.png"`));
-  assert.ok(!html.includes('-motion.png'),'entry cannot fall back to a complete motion sheet');
+  assert.ok(html.includes(`class="loading-icon" src="assets/${classId}-${job||'novice'}-portrait.webp"`));
+  assert.ok(!html.includes('-motion.webp'),'entry cannot fall back to a complete motion sheet');
   await h.flush();await pending;assert.equal(h.api.get().scene,'playing');
  }
 });
@@ -2043,4 +2043,35 @@ test('renamed inventory items share artwork across shop, bag, quick slots and co
  h.draws.length=0;for(const type of ['potions','scrap','cores'])h.api.drawDrop({type,x:p.x,y:p.y});
  for(const type of ['potions','scrap','cores'])assert.ok(h.draws.some(d=>d.asset===core.ITEMS[type].image));
  assert.equal(p.potions,3);assert.equal(p.mpPotions,2);assert.equal(p.returnScrolls,3);assert.equal(p.uniform,1);assert.equal(p.typeATitle,1);assert.equal(p.scrap,4);assert.equal(p.cores,5);
+});
+
+
+test('cold startup requests only the title background and reuses one promise per asset',()=>{
+ const h=harness({manualImages:true});assert.deepEqual(h.requestedImages.map(img=>img.asset),['assets/city.webp']);
+ assert.equal(h.api.loadImage('city'),h.api.loadImage('city'));assert.equal(h.requestedImages.length,1);
+ h.api.createModal();assert.equal(h.requestedImages.length,1,'choosing a class does not fetch every animation');
+});
+test('entry waits for the chosen scene but never waits for unrelated boss art', {timeout:1000},async()=>{
+ const h=harness({manualImages:true}),p=core.createCharacter('빠른입장','rabbit');h.api.start(p);
+ h.api.loadImage('type-a');const pending=h.api.enterWorld(p.id);assert.equal(h.api.get().scene,'loading');
+ h.finishImages('assets/type-a.webp');await h.flush();await pending;assert.equal(h.api.get().scene,'playing');
+ assert.equal(h.requestedImages.find(img=>img.asset==='assets/type-a.webp').complete,false);
+ assert.ok(!h.requestedImages.some(img=>img.asset==='assets/endgame-dungeons.webp'));
+ assert.ok(!h.requestedImages.some(img=>img.asset==='assets/otter-motion.webp'));
+});
+test('travel waits for destination art and only loads bosses in their own rooms', {timeout:1000},async()=>{
+ const h=harness({manualImages:true}),p=core.createCharacter('지역로딩');h.api.start(p);h.finishImages();
+ const pending=h.api.travel({to:'pocha',spawnX:200});await h.flush();assert.equal(h.api.get().scene,'loading');
+ assert.equal(p.map,'town');assert.ok(h.requestedImages.some(img=>img.asset==='assets/soldier-boss.webp'));
+ h.finishImages();await pending;assert.equal(p.map,'pocha');assert.equal(h.api.get().scene,'playing');
+ assert.ok(!h.requestedImages.some(img=>img.asset==='assets/type-a.webp'));
+});
+test('service art is compact WebP while animation geometry remains unchanged',()=>{
+ const report=JSON.parse(fs.readFileSync(new URL('../asset-sizes.json',import.meta.url),'utf8'));
+ assert.ok(report.bytes<report.source_bytes*.2);
+ for(const asset of report.assets){
+  const file=fs.readFileSync(new URL('../dist/assets/'+asset.name+'.webp',import.meta.url));
+  assert.equal(file.toString('ascii',8,12),'WEBP');
+  if(asset.compact)assert.ok(Math.max(...asset.size)<=256);else assert.deepEqual(asset.size,asset.source_size);
+ }
 });

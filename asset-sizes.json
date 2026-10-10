@@ -1,0 +1,1476 @@
+{
+  "source_bytes": 172082786,
+  "bytes": 23092974,
+  "assets": [
+    {
+      "name": "builder-recovery-walk",
+      "source_bytes": 1214168,
+      "bytes": 256320,
+      "source_size": [
+        1774,
+        887
+      ],
+      "size": [
+        1774,
+        887
+      ],
+      "compact": false
+    },
+    {
+      "name": "cat",
+      "source_bytes": 1203110,
+      "bytes": 146448,
+      "source_size": [
+        1145,
+        1374
+      ],
+      "size": [
+        1145,
+        1374
+      ],
+      "compact": false
+    },
+    {
+      "name": "cat-motion",
+      "source_bytes": 1708760,
+      "bytes": 364956,
+      "source_size": [
+        1145,
+        1374
+      ],
+      "size": [
+        1145,
+        1374
+      ],
+      "compact": false
+    },
+    {
+      "name": "cat-protester",
+      "source_bytes": 1267283,
+      "bytes": 154610,
+      "source_size": [
+        1145,
+        1374
+      ],
+      "size": [
+        1145,
+        1374
+      ],
+      "compact": false
+    },
+    {
+      "name": "cat-protester-motion",
+      "source_bytes": 1813837,
+      "bytes": 379774,
+      "source_size": [
+        1145,
+        1374
+      ],
+      "size": [
+        1145,
+        1374
+      ],
+      "compact": false
+    },
+    {
+      "name": "cat-protester-skills",
+      "source_bytes": 1151593,
+      "bytes": 207594,
+      "source_size": [
+        2172,
+        724
+      ],
+      "size": [
+        2172,
+        724
+      ],
+      "compact": false
+    },
+    {
+      "name": "cat-skills",
+      "source_bytes": 1117783,
+      "bytes": 193902,
+      "source_size": [
+        2172,
+        724
+      ],
+      "size": [
+        2172,
+        724
+      ],
+      "compact": false
+    },
+    {
+      "name": "chick-actions",
+      "source_bytes": 1441754,
+      "bytes": 374804,
+      "source_size": [
+        1448,
+        1086
+      ],
+      "size": [
+        1448,
+        1086
+      ],
+      "compact": false
+    },
+    {
+      "name": "chick-hacker-portrait",
+      "source_bytes": 77243,
+      "bytes": 21878,
+      "source_size": [
+        256,
+        256
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "chick-motion",
+      "source_bytes": 1660846,
+      "bytes": 450306,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        1254,
+        1254
+      ],
+      "compact": false
+    },
+    {
+      "name": "chick-motion-feet",
+      "source_bytes": 1646458,
+      "bytes": 431564,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        1254,
+        1254
+      ],
+      "compact": false
+    },
+    {
+      "name": "chick-novice-portrait",
+      "source_bytes": 72455,
+      "bytes": 20592,
+      "source_size": [
+        256,
+        256
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "chick-skill-a",
+      "source_bytes": 1705778,
+      "bytes": 13060,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "chick-skill-a-closeup",
+      "source_bytes": 1665478,
+      "bytes": 13076,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "chick-skill-q",
+      "source_bytes": 1945461,
+      "bytes": 18982,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "chick-skill-q-closeup",
+      "source_bytes": 1927494,
+      "bytes": 16234,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "chick-typing",
+      "source_bytes": 1373045,
+      "bytes": 320002,
+      "source_size": [
+        1774,
+        887
+      ],
+      "size": [
+        1774,
+        887
+      ],
+      "compact": false
+    },
+    {
+      "name": "chick-typing-feet",
+      "source_bytes": 1381199,
+      "bytes": 312510,
+      "source_size": [
+        1774,
+        887
+      ],
+      "size": [
+        1774,
+        887
+      ],
+      "compact": false
+    },
+    {
+      "name": "chick-walk-rig",
+      "source_bytes": 1450863,
+      "bytes": 375004,
+      "source_size": [
+        1448,
+        1086
+      ],
+      "size": [
+        1448,
+        1086
+      ],
+      "compact": false
+    },
+    {
+      "name": "city",
+      "source_bytes": 2341939,
+      "bytes": 385198,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "combat-brawler",
+      "source_bytes": 1454296,
+      "bytes": 349604,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        1254,
+        1254
+      ],
+      "compact": false
+    },
+    {
+      "name": "combat-power",
+      "source_bytes": 1406438,
+      "bytes": 353534,
+      "source_size": [
+        1448,
+        1086
+      ],
+      "size": [
+        1448,
+        1086
+      ],
+      "compact": false
+    },
+    {
+      "name": "combat-swordsman",
+      "source_bytes": 1265951,
+      "bytes": 339570,
+      "source_size": [
+        1448,
+        1086
+      ],
+      "size": [
+        1448,
+        1086
+      ],
+      "compact": false
+    },
+    {
+      "name": "crossroads",
+      "source_bytes": 2541247,
+      "bytes": 477166,
+      "source_size": [
+        1672,
+        941
+      ],
+      "size": [
+        1672,
+        941
+      ],
+      "compact": false
+    },
+    {
+      "name": "districts",
+      "source_bytes": 2823202,
+      "bytes": 498262,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "dojo",
+      "source_bytes": 2230712,
+      "bytes": 298804,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "endgame-dungeons",
+      "source_bytes": 2923397,
+      "bytes": 491538,
+      "source_size": [
+        1774,
+        887
+      ],
+      "size": [
+        1774,
+        887
+      ],
+      "compact": false
+    },
+    {
+      "name": "gangnam",
+      "source_bytes": 2754298,
+      "bytes": 478520,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "hacker-skill-a",
+      "source_bytes": 2190240,
+      "bytes": 24826,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "hacker-skill-e",
+      "source_bytes": 2150704,
+      "bytes": 26102,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "hacker-skill-q",
+      "source_bytes": 1834450,
+      "bytes": 15678,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "hacker-skill-r",
+      "source_bytes": 2171635,
+      "bytes": 24768,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "hacker-skill-w",
+      "source_bytes": 2003043,
+      "bytes": 19340,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "hansabal-pocha",
+      "source_bytes": 2168220,
+      "bytes": 323230,
+      "source_size": [
+        1672,
+        941
+      ],
+      "size": [
+        1672,
+        941
+      ],
+      "compact": false
+    },
+    {
+      "name": "high-dungeons",
+      "source_bytes": 2608366,
+      "bytes": 457124,
+      "source_size": [
+        1763,
+        892
+      ],
+      "size": [
+        1763,
+        892
+      ],
+      "compact": false
+    },
+    {
+      "name": "item-americano",
+      "source_bytes": 1883391,
+      "bytes": 14286,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "item-badge",
+      "source_bytes": 2067305,
+      "bytes": 11792,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "item-chips",
+      "source_bytes": 1805528,
+      "bytes": 14690,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "item-core",
+      "source_bytes": 2086640,
+      "bytes": 19208,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "item-device",
+      "source_bytes": 1912029,
+      "bytes": 14488,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "item-gimbap",
+      "source_bytes": 2020747,
+      "bytes": 14784,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "item-parts",
+      "source_bytes": 2264931,
+      "bytes": 20766,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "item-sandwich",
+      "source_bytes": 2245982,
+      "bytes": 22630,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "item-uniform",
+      "source_bytes": 2209132,
+      "bytes": 18728,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "job-equipment",
+      "source_bytes": 393130,
+      "bytes": 80784,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        1254,
+        1254
+      ],
+      "compact": false
+    },
+    {
+      "name": "maple-hideout",
+      "source_bytes": 2011254,
+      "bytes": 245236,
+      "source_size": [
+        1672,
+        941
+      ],
+      "size": [
+        1672,
+        941
+      ],
+      "compact": false
+    },
+    {
+      "name": "npc-emperor-coach",
+      "source_bytes": 1857554,
+      "bytes": 186214,
+      "source_size": [
+        1024,
+        1536
+      ],
+      "size": [
+        1024,
+        1536
+      ],
+      "compact": false
+    },
+    {
+      "name": "npc-hyuntori",
+      "source_bytes": 749162,
+      "bytes": 109998,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        1254,
+        1254
+      ],
+      "compact": false
+    },
+    {
+      "name": "npc-hyuntori-white",
+      "source_bytes": 731365,
+      "bytes": 107988,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        1254,
+        1254
+      ],
+      "compact": false
+    },
+    {
+      "name": "npc-hyupro",
+      "source_bytes": 1318300,
+      "bytes": 214932,
+      "source_size": [
+        1214,
+        1295
+      ],
+      "size": [
+        1214,
+        1295
+      ],
+      "compact": false
+    },
+    {
+      "name": "npc-maguri",
+      "source_bytes": 1323045,
+      "bytes": 203126,
+      "source_size": [
+        1491,
+        1055
+      ],
+      "size": [
+        1491,
+        1055
+      ],
+      "compact": false
+    },
+    {
+      "name": "npc-maguri-crate",
+      "source_bytes": 1587214,
+      "bytes": 219686,
+      "source_size": [
+        1303,
+        1207
+      ],
+      "size": [
+        1303,
+        1207
+      ],
+      "compact": false
+    },
+    {
+      "name": "npc-maguri-large-crate",
+      "source_bytes": 1502377,
+      "bytes": 207944,
+      "source_size": [
+        1303,
+        1207
+      ],
+      "size": [
+        1303,
+        1207
+      ],
+      "compact": false
+    },
+    {
+      "name": "npc-maguri-seated",
+      "source_bytes": 1652104,
+      "bytes": 225558,
+      "source_size": [
+        1303,
+        1207
+      ],
+      "size": [
+        1303,
+        1207
+      ],
+      "compact": false
+    },
+    {
+      "name": "npc-maguri-traveler",
+      "source_bytes": 1579376,
+      "bytes": 216304,
+      "source_size": [
+        1303,
+        1207
+      ],
+      "size": [
+        1303,
+        1207
+      ],
+      "compact": false
+    },
+    {
+      "name": "npc-redfox",
+      "source_bytes": 1576341,
+      "bytes": 173062,
+      "source_size": [
+        1024,
+        1536
+      ],
+      "size": [
+        1024,
+        1536
+      ],
+      "compact": false
+    },
+    {
+      "name": "npc-tiger-master",
+      "source_bytes": 1876251,
+      "bytes": 227432,
+      "source_size": [
+        1024,
+        1536
+      ],
+      "size": [
+        1024,
+        1536
+      ],
+      "compact": false
+    },
+    {
+      "name": "npc-yumi",
+      "source_bytes": 1733316,
+      "bytes": 187576,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "olympic-park",
+      "source_bytes": 2360082,
+      "bytes": 347374,
+      "source_size": [
+        1672,
+        941
+      ],
+      "size": [
+        1672,
+        941
+      ],
+      "compact": false
+    },
+    {
+      "name": "otter-idol-leopard-motion",
+      "source_bytes": 2087194,
+      "bytes": 562248,
+      "source_size": [
+        1215,
+        1295
+      ],
+      "size": [
+        1215,
+        1295
+      ],
+      "compact": false
+    },
+    {
+      "name": "otter-idol-motion",
+      "source_bytes": 1866358,
+      "bytes": 490978,
+      "source_size": [
+        1215,
+        1295
+      ],
+      "size": [
+        1215,
+        1295
+      ],
+      "compact": false
+    },
+    {
+      "name": "otter-idol-portrait",
+      "source_bytes": 83358,
+      "bytes": 23884,
+      "source_size": [
+        256,
+        256
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "otter-idol-skirt-motion",
+      "source_bytes": 2045558,
+      "bytes": 543522,
+      "source_size": [
+        1215,
+        1295
+      ],
+      "size": [
+        1215,
+        1295
+      ],
+      "compact": false
+    },
+    {
+      "name": "otter-motion",
+      "source_bytes": 1443526,
+      "bytes": 352938,
+      "source_size": [
+        1215,
+        1295
+      ],
+      "size": [
+        1215,
+        1295
+      ],
+      "compact": false
+    },
+    {
+      "name": "otter-novice-portrait",
+      "source_bytes": 60794,
+      "bytes": 15568,
+      "source_size": [
+        256,
+        256
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "otter-skill-a",
+      "source_bytes": 1783268,
+      "bytes": 14964,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "otter-skill-e",
+      "source_bytes": 1786824,
+      "bytes": 16580,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "otter-skill-q",
+      "source_bytes": 1803792,
+      "bytes": 25116,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "otter-skill-r",
+      "source_bytes": 2086607,
+      "bytes": 18660,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "otter-skill-w",
+      "source_bytes": 2034428,
+      "bytes": 25738,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "penguin",
+      "source_bytes": 669816,
+      "bytes": 95354,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        1254,
+        1254
+      ],
+      "compact": false
+    },
+    {
+      "name": "penguin-hurt",
+      "source_bytes": 672838,
+      "bytes": 99830,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        1254,
+        1254
+      ],
+      "compact": false
+    },
+    {
+      "name": "penguin-jump",
+      "source_bytes": 1769022,
+      "bytes": 219420,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "penguin-power",
+      "source_bytes": 1085550,
+      "bytes": 163918,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        1254,
+        1254
+      ],
+      "compact": false
+    },
+    {
+      "name": "penguin-power-jump",
+      "source_bytes": 1880458,
+      "bytes": 249056,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "penguin-power-poses",
+      "source_bytes": 1072976,
+      "bytes": 185804,
+      "source_size": [
+        1774,
+        887
+      ],
+      "size": [
+        1774,
+        887
+      ],
+      "compact": false
+    },
+    {
+      "name": "penguin-power-walk",
+      "source_bytes": 2034694,
+      "bytes": 324438,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "penguin-walk",
+      "source_bytes": 1852996,
+      "bytes": 261712,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "player",
+      "source_bytes": 686431,
+      "bytes": 134114,
+      "source_size": [
+        1122,
+        1402
+      ],
+      "size": [
+        1122,
+        1402
+      ],
+      "compact": false
+    },
+    {
+      "name": "power-recovery-walk",
+      "source_bytes": 1907640,
+      "bytes": 268178,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "rabbit-mage-portrait",
+      "source_bytes": 79253,
+      "bytes": 22492,
+      "source_size": [
+        256,
+        256
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "rabbit-motion",
+      "source_bytes": 2014722,
+      "bytes": 601298,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        1254,
+        1254
+      ],
+      "compact": false
+    },
+    {
+      "name": "rabbit-novice-motion",
+      "source_bytes": 1760683,
+      "bytes": 496338,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        1254,
+        1254
+      ],
+      "compact": false
+    },
+    {
+      "name": "rabbit-novice-portrait",
+      "source_bytes": 68574,
+      "bytes": 19206,
+      "source_size": [
+        256,
+        256
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "robot",
+      "source_bytes": 632516,
+      "bytes": 96976,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        1254,
+        1254
+      ],
+      "compact": false
+    },
+    {
+      "name": "soldier-boss",
+      "source_bytes": 2159193,
+      "bytes": 337304,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "soldier-counter",
+      "source_bytes": 2006015,
+      "bytes": 277632,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "soldier-walk",
+      "source_bytes": 2242636,
+      "bytes": 361072,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "station-six",
+      "source_bytes": 2554411,
+      "bytes": 462788,
+      "source_size": [
+        1672,
+        941
+      ],
+      "size": [
+        1672,
+        941
+      ],
+      "compact": false
+    },
+    {
+      "name": "sword-guard-walk",
+      "source_bytes": 1824439,
+      "bytes": 260980,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "type-a",
+      "source_bytes": 1512479,
+      "bytes": 472278,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        1254,
+        1254
+      ],
+      "compact": false
+    },
+    {
+      "name": "uniform-builder-recovery-walk",
+      "source_bytes": 1316560,
+      "bytes": 259358,
+      "source_size": [
+        1774,
+        887
+      ],
+      "size": [
+        1774,
+        887
+      ],
+      "compact": false
+    },
+    {
+      "name": "uniform-combat-brawler",
+      "source_bytes": 1556057,
+      "bytes": 354618,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        1254,
+        1254
+      ],
+      "compact": false
+    },
+    {
+      "name": "uniform-combat-power",
+      "source_bytes": 1496873,
+      "bytes": 362102,
+      "source_size": [
+        1448,
+        1086
+      ],
+      "size": [
+        1448,
+        1086
+      ],
+      "compact": false
+    },
+    {
+      "name": "uniform-combat-swordsman",
+      "source_bytes": 1344188,
+      "bytes": 340876,
+      "source_size": [
+        1448,
+        1086
+      ],
+      "size": [
+        1448,
+        1086
+      ],
+      "compact": false
+    },
+    {
+      "name": "uniform-penguin",
+      "source_bytes": 731242,
+      "bytes": 104652,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        1254,
+        1254
+      ],
+      "compact": false
+    },
+    {
+      "name": "uniform-penguin-hurt",
+      "source_bytes": 734714,
+      "bytes": 98738,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        1254,
+        1254
+      ],
+      "compact": false
+    },
+    {
+      "name": "uniform-penguin-jump",
+      "source_bytes": 1867356,
+      "bytes": 238200,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "uniform-penguin-power-jump",
+      "source_bytes": 2069192,
+      "bytes": 289540,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "uniform-penguin-power-poses",
+      "source_bytes": 1223131,
+      "bytes": 206624,
+      "source_size": [
+        1774,
+        887
+      ],
+      "size": [
+        1774,
+        887
+      ],
+      "compact": false
+    },
+    {
+      "name": "uniform-penguin-power-walk",
+      "source_bytes": 2274906,
+      "bytes": 364742,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "uniform-penguin-walk",
+      "source_bytes": 1952764,
+      "bytes": 276642,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "uniform-power-recovery-walk",
+      "source_bytes": 2005179,
+      "bytes": 284650,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "uniform-sword-guard-walk",
+      "source_bytes": 1860672,
+      "bytes": 254148,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "size": [
+        1536,
+        1024
+      ],
+      "compact": false
+    },
+    {
+      "name": "world-map",
+      "source_bytes": 2641601,
+      "bytes": 418234,
+      "source_size": [
+        1774,
+        887
+      ],
+      "size": [
+        1774,
+        887
+      ],
+      "compact": false
+    }
+  ]
+}
