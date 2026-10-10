@@ -1,6 +1,6 @@
 {
-  "source_bytes": 223369104,
-  "bytes": 25076912,
+  "source_bytes": 225978726,
+  "bytes": 25439078,
   "assets": [
     {
       "name": "builder-recovery-walk",
@@ -1861,6 +1861,20 @@
       "size": [
         1998,
         787
+      ],
+      "compact": false
+    },
+    {
+      "name": "bruteforce-title-v133",
+      "source_bytes": 2609622,
+      "bytes": 362166,
+      "source_size": [
+        1672,
+        941
+      ],
+      "size": [
+        1672,
+        941
       ],
       "compact": false
     }

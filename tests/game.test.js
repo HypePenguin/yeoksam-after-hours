@@ -2193,8 +2193,8 @@ test('renamed inventory items share artwork across shop, bag, quick slots and co
 });
 
 
-test('cold startup requests only the title background and reuses one promise per asset',()=>{
- const h=harness({manualImages:true});assert.deepEqual(h.requestedImages.map(img=>img.asset),['assets/city.webp']);
+test('cold startup uses HTML key art and reuses one promise per requested gameplay asset',()=>{
+ const h=harness({manualImages:true});assert.deepEqual(h.requestedImages,[],'title illustration is rendered directly in HTML without fetching gameplay assets');
  assert.equal(h.api.loadImage('city'),h.api.loadImage('city'));assert.equal(h.requestedImages.length,1);
  h.api.createModal();assert.equal(h.requestedImages.length,1,'choosing a class does not fetch every animation');
 });

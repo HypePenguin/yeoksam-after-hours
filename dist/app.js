@@ -1,7 +1,7 @@
-import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawBallotVortex} from './cat-effects.js?v=132';
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=132';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=132';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=132';
+import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawBallotVortex} from './cat-effects.js?v=133';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=133';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=133';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=133';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -21,7 +21,7 @@ const ITEM_ART_ASSETS=[...new Set(Object.values(ITEMS).map(item=>item.image).fil
 // Keep downloads scoped to the visible scene; cache each image and its decode once.
 function loadImage(name){
  if(imageLoads.has(name))return imageLoads.get(name);
- const img=new Image();images[name]=img;img.decoding='async';img.fetchPriority=name==='city'?'high':'auto';
+ const img=new Image();images[name]=img;img.decoding='async';img.fetchPriority='auto';
  const promise=new Promise(resolve=>{
   img.onload=()=>{if(typeof img.decode==='function')img.decode().then(()=>resolve(true),()=>resolve(false));else resolve(true);};
   img.onerror=()=>resolve(false);
@@ -44,7 +44,7 @@ function mapAssets(mapId){
 }
 function sceneAssets(p){return [...new Set([...characterAssets(p),...mapAssets(p.map),...ITEM_ART_ASSETS])];}
 async function loadSceneAssets(p){const results=await Promise.all(sceneAssets(p).map(loadImage));return results.every(Boolean);}
-void loadImage('city');
+// The title illustration loads directly in HTML; gameplay assets wait for entry.
 
 let records=[],storageBroken=false;
 try{const saved=localStorage.getItem(SAVE_KEY);if(saved){const parsed=JSON.parse(saved);if(!parsed||parsed.version!==1||!Array.isArray(parsed.characters))throw new Error('invalid save');records=parsed.characters.map(normalizeCharacter).filter(Boolean);}}catch{storageBroken=true;}
@@ -87,7 +87,7 @@ function save(silent=true){
  try{localStorage.setItem(SAVE_KEY,JSON.stringify({version:1,characters:records}));storageBroken=false;lastSavedLabel='방금 저장됨';if(!silent)toast('현재 위치와 진행 상황을 저장했어요.');return true;}catch{storageBroken=true;if(!silent)toast('브라우저 저장 공간에 접근할 수 없어요. 진행 상황이 유지되지 않을 수 있습니다.');return false;}
 }
 function setScene(next){if(next!=='playing'){maguriHack=null;if(player){player.respectTime=0;player.hp=Math.min(player.hp,maxHp(player));}boss=null;potionCooldown=0;}cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;$('.game-shell').classList.remove('boss-fight');resetJump();resetGait();cancelSword();resetCombat();hurtTime=0;scene=next;keys.clear();ui.innerHTML='';$('#touch-controls').classList.toggle('playing',next==='playing');$('.game-shell').classList.toggle('is-playing',next==='playing');resize();}
-function title(){transitionId++;resetOtter();player=null;closeModal();setScene('title');screens.innerHTML=`<div class="title-screen"><div class="title-content"><div class="eyebrow"><span></span> 불이 꺼진 도시에서, 모험이 켜진다.</div><p class="english-title">YEOKSAM<br>AFTER HOURS</p><h1>역삼의 밤<span>夜</span></h1><p class="intro">익숙한 거리, 조금 다른 밤.<br>작은 용기를 챙겨 도시 밖으로 떠나보세요.</p><button class="primary start-button" id="start-button">시작하기 <span>ENTER ↵</span></button><div class="save-caption">진행 상황은 이 브라우저에 자동 저장됩니다.</div></div><div class="scene-caption"><span class="station-pill">2</span><div>역삼 Yeoksam<small>37.5006° N &nbsp; 127.0364° E</small></div></div></div>`;$('#start-button').onclick=selectCharacters;}
+function title(){transitionId++;resetOtter();player=null;closeModal();setScene('title');screens.innerHTML=`<div class="title-screen"><img class="title-art" src="assets/bruteforce-title-v133.webp" alt="밤 도시에서 전투 자세를 취한 펭귄, 고양이 시위대, 안경 쓴 토끼 마법사, 노트북을 든 병아리 해커, 수달 아이돌" decoding="async" fetchpriority="high"><h1 class="game-title">BruteForce <span>21</span></h1><button class="primary start-button" id="start-button">게임 시작</button></div>`;$('#start-button').onclick=selectCharacters;}
 function selectCharacters(){
  if(player){resetOtter();save();}player=null;closeModal();setScene('characters');
  if(!records.some(p=>p.id===selectedId))selectedId=records[0]?.id??null;
@@ -1855,7 +1855,7 @@ function draw(){
  // Shake the whole world together so actors stay anchored to the street.
  viewShakeX=isPlay&&shake>0?(Math.random()-.5)*shake:0;viewShakeY=isPlay&&shake>0?(Math.random()-.5)*shake:0;
  if(isPlay){ctx.translate(viewShakeX,viewShakeY+viewOffsetY());ctx.scale(cameraZoom,cameraZoom);}
- drawBackground(player?.map??'town');
+ if(isPlay)drawBackground(player.map);
  if(isPlay){
   if(!bossActive())MAPS[player.map].portals.forEach(drawPortal);
   drawBossTelegraphs();
