@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=98';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=98';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=98';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,MAP_ROUTES,mapTabFor,monsterCount,recommendedMap,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=99';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=99';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=99';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={};let assetsReady=false,assetFailed=false;
@@ -114,7 +114,7 @@ async function travel(portal){
 }
 const OTTER_SKILL_ART={a:'assets/otter-skill-a.png',q:'assets/otter-skill-q.png',w:'assets/otter-skill-w.png',e:'assets/otter-skill-e.png',r:'assets/otter-skill-r.png'};
 const HACKER_SKILL_ART={a:'assets/hacker-skill-a.png',q:'assets/hacker-skill-q.png',w:'assets/hacker-skill-w.png',e:'assets/hacker-skill-e.png',r:'assets/hacker-skill-r.png'};
-const NOVICE_CHICK_SKILL_ART={a:'assets/chick-skill-a.png',q:'assets/chick-skill-q.png',w:HACKER_SKILL_ART.w};
+const NOVICE_CHICK_SKILL_ART={a:'assets/chick-skill-a-closeup.png',q:'assets/chick-skill-q-closeup.png',w:HACKER_SKILL_ART.w};
 const skillArtFor=key=>player?.classId==='otter'?OTTER_SKILL_ART[key]:player?.classId==='chick'?(player.job==='hacker'?HACKER_SKILL_ART:NOVICE_CHICK_SKILL_ART)[key]:null;
 function skillSymbolMarkup(key,fallback){
  const art=skillArtFor(key);
