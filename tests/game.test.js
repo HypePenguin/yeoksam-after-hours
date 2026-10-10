@@ -31,7 +31,7 @@ function harness({manualImages=false}={}){
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),hidden:false,activeElement:el('#game')};
  const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;requestedImages.push(this);this.complete=!manualImages;this.naturalWidth=v.includes('otter-')?1215:1500;this.naturalHeight=v.includes('otter-')?1295:1000;if(!manualImages)this.onload?.();}},Promise,Math,Date,Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
- vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,createModal,characterPortrait,sceneAssets,mapAssets,loadSceneAssets,loadImage,images,imageLoads,buildHUD,refreshHUD,refreshItemSlots,drawDrop,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,drawGuardBack,refreshHealthHUD,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
+ vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,createModal,characterPortrait,sceneAssets,mapAssets,loadSceneAssets,loadImage,images,imageLoads,buildHUD,refreshHUD,refreshItemSlots,drawDrop,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,drawGuardBack,refreshHealthHUD,recordSwordBlock,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,guardBlocks,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
  return {api:context.gameTest,persistence,requestedImages,finishImages(except){for(const img of requestedImages)if(!img.complete&&img.asset!==except){img.complete=true;img.onload?.();}},draws,labels,strokes,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
 }
 function advance(h,seconds){for(let t=0;t<seconds;t+=1/60)h.api.update(1/60);}
@@ -925,13 +925,13 @@ test('guard follow-up travels half of W, retains its cost, and sweeps in a flat 
 
 test('sword electricity forks, stays stable across renders, mirrors and fades without changing other jobs',()=>{
  for(const dir of [-1,1]){
-  const {h,p}=combatHarness('swordsman');h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');h.api.update(.01);h.api.keys.clear();h.api.attack();
+  const {h,p}=combatHarness('swordsman');h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');h.api.update(.01);h.api.keys.clear();h.api.cast('w');
   const e=h.api.get().effects.find(e=>e.type==='lightning');assert.ok(e.bolts.length>1);assert.equal(e.dir,dir);
   const main=e.bolts[0].points;assert.ok(main.length>20);assert.ok(e.bolts.slice(1).every(b=>main.some(p=>p.x===b.points[0].x&&p.y===b.points[0].y)),'branches connect to the main bolt');
   const shape=JSON.stringify(e.bolts);h.api.drawEffects();h.api.drawEffects();assert.equal(JSON.stringify(e.bolts),shape,'frame rendering cannot jitter the stored bolt');
   assert.ok(h.strokes.some(s=>s.color==='#fffef2'),'electricity has a bright white center');
   for(const b of e.bolts)for(const p of b.points){assert.ok(Number.isFinite(p.x)&&Number.isFinite(p.y));}
-  advance(h,.3);assert.equal(h.api.get().effects.includes(e),false);
+  advance(h,.45);assert.equal(h.api.get().effects.includes(e),false);
  }
  const builder=combatHarness('bodybuilder');builder.h.api.attack();assert.equal(builder.h.api.get().effects.some(e=>e.bolts),false);
 });
@@ -1060,9 +1060,9 @@ test('sword guard ends its contact protection at two seconds without lingering i
  const {h,p}=combatHarness('swordsman'),m=h.api.get().monsters[0];Object.assign(m,{dead:false,x:p.x,y:p.y,speed:0,attack:100});h.api.cast('e');h.api.update(1.9);h.api.update(.099);assert.equal(p.hp,480);assert.ok(h.api.get().guardTime>0);assert.ok(h.api.get().invincible<=0);h.api.update(.002);assert.equal(h.api.get().guardTime,0);assert.equal(p.hp,380);
 });
 
-test('sword attacks retain lightning while powered recovery uses one combined status banner',()=>{
+test('sword W retains lightning while powered recovery uses one combined status banner',()=>{
  for(const job of ['swordsman'])for(const skill of ['a','q','w']){
-  const {h}=combatHarness(job);skill==='a'?h.api.attack():h.api.cast(skill);assert.ok(h.api.get().effects.some(e=>e.type==='lightning'&&e.color==='#ffe45c'),`${job} ${skill}`);
+  const {h}=combatHarness(job);skill==='a'?h.api.attack():h.api.cast(skill);assert.equal(h.api.get().effects.some(e=>e.type==='lightning'&&e.color==='#ffe45c'),skill==='w',`${job} ${skill}`);
  }
  const builder=combatHarness();builder.h.api.cast('r');assert.ok(builder.h.api.get().effects.some(e=>e.type==='impact'&&e.color==='#f7fcff'));builder.h.api.cast('e');assert.equal(builder.h.el('#power-banner').hidden,true);assert.equal(builder.h.el('#combat-banner').hidden,false);assert.match(builder.h.el('#combat-title').textContent,/근육 각성.*한 번 더/);builder.h.api.update(1.51);assert.equal(builder.h.el('#power-banner').hidden,false);assert.equal(builder.h.el('#combat-banner').hidden,true);
  const sword=counterHarness();sword.h.api.startSwordCharge();sword.h.api.releaseSword('keyboard');sword.h.api.update(.01);assert.ok(sword.h.api.get().effects.some(e=>e.type==='lightning'&&e.color==='#ffe45c'));
@@ -2128,5 +2128,35 @@ test('service art is compact WebP while animation geometry remains unchanged',()
   const file=fs.readFileSync(new URL('../dist/assets/'+asset.name+'.webp',import.meta.url));
   assert.equal(file.toString('ascii',8,12),'WEBP');
   if(asset.compact)assert.ok(Math.max(...asset.size)<=256);else assert.deepEqual(asset.size,asset.source_size);
+ }
+});
+
+test('sword A has only a plain blade arc and Q uses one thicker electric arc without hit or radial bolts',()=>{
+ for(const dir of [-1,1])for(const input of ['a','q']){
+  const {h,p}=combatHarness('swordsman');h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');h.api.update(.01);h.api.keys.clear();
+  const target=h.api.get().monsters[0];Object.assign(target,{dead:false,x:p.x+dir*100,y:p.y,hp:10000,maxHp:10000,speed:0});
+  if(input==='a')h.api.attack();else h.api.cast('q');
+  const effects=h.api.get().effects,arc=effects.find(e=>e.type==='slash');assert.ok(arc);assert.equal(effects.some(e=>e.type==='lightning'),false);assert.equal(arc.dir,dir);
+  assert.equal(arc.bladeOnly,input==='a');assert.equal(arc.focused,input==='q');assert.equal(target.hp,10000-(input==='a'?core.basicAttackPower(p):Math.round(core.attackPower(p)*core.effectiveSkill(p,'q').damage)));
+  h.strokes.length=0;h.api.drawEffects();const width=Math.max(...h.strokes.map(s=>s.width));
+  if(input==='q'){assert.equal(arc.arcBolts.length,1);assert.ok(arc.arcBolts[0].points.length>30);assert.ok(width>=15);const shape=JSON.stringify(arc.arcBolts);h.api.drawEffects();assert.equal(JSON.stringify(arc.arcBolts),shape);}else assert.ok(width<=5);
+ }
+});
+test('guard stacks boost only the next release by 10 percent per block, cap at 50 percent and reset',()=>{
+ for(const count of [0,1,3,5,8]){
+  const {h,p}=combatHarness('swordsman');h.api.get().monsters.forEach(m=>m.dead=true);const target=h.api.get().monsters[0];Object.assign(target,{dead:false,x:p.x+130,y:p.y,hp:10000,maxHp:10000,speed:0});
+  const skill=core.effectiveSkill(p,'e');h.api.cast('e');for(let i=0;i<count;i++)h.api.recordSwordBlock();const stacks=Math.min(5,count);assert.equal(h.api.get().guardBlocks,stacks);assert.ok(h.el('#combat-detail').textContent.includes(`발도 피해 +${stacks*10}%`));
+  h.api.cast('e');assert.equal(target.hp,10000-Math.round(core.attackPower(p)*skill.releaseDamage*(1+stacks*.1)));assert.equal(h.api.get().guardBlocks,0);
+  h.api.resetCombat();p.cooldowns.e=0;h.api.cast('e');assert.equal(h.api.get().guardBlocks,0);h.api.recordSwordBlock();h.api.update(2.01);assert.equal(h.api.get().guardBlocks,0);
+ }
+});
+test('contact overlap counts by enemy attack cadence and boss melee or beam hits strengthen guard',()=>{
+ for(const fps of [30,60,120]){
+  const {h,p}=combatHarness('swordsman');h.api.get().monsters.forEach(m=>m.dead=true);const m=h.api.get().monsters[0];Object.assign(m,{dead:false,x:p.x,y:p.y,speed:0,attack:100,hp:10000});p.hp=480;h.api.cast('e');
+  for(let i=0;i<fps*.5;i++)h.api.update(1/fps);assert.equal(h.api.get().guardBlocks,1);assert.equal(p.hp,480);
+  for(let i=0;i<fps*.75;i++)h.api.update(1/fps);assert.equal(h.api.get().guardBlocks,2);assert.equal(p.hp,480);
+ }
+ for(const phase of ['flurry','wave']){
+  const {h,p}=bossHarness();h.api.startBossFight();const b=h.api.get().boss;Object.assign(b,{phase:'recover',elapsed:-10});advance(h,1.2);p.x=900;p.y=650;Object.assign(b,{x:800,y:650,dir:1,phase:phase==='wave'?'recover':phase,elapsed:0,strikes:0});h.api.cast('e');if(phase==='wave')b.projectiles=[{x:890,y:650,dir:1,life:3,spent:false}];advance(h,.5);assert.ok(h.api.get().guardBlocks>=2);assert.equal(p.hp,480);
  }
 });

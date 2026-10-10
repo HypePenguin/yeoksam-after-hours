@@ -145,12 +145,12 @@ test('class combat effects regression coverage',async t=>{
   }
  });
 
- await t.test('swordsman retains yellow lightning, yellow/black dash and sword R',()=>{
+ await t.test('swordsman separates blade A and focused Q while retaining yellow/black W and R',()=>{
   for(const job of ['swordsman'])for(const key of ['a','q','w']){
    const h=harness(job);h.target();key==='a'?h.api.attack():h.api.cast(key);const effects=h.api.get().effects;
-   assert.ok(effects.some(e=>e.type==='lightning'&&e.color==='#ffe45c'));assert.equal(effects.some(e=>['impact','windSwing'].includes(e.type)),false);
+   assert.equal(effects.some(e=>e.type==='lightning'&&e.color==='#ffe45c'),key==='w');assert.equal(effects.some(e=>['impact','windSwing'].includes(e.type)),false);
    if(key==='w'){h.api.update(.1);drawEffects(h);assert.ok(h.strokes.some(s=>s.color==='#ffe45c'&&s.width===6));assert.ok(h.strokes.some(s=>s.color==='#111117'&&s.width===9));}
-   else assert.ok(effects.some(e=>e.type==='slash'&&e.color==='#ffe45c'));
+   else assert.ok(effects.some(e=>e.type==='slash'&&(key==='a'?e.bladeOnly:e.focused)));
   }
   const h=harness('swordsman');h.target();assert.equal(h.api.startSwordCharge(),true);h.api.update(.2);h.clearDraws();h.api.drawCombatIndicators();
   assert.ok(h.strokes.some(s=>s.color==='#ffe45c'));assert.ok(h.strokes.some(s=>s.color==='#101014'));
