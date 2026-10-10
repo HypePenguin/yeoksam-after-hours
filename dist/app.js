@@ -1,7 +1,7 @@
-import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawBallotVortex} from './cat-effects.js?v=134';
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=134';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=134';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=134';
+import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawBallotVortex} from './cat-effects.js?v=135';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=135';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=135';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=135';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -87,7 +87,7 @@ function save(silent=true){
  try{localStorage.setItem(SAVE_KEY,JSON.stringify({version:1,characters:records}));storageBroken=false;lastSavedLabel='방금 저장됨';if(!silent)toast('현재 위치와 진행 상황을 저장했어요.');return true;}catch{storageBroken=true;if(!silent)toast('브라우저 저장 공간에 접근할 수 없어요. 진행 상황이 유지되지 않을 수 있습니다.');return false;}
 }
 function setScene(next){if(next!=='playing'){maguriHack=null;if(player){player.respectTime=0;player.hp=Math.min(player.hp,maxHp(player));}boss=null;potionCooldown=0;}cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;$('.game-shell').classList.remove('boss-fight');resetJump();resetGait();cancelSword();resetCombat();hurtTime=0;scene=next;keys.clear();ui.innerHTML='';$('#touch-controls').classList.toggle('playing',next==='playing');$('.game-shell').classList.toggle('is-playing',next==='playing');resize();}
-function title(){transitionId++;resetOtter();player=null;closeModal();setScene('title');screens.innerHTML=`<div class="title-screen"><img class="title-art" src="assets/bruteforce-title-v133.webp" alt="밤 도시에서 전투 자세를 취한 펭귄, 고양이 시위대, 안경 쓴 토끼 마법사, 노트북을 든 병아리 해커, 수달 아이돌" decoding="async" fetchpriority="high"><h1 class="game-title">BruteForce <span>21</span></h1><button class="primary start-button" id="start-button">게임 시작</button></div>`;$('#start-button').onclick=selectCharacters;}
+function title(){transitionId++;resetOtter();player=null;closeModal();setScene('title');screens.innerHTML=`<div class="title-screen"><img class="title-art" src="assets/bruteforce-title-v135.webp" alt="밤 도시에서 포즈를 취한 안경 쓴 토끼 마법사, 고양이 시위대, 펭귄 전사, 병아리 해커, 마이크를 든 수달 아이돌" decoding="async" fetchpriority="high"><h1 class="game-title">BruteForce <span>21</span></h1><button class="primary start-button" id="start-button">게임 시작</button></div>`;$('#start-button').onclick=selectCharacters;}
 function selectCharacters(){
  if(player){resetOtter();save();}player=null;closeModal();setScene('characters');
  if(!records.some(p=>p.id===selectedId))selectedId=records[0]?.id??null;
