@@ -872,6 +872,30 @@ function combatHarness(job='bodybuilder',power=0){
 }
 const closeTo=(actual,expected,message)=>assert.ok(Math.abs(actual-expected)<1e-8,message||`${actual} differs from ${expected}`);
 
+test('swordsman Q covers its rear sweep and body in either direction while preserving front, lane and resource limits',()=>{
+ for(const dir of [-1,1]){
+  const {h,p}=combatHarness('swordsman');
+  h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');h.api.update(.01);h.api.keys.clear();
+  const skill=core.effectiveSkill(p,'q'),x=p.x,mp=p.mp,damage=Math.round(core.attackPower(p)*skill.damage);
+  assert.equal(skill.range,252);assert.equal(skill.rearRange,140);
+  const cases=[[-139,0,true],[-80,0,true],[0,0,true],[251,0,true],[-140,0,false],[252,0,false],[0,114,false],[-80,113,true]];
+  const enemies=cases.map(([dx,dy],i)=>({...core.makeMonster('alley',i),x:x+dx*dir,y:p.y+dy,hp:10000,maxHp:10000,dead:false,speed:0}));
+  h.api.get().monsters.splice(0,h.api.get().monsters.length,...enemies);
+  h.api.cast('q');
+  enemies.forEach((m,i)=>assert.equal(m.hp,10000-(cases[i][2]?damage:0),`direction ${dir}, offset ${cases[i][0]}, lane ${cases[i][1]}`));
+  assert.equal(p.x,x);assert.equal(p.mp,mp-skill.mp);assert.equal(p.cooldowns.q,skill.cooldown);
+  assert.ok(h.api.get().effects.some(e=>e.focused&&e.size===skill.range));
+ }
+});
+
+test('rear Q extension does not change novice or bodybuilder attacks, sword basic attacks or sword W',()=>{
+ for(const [job,key] of [[null,'q'],['bodybuilder','q'],['bodybuilder','a'],['swordsman','a'],['swordsman','w']]){
+  const {h,p}=combatHarness(job),m=h.api.get().monsters[0];Object.assign(m,{x:p.x-80,y:p.y,hp:10000,maxHp:10000,dead:false,speed:0});
+  if(key==='a')h.api.attack();else h.api.cast(key);
+  assert.equal(m.hp,10000,`${job} ${key} must retain its original rear limit`);
+ }
+});
+
 test('two-second sword guard rejects other keyboard, held and pointer attacks before any resource or damage effect',()=>{
  const {h,p,monsters}=swordHarness();h.api.cast('q');assert.ok(h.api.get().combatMotion);h.api.cast('e');assert.equal(h.api.get().combatMotion,null);
  const mp=p.mp,cd=JSON.stringify(p.cooldowns),hp=monsters.map(m=>m.hp),x=p.x,effects=h.api.get().effects.length;

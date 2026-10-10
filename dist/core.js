@@ -223,7 +223,7 @@ export function effectiveSkill(p,key){
   if(key==='r')return {...skill,name:p.job==='protester'?'부정선거':'전직 궁극기',icon:'▣',mp:36,cooldown:32,damage:.9,range:490,duration:5,tick:.5,pull:20,hp:1500,description:p.job==='protester'?'시전 직후 0.3초간 행동할 수 없습니다. 체력 1500의 투표함을 5초간 설치해 주변 적의 우선 공격대상이 됩니다. 지속 피해를 주며 맞을 때마다 중심으로 조금씩 끌어당겨요.':'올림픽공원에서 시위대로 전직하세요.',enhanced:''};
  }
  if(base.requiresJob&&!JOBS[p.job])skill={...skill,name:key==='e'?'전직 스킬':'전직 궁극기',description:'Lv. 10부터 헬스장 또는 검도장에서 전직하세요.',enhanced:''};
- if(p.job==='swordsman'&&key==='q')skill={...skill,name:'번개 베기',range:skill.range*1.2,description:'검을 크게 휘둘러 전방의 적을 베어요.'};
+ if(p.job==='swordsman'&&key==='q')skill={...skill,name:'번개 베기',range:skill.range*1.2,rearRange:140,description:'검을 크게 휘둘러 전방과 몸 주변, 등 뒤 가까운 적을 베어요.'};
  if(p.job==='swordsman'&&key==='w')skill={...skill,name:'발도 돌진',range:skill.range*1.2,dash:skill.dash*1.2,description:'검을 뽑으며 앞으로 돌진해 경로의 적을 베어요.'};
  if(p.job==='bodybuilder'&&key==='q')skill={...skill,cooldown:1.7};
  if(p.job==='bodybuilder'&&key==='w')skill={...skill,name:'어깨 돌진',description:'어깨를 내밀어 전방의 적에게 강하게 부딪혀요.'};

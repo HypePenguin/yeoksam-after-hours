@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=114';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=114';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=114';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=115';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=115';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=115';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -1290,7 +1290,7 @@ function cast(key){
     effects.push(swingEffect(player.x,player.y-45-pz,skill.range,.38,player.job==='swordsman'?'focused':'default'));
    }
   }
-  monsters.filter(m=>!m.dead&&Math.abs(m.y-player.y)<(isPowered(player)?135:player.job==='swordsman'&&key==='q'?114:95)&&Math.abs(m.x-startX)<skill.range&&(m.x-startX)*facing>-25).forEach(m=>hitMonster(m,Math.round(attackPower(player)*skill.damage),14,player.job==='swordsman'&&key==='q'?'blade':'default'));
+  monsters.filter(m=>!m.dead&&Math.abs(m.y-player.y)<(isPowered(player)?135:player.job==='swordsman'&&key==='q'?114:95)&&Math.abs(m.x-startX)<skill.range&&(m.x-startX)*facing>-(skill.rearRange??25)).forEach(m=>hitMonster(m,Math.round(attackPower(player)*skill.damage),14,player.job==='swordsman'&&key==='q'?'blade':'default'));
   if(scene!=='playing')return;
   shake=isPowered(player)?5:3;beep(500,.22,'sawtooth',.025);
  }
