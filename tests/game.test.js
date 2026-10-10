@@ -795,8 +795,8 @@ test('last-character deletion produces an empty selection with creation availabl
 });
 
 test('job passives survive old-save restore and respawn without stacking equipment bonuses',()=>{
- for(const [job,map,speed,damage] of [['swordsman','dojo',1.1,100],['bodybuilder','gym',1,90]]){
-  const p=core.createCharacter('특성');p.level=10;p.map=map;
+ for(const [job,map,speed,damage] of [['swordsman','dojo',1.1,100],['bodybuilder','gym',1,90],['protester','olympic',1.1,100]]){
+  const p=core.createCharacter('특성',job==='protester'?'cat':'wanderer');p.level=10;p.map=map;
   assert.equal(core.movementMultiplier(p),1);assert.equal(core.incomingDamage(p,100),100);
   assert.equal(core.advanceJob(p,job).ok,true);assert.equal(core.movementMultiplier(p),speed);assert.equal(core.incomingDamage(p,100),damage);
   // No new saved fields are needed, including for characters created before these bonuses.
@@ -808,6 +808,21 @@ test('job passives survive old-save restore and respawn without stacking equipme
    restored=core.normalizeCharacter(JSON.parse(JSON.stringify(restored)));
   }
  }
+});
+
+test('protester walks 10 percent faster after promotion on every axis and in air while retaining W distance and buff stacking',()=>{
+ for(const job of [null,'protester'])for(const uniform of [false,true])for(const airborne of [false,true])for(const buff of [false,true]){
+  for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,-1]]){
+   const h=harness(),p=core.createCharacter('고양이보폭','cat');Object.assign(p,{level:20,job,x:1000,y:650,uniform:uniform?1:0,uniformEquipped:uniform});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);
+   p.respectTime=buff?10:0;p.concertTime=buff?10:0;
+   if(dx)h.api.keys.add(dx>0?'ArrowRight':'ArrowLeft');if(dy)h.api.keys.add(dy>0?'ArrowDown':'ArrowUp');if(airborne)h.api.jump();
+   const x=p.x,y=p.y,norm=Math.hypot(dx,dy),speed=(job==='protester'?1.1:1)*(uniform?1.2:1)*(buff?1.2*1.2:1);
+   for(let i=0;i<12;i++)h.api.update(1/60);
+   closeTo(p.x-x,dx/norm*285*speed*.2);closeTo(p.y-y,dy/norm*175*speed*.2);
+   h.api.keys.clear();const before=p.x;h.api.cast('w');closeTo(Math.abs(p.x-before),210);
+  }
+ }
+ assert.match(core.JOBS.protester.passive,/점프 높이 \+20%.*기본 이동속도 \+10%/);
 });
 
 test('swordsman moves 10% faster on every axis and in air while W follows its job-specific dash distance',()=>{
@@ -1656,7 +1671,7 @@ test('title migration, ownership checks and attack bonus remain stable across jo
 test('cat bottle buffs explosion damage and independent explosion/fire radii at hit boundaries',()=>{
  for(const phase of ['explosion','fire'])for(const axis of ['x','y'])for(const edge of [-1,1]){
   const h=harness(),p=core.createCharacter('화염강화','cat');Object.assign(p,{level:15,job:'protester',map:'alley',x:1000});p.mp=core.maxMp(p);h.api.start(p);
-  const skill=core.effectiveSkill(p,'e');assert.equal(skill.damage,2.75);assert.equal(skill.radius,105*1.5);assert.ok(Math.abs(skill.burnRadius-105*.86*1.7)<1e-9);
+  const skill=core.effectiveSkill(p,'e');assert.equal(skill.damage,2.75);assert.equal(skill.radius,157.5*1.2);assert.ok(Math.abs(skill.burnRadius-153.51*1.2)<1e-9);
   h.api.startCatCharge('test');h.api.releaseCatCharge('test');const bottle=h.api.get().catProjectiles[0];bottle.elapsed=bottle.duration;
   const monsters=h.api.get().monsters,m=monsters[0];monsters.forEach(m=>{m.x=2300;m.home=m.x;m.speed=0;m.hp=m.maxHp=10000;});
   const radius=phase==='explosion'?skill.radius:skill.burnRadius;
@@ -1785,14 +1800,14 @@ test('cat R locks all actions for 0.3 seconds across frame rates, without lockin
   const x=p.x,mp=p.mp;h.api.keys.add('ArrowRight');h.api.attack();h.api.cast('q');h.api.cast('w');h.api.startCatCharge('test');h.api.jump();
   assert.equal(p.mp,mp);assert.equal(h.api.get().catCharge,null);assert.equal(h.api.get().jumpPrep,0);assert.equal(h.api.get().combatMotion.kind,'catBallot');
   for(let i=0;i<fps/2;i++)h.api.update(1/fps);
-  assert.ok(Math.abs(p.x-x-285*.2)<1e-7,'only 0.2 seconds of the first half-second are movable');assert.ok(h.api.get().catBallot.remaining>4);
+  assert.ok(Math.abs(p.x-x-285*1.1*.2)<1e-7,'only 0.2 seconds of the first half-second are movable at promoted speed');assert.ok(h.api.get().catBallot.remaining>4);
   h.api.attack();assert.equal(h.api.get().combatMotion.kind,'catPunch');
  }
 });
 test('cancelled cat E and scene resets cannot leave a movement lock behind',()=>{
  const h=harness(),p=core.createCharacter('시전 취소','cat');Object.assign(p,{level:15,job:'protester',x:1100});p.mp=core.maxMp(p);h.api.start(p);
- h.api.startCatCharge('keyboard');h.windowEvents.get('blur').forEach(fn=>fn());h.api.keys.add('ArrowRight');h.api.update(.1);assert.equal(p.x,1128.5);
- h.api.cast('r');h.api.resetCombat();h.api.keys.add('ArrowRight');h.api.update(.1);assert.equal(p.x,1157);
+ h.api.startCatCharge('keyboard');h.windowEvents.get('blur').forEach(fn=>fn());h.api.keys.add('ArrowRight');h.api.update(.1);closeTo(p.x,1131.35);
+ h.api.cast('r');h.api.resetCombat();h.api.keys.add('ArrowRight');h.api.update(.1);closeTo(p.x,1162.7);
 });
 
 test('dungeon patrol never snaps back to the spawn after chasing, and stun pauses it',()=>{

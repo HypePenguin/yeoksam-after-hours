@@ -14,7 +14,7 @@ export const JOBS = {
  mage:{id:'mage',name:'마법사',classId:'rabbit',map:'town',maps:['town','gangnam','yeoksamStreet'],e:'마력 방벽',r:'존경!',passive:'W가 순간 이동으로 변경'},
  bodybuilder:{id:'bodybuilder',name:'바디빌더',map:'gym',e:'회복',r:'근육 각성',passive:'받는 피해 10% 감소'},
  swordsman:{id:'swordsman',name:'검사',map:'dojo',e:'막기',r:'섬광 연참',passive:'기본 이동속도 +10%'},
- protester:{id:'protester',name:'시위대',map:'olympic',classId:'cat',e:'화염병',r:'부정선거',passive:'점프 높이 +20%'}
+ protester:{id:'protester',name:'시위대',map:'olympic',classId:'cat',e:'화염병',r:'부정선거',passive:'점프 높이 +20% · 기본 이동속도 +10%'}
 };
 export const jobName=p=>JOBS[p?.job]?.name||(CLASSES.find(c=>c.id===p?.classId)?.name||'펭귄 모험가');
 export const ITEMS = {
@@ -35,7 +35,7 @@ export const jumpHeightMultiplier=p=>p?.classId==='cat'&&p?.job==='protester'?1.
 export const hasTypeATitle=p=>!!(p?.typeATitle>0&&p.typeATitleEquipped);
 export const itemEquipped=(p,id)=>id==='typeATitle'?hasTypeATitle(p):id==='uniform'&&p.uniform>0&&p.uniformEquipped;
 export function equipTypeATitle(p){if(!(p.typeATitle>0))return {ok:false,message:'먼저 A형을 처치해 칭호를 얻으세요.'};p.typeATitleEquipped=!p.typeATitleEquipped;return {ok:true,message:p.typeATitleEquipped?'A형 칭호 장착 · 공격력 +5%':'A형 칭호를 해제했어요.'};}
-export const movementMultiplier=p=>(p?.job==='swordsman'?1.1:1)*(p?.uniform>0&&p.uniformEquipped?1.2:1)*(p?.respectTime>0?1.2:1)*(p?.concertTime>0?1.2:1);
+export const movementMultiplier=p=>(['swordsman','protester'].includes(p?.job)?1.1:1)*(p?.uniform>0&&p.uniformEquipped?1.2:1)*(p?.respectTime>0?1.2:1)*(p?.concertTime>0?1.2:1);
 export const incomingDamage=(p,damage,multiplier=1)=>Math.max(0,Math.round(damage*(p?.job==='bodybuilder'?0.9:1)*(p?.respectTime>0?.8:1)*multiplier));
 export function equipUniform(p){if(!p.uniform)return {ok:false,message:'먼저 신원미상의 예비군을 처치해 군복을 얻으세요.'};p.uniformEquipped=!p.uniformEquipped;return {ok:true,message:p.uniformEquipped?'군복 장착 · 이동속도 +20%':'군복을 벗었어요.'};}
 export const validItem=id=>Object.hasOwn(ITEMS,id);
@@ -219,7 +219,7 @@ export function effectiveSkill(p,key){
  if(p?.classId==='cat'){
   if(key==='q')return {...skill,name:'앞발 할퀴기',icon:'爪',mp:9,cooldown:2.4,damage:2.25,range:195,description:'전방의 적을 발톱으로 크게 할퀴어요.',enhanced:''};
   if(key==='w')return {...skill,name:'뒤로 뛰기',icon:'↶',mp:12,cooldown:3.5,damage:0,range:0,dash:210,invulnerable:.7,description:'바라보는 방향의 뒤로 빠르게 뛰어 0.7초 동안 무적이 돼요.',enhanced:''};
-  if(key==='e')return {...skill,name:p.job==='protester'?'화염병':'전직 스킬',icon:'🔥',mp:20,cooldown:7,damage:2.75,range:180,maxRange:490,charge:1,radius:157.5,burnRadius:153.51,burn:3,description:p.job==='protester'?'E를 최대 1초간 누르면 사거리가 늘어요. 차징·투척 중 이동할 수 없고, 착탄 후 바닥에 3초간 불길을 남깁니다.':'올림픽공원에서 시위대로 전직하세요.',enhanced:''};
+  if(key==='e')return {...skill,name:p.job==='protester'?'화염병':'전직 스킬',icon:'🔥',mp:20,cooldown:7,damage:2.75,range:180,maxRange:490,charge:1,radius:189,burnRadius:184.212,burn:3,description:p.job==='protester'?'E를 최대 1초간 누르면 사거리가 늘어요. 차징·투척 중 이동할 수 없고, 착탄 후 바닥에 3초간 불길을 남깁니다.':'올림픽공원에서 시위대로 전직하세요.',enhanced:''};
   if(key==='r')return {...skill,name:p.job==='protester'?'부정선거':'전직 궁극기',icon:'▣',mp:36,cooldown:32,damage:.9,range:490,duration:5,tick:.5,pull:20,hp:1500,description:p.job==='protester'?'시전 직후 0.3초간 행동할 수 없습니다. 체력 1500의 투표함을 5초간 설치해 주변 적의 우선 공격대상이 됩니다. 지속 피해를 주며 맞을 때마다 중심으로 조금씩 끌어당겨요.':'올림픽공원에서 시위대로 전직하세요.',enhanced:''};
  }
  if(base.requiresJob&&!JOBS[p.job])skill={...skill,name:key==='e'?'전직 스킬':'전직 궁극기',description:'Lv. 10부터 헬스장 또는 검도장에서 전직하세요.',enhanced:''};
