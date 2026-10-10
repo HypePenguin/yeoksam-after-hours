@@ -231,9 +231,9 @@ test('trainer dialog changes job once and updates persistent class-specific skil
  assert.equal(h.api.get().modal,'job');assert.match(h.el('#modal-root').innerHTML,/검사로 전직하기/);h.el('#advance-job').onclick();assert.equal(p.job,'swordsman');assert.equal(JSON.parse(h.storage.get(core.SAVE_KEY)).characters[0].job,'swordsman');
  assert.match(h.el('#game-ui').innerHTML,/막기/);assert.match(h.el('#game-ui').innerHTML,/섬광 연참/);
 });
-test('swordsman block works at full HP, blocks contact and expires after one second',()=>{
- const {h,p,monsters}=swordHarness();advance(h,2.1);p.hp=core.maxHp(p);monsters.forEach(m=>m.x=p.x);h.api.cast('e');assert.equal(h.api.get().guardTime,1);const hp=p.hp;
- advance(h,.9);assert.equal(p.hp,hp);assert.ok(h.api.get().guardTime>0);advance(h,.6);assert.equal(h.api.get().guardTime,0);assert.ok(p.hp<hp);
+test('swordsman block works at full HP, blocks contact and expires after two seconds',()=>{
+ const {h,p,monsters}=swordHarness();advance(h,2.1);p.hp=core.maxHp(p);monsters.forEach(m=>m.x=p.x);h.api.cast('e');assert.equal(h.api.get().guardTime,2);const hp=p.hp;
+ advance(h,1.9);assert.equal(p.hp,hp);assert.ok(h.api.get().guardTime>0);advance(h,.6);assert.equal(h.api.get().guardTime,0);assert.ok(p.hp<hp);
 });
 test('sword ultimate targets nearest unique enemies one by one, caps at five and auto-strikes exactly once',()=>{
  const {h,p,monsters}=swordHarness();assert.equal(h.api.startSwordCharge(),true);assert.equal(p.mp,170);assert.equal(p.cooldowns.r,30);assert.equal(h.api.get().swordUlt.targets.length,1);
@@ -727,7 +727,7 @@ test('counter warning and recovery accept damage while the full three-second sta
  h.api.hitMonster(b,200);assert.equal(b.hp,hp-200);assert.equal(p.hp,330);
 });
 test('counter ignores spawn invulnerability and guard, but every successful repeat attack still applies passive defense',()=>{
- const {h,p,b}=counterHarness();h.api.cast('e');assert.ok(h.api.get().guardTime>0);h.api.attack();assert.equal(p.hp,480);assert.equal(b.hp,b.maxHp);advance(h,1.01);h.api.attack();assert.equal(p.hp,395);
+ const {h,p,b}=counterHarness();h.api.cast('e');assert.ok(h.api.get().guardTime>0);h.api.attack();assert.equal(p.hp,480);assert.equal(b.hp,b.maxHp);advance(h,2.01);h.api.attack();assert.equal(p.hp,395);
  h.api.attack();assert.equal(p.hp,395,'attack cooldown prevents duplicate input');advance(h,.35);h.api.attack();assert.equal(p.hp,310);
  const fresh=bossHarness();fresh.h.api.startBossFight();const freshBoss=fresh.h.api.get().boss;freshBoss.phase='counter';assert.ok(fresh.h.api.get().invincible>0);
  fresh.h.api.hitMonster(freshBoss,200);assert.equal(fresh.p.hp,330);assert.equal(freshBoss.hp,freshBoss.maxHp);
@@ -859,14 +859,14 @@ function combatHarness(job='bodybuilder',power=0){
 }
 const closeTo=(actual,expected,message)=>assert.ok(Math.abs(actual-expected)<1e-8,message||`${actual} differs from ${expected}`);
 
-test('one-second sword guard rejects keyboard, held and pointer attacks before any resource or damage effect',()=>{
+test('two-second sword guard rejects other keyboard, held and pointer attacks before any resource or damage effect',()=>{
  const {h,p,monsters}=swordHarness();h.api.cast('q');assert.ok(h.api.get().combatMotion);h.api.cast('e');assert.equal(h.api.get().combatMotion,null);
  const mp=p.mp,cd=JSON.stringify(p.cooldowns),hp=monsters.map(m=>m.hp),x=p.x,effects=h.api.get().effects.length;
- for(const code of ['KeyA','KeyQ','KeyW','KeyE','KeyR']){key(h,code);h.events.get('keyup')({code});}
+ for(const code of ['KeyA','KeyQ','KeyW','KeyR']){key(h,code);h.events.get('keyup')({code});}
  h.api.keys.add('KeyA');h.api.attack();assert.equal(h.api.startSwordCharge('assist'),false);
  for(const skill of ['a','q','w','r']){const b=h.el(`guard-${skill}`);b.dataset.skill=skill;h.api.bindSkillButton(b);b.onclick({detail:0});if(skill==='r'){b.listeners.get('pointerdown')({pointerId:8,preventDefault(){}});b.listeners.get('pointerup')({pointerId:8});}}
  assert.equal(p.mp,mp);assert.equal(JSON.stringify(p.cooldowns),cd);assert.deepEqual(monsters.map(m=>m.hp),hp);assert.equal(p.x,x);assert.equal(h.api.get().effects.length,effects);assert.equal(h.api.get().swordUlt,null);
- h.api.update(.99);assert.ok(h.api.get().guardTime>0);assert.deepEqual(monsters.map(m=>m.hp),hp);h.api.keys.clear();h.api.update(.011);assert.equal(h.api.get().guardTime,0);
+ h.api.update(1.99);assert.ok(h.api.get().guardTime>0);assert.deepEqual(monsters.map(m=>m.hp),hp);h.api.keys.clear();h.api.update(.011);assert.equal(h.api.get().guardTime,0);
  h.api.attack();assert.ok(monsters[0].hp<hp[0]);assert.equal(h.api.startSwordCharge('assist'),true,'R can activate immediately after guard finishes');
 });
 
@@ -877,6 +877,41 @@ test('sword guard blocks contact and every boss attack pattern without a hurt re
   if(phase==='wave')b.projectiles=[{x:890,y:650,dir:1,life:3,spent:false}];h.api.update(.01);
   assert.equal(p.hp,480,phase);assert.equal(h.api.get().hurtTime,0);assert.ok(h.api.get().guardTime>0);
  }
+});
+
+test('second E releases guard through keyboard or HUD, sweeps both sides once and keeps MP and cooldown',()=>{
+ for(const input of ['keyboard','hud'])for(const dir of [-1,1]){
+  const {h,p}=combatHarness('swordsman');h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');h.api.update(.01);h.api.keys.clear();
+  const start=p.x,skill=core.effectiveSkill(p,'e'),center=start+dir*skill.releaseDash/2;
+  const enemies=h.api.get().monsters.slice(0,4);
+  const positions=[[center+160,p.y],[center-160,p.y],[center,p.y+100],[center+190,p.y]];
+  enemies.forEach((m,i)=>Object.assign(m,{dead:false,x:positions[i][0],y:positions[i][1],hp:10000,maxHp:10000,speed:0}));
+  h.api.cast('e');const mp=p.mp,cd=p.cooldowns.e;
+  assert.equal(h.el('[data-skill="e"] .skill-symbol .skill-cue').textContent,'발도');
+  if(input==='keyboard'){key(h,'KeyE');h.events.get('keyup')({code:'KeyE'});key(h,'KeyE');}
+  else{const b=h.el('recast-e');b.dataset.skill='e';h.api.bindSkillButton(b);b.onclick({detail:1});b.onclick({detail:1});}
+  assert.equal(h.api.get().guardTime,0);closeTo(p.x,start+dir*90);assert.equal(p.mp,mp);assert.equal(p.cooldowns.e,cd);
+  assert.deepEqual(Array.from(enemies,m=>m.hp),[10000,10000,10000,10000].map((hp,i)=>hp-(i<3?Math.round(core.attackPower(p)*skill.releaseDamage):0)));
+  assert.equal(h.api.combatPose().kind,'draw');assert.equal(h.api.combatDisplayX(),start);assert.ok(h.api.get().effects.some(e=>e.type==='guardDraw'));
+  const health=enemies.map(m=>m.hp);h.api.attack();h.api.cast('q');assert.equal(h.api.startSwordCharge('pointer:1'),false);assert.equal(p.mp,mp);assert.deepEqual(enemies.map(m=>m.hp),health);
+  render(h);assert.ok(h.draws.some(d=>d.asset==='assets/combat-swordsman.webp'));
+  h.api.update(.29);h.api.cast('e');assert.equal(h.api.get().guardTime,0,'expired guard cannot recast during its original cooldown');
+ }
+});
+
+test('guard release clamps short dash at map edges and removes protection immediately',()=>{
+ for(const dir of [-1,1]){
+  const {h,p}=combatHarness('swordsman');p.x=dir<0?45:core.MAPS[p.map].width-45;
+  h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');h.api.update(.01);h.api.keys.clear();const x=p.x;
+  const m=h.api.get().monsters[0];Object.assign(m,{dead:false,x,y:p.y,hp:10000,maxHp:10000,speed:0,attack:100});
+  h.api.cast('e');h.api.update(.01);assert.equal(p.hp,480);h.api.cast('e');assert.equal(p.x,x);assert.equal(h.api.get().invincible<=0,true);
+  h.api.update(.01);assert.equal(p.hp,380,'release is an attack, not an extra invulnerability window');
+ }
+});
+
+test('guard release still respects boss counter and cannot reward or hit inactive bosses',()=>{
+ const {h,p,b}=counterHarness();h.api.cast('e');const hp=b.hp;h.api.cast('e');assert.equal(b.hp,hp);assert.ok(p.hp<480,'counter reflects the release attack after protection ends');
+ const idle=bossHarness();const target=idle.h.api.get().boss;idle.p.x=target.x;idle.h.api.cast('e');idle.h.api.cast('e');assert.equal(target.hp,target.maxHp);assert.equal(target.active,false);
 });
 
 test('builder E heals over exactly 1.5 active seconds, pauses with gameplay, and preserves normal and powered budgets',()=>{
@@ -999,8 +1034,8 @@ test('combat motion, recovery and guard clear on world and scene changes and nev
  }
 });
 
-test('sword guard ends its contact protection at one second without lingering invincibility',()=>{
- const {h,p}=combatHarness('swordsman'),m=h.api.get().monsters[0];Object.assign(m,{dead:false,x:p.x,y:p.y,speed:0,attack:100});h.api.cast('e');h.api.update(.9);h.api.update(.099);assert.equal(p.hp,480);assert.ok(h.api.get().guardTime>0);assert.ok(h.api.get().invincible<=0);h.api.update(.002);assert.equal(h.api.get().guardTime,0);assert.equal(p.hp,380);
+test('sword guard ends its contact protection at two seconds without lingering invincibility',()=>{
+ const {h,p}=combatHarness('swordsman'),m=h.api.get().monsters[0];Object.assign(m,{dead:false,x:p.x,y:p.y,speed:0,attack:100});h.api.cast('e');h.api.update(1.9);h.api.update(.099);assert.equal(p.hp,480);assert.ok(h.api.get().guardTime>0);assert.ok(h.api.get().invincible<=0);h.api.update(.002);assert.equal(h.api.get().guardTime,0);assert.equal(p.hp,380);
 });
 
 test('sword attacks retain lightning while powered recovery uses one combined status banner',()=>{
@@ -1214,7 +1249,7 @@ test('moving sword guard cycles eight poses in both outfits and directions, then
    core.equipUniform(p);const dressed=assertUniformRender(h,'sword-guard-walk',true);assertUniformGeometry(dressed,plain);assert.equal(Math.sign(dressed.matrix[0]),dir);
    assert.equal(h.draws.some(d=>d.asset==='assets/job-equipment.webp'),false,'guard atlas already carries the sword');core.equipUniform(p);
   }
-  assert.equal(seen.size,8);core.equipUniform(p);h.api.update(.201);assert.equal(h.api.get().guardTime,0);assert.equal(h.api.combatPose(),null);assertUniformRender(h,'penguin-walk',true);
+  assert.equal(seen.size,8);core.equipUniform(p);h.api.update(1.201);assert.equal(h.api.get().guardTime,0);assert.equal(h.api.combatPose(),null);assertUniformRender(h,'penguin-walk',true);
   h.api.keys.clear();h.api.update(.01);assertUniformRender(h,'penguin',true);
  }
 });

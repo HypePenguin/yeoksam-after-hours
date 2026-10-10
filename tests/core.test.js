@@ -11,7 +11,7 @@ test('active defense multiplies passive defense before one final rounding',()=>{
  assert.equal(incomingDamage(p,5,.5),2,'rounding the passive first would incorrectly produce 3');
  assert.equal(incomingDamage(p,84,.5),38);
  for(const power of [0,12]){p.level=20;p.powerTime=power;p.hp=maxHp(p);p.mp=250;const e=effectiveSkill(p,'e');assert.equal(e.heal,power?.7:.4);assert.equal(e.recovery,1.5);assert.equal(e.reduction,.5);assert.equal(canUseSkill(p,'e').ok,true);}
- p.job='swordsman';assert.equal(effectiveSkill(p,'e').guard,1);assert.equal(effectiveSkill(p,'r').reduction,.8);
+ p.job='swordsman';assert.equal(effectiveSkill(p,'e').guard,2);assert.equal(effectiveSkill(p,'r').reduction,.8);
 });
 
 test('new character starts with 500 won, HP/MP, supplies and town location',()=>{

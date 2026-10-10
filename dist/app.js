@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=107';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=107';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=107';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=108';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=108';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=108';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -167,8 +167,10 @@ function refreshHealthHUD(){
 function refreshHUD(){if(scene!=='playing'||!$('#hud-level'))return;$('#hud-name').textContent=player.name;$('#hud-job').title=JOBS[player.job]?.passive||'';$('#hud-job').textContent=jobName(player)+(player.uniformEquipped?' · 군복 +20%':'');$('#xp-text').textContent=`${player.xp} / ${xpNeeded(player.level)}`;$('#hud-level').textContent=`Lv.${player.level}`;refreshHealthHUD();$('#mp-text').textContent=`${Math.floor(player.mp)} / ${maxMp(player)}`;$('#mp-bar').style.width=`${player.mp/maxMp(player)*100}%`;$('#xp-bar').style.width=`${player.xp/xpNeeded(player.level)*100}%`;$('#xp-bar').parentElement.title=`경험치 ${player.xp} / ${xpNeeded(player.level)}`;$('#hud-money').textContent=player.money.toLocaleString();refreshItemSlots();refreshBossHUD();$('#hud-saved').textContent=storageBroken?'저장 실패 · 브라우저 설정 확인':lastSavedLabel||'자동 저장 중';skillsFor(player).forEach(s=>{const b=$(`[data-skill="${s.key}"]`),locked=!skillUnlocked(player,s);
  b.title=locked?`잠금 · Lv.${s.level} 해금${s.requiresJob?' · 전직 필요':''}`:`${s.name} · Lv.${s.level}${s.requiresJob?' · 전직 필요':''} · ${s.description}`;
  b.setAttribute('aria-label',locked?`${s.key.toUpperCase()} 키, 잠금, 레벨 ${s.level}에 해금${s.requiresJob?', 전직 필요':''}`:`${s.name}, ${s.key.toUpperCase()} 키, 레벨 ${s.level}${s.requiresJob?' 전직 후':''}, MP ${s.mp}`);
- b.setAttribute('aria-disabled',String(locked));b.classList.toggle('locked',locked);b.classList.toggle('cooldown',!locked&&cooldowns[s.key]>0);
- const symbol=b.querySelector('.skill-symbol'),cue=player.classId==='otter'&&s.key==='w'&&otterWave&&!otterWave.riding&&otterWave.elapsed<=otterWave.skill.rideWindow?'↗':cooldowns[s.key]>0?String(Math.ceil(cooldowns[s.key])):'';
+ const guardRelease=player.job==='swordsman'&&s.key==='e'&&guardTime>0;
+ if(guardRelease){b.title='E 다시 누르기 · 막기 해제 후 전진 발도';b.setAttribute('aria-label',b.title);}
+ b.setAttribute('aria-disabled',String(locked));b.classList.toggle('locked',locked);b.classList.toggle('cooldown',!locked&&!guardRelease&&cooldowns[s.key]>0);
+ const symbol=b.querySelector('.skill-symbol'),cue=guardRelease?'발도':player.classId==='otter'&&s.key==='w'&&otterWave&&!otterWave.riding&&otterWave.elapsed<=otterWave.skill.rideWindow?'↗':cooldowns[s.key]>0?String(Math.ceil(cooldowns[s.key])):'';
  if(skillArtFor(s.key)&&!locked){
   if(symbol.dataset.art!==s.key||symbol.dataset.artSource!==skillArtFor(s.key)){symbol.innerHTML=skillSymbolMarkup(s.key,s.icon);symbol.dataset.art=s.key;symbol.dataset.artSource=skillArtFor(s.key);}
   const overlay=symbol.querySelector('.skill-cue');overlay.textContent=cue;overlay.hidden=!cue;
@@ -320,7 +322,7 @@ function swordCandidates(seen=new Set()){
   .sort((a,b)=>Math.hypot(a.x-player.x,a.y-player.y)-Math.hypot(b.x-player.x,b.y-player.y));
 }
 function startSwordCharge(input='keyboard'){
- if(scene!=='playing'||modal||swordUlt||guardTime>0||player.job!=='swordsman')return false;
+ if(scene!=='playing'||modal||swordUlt||guardTime>0||combatMotion?.guardRelease||player.job!=='swordsman')return false;
  const check=canUseSkill(player,'r',cooldowns.r);if(!check.ok){toast(check.message);return false;}
  if(!swordCandidates().length){toast('현재 맵에 조준할 적이 없어요.');return false;}
  player.mp-=check.skill.mp;cooldowns.r=check.skill.cooldown;walking=false;resetJump();combatMotion=null;
@@ -377,7 +379,7 @@ function refreshCombatHUD(){
  const banner=$('#combat-banner');banner.classList.toggle('otter-status',player?.classId==='otter');banner.hidden=!hackerUlt&&!chickCharge&&chickStealth<=0&&!swordUlt&&guardTime<=0&&!recovery&&!catCharge&&!rabbitShield&&!otterShield&&!otterBubbles&&!otterConcert&&!otterWave&&!(player?.respectTime>0);
  if(player?.respectTime>0||rabbitShield){$('#combat-title').textContent=player.respectTime>0?'존경! · 아군 강화':'마력 방벽';$('#combat-clock').textContent=`${Math.ceil(player.respectTime||rabbitShield?.remaining||0)}초`;$('#combat-detail').textContent=player.respectTime>0?'이동·공격·최대 HP +20% / 피해 20% 감소':`남은 보호막 ${Math.ceil(rabbitShield.hp)}`;$('#combat-bar').style.width=`${(player.respectTime?player.respectTime/10:rabbitShield.remaining/3)*100}%`;}
  if(swordUlt){const charging=swordUlt.phase==='charging',alive=monsters.filter(m=>!m.dead&&swordUlt.targets.includes(m.id)).length,solo=charging?alive===1:swordUlt.damageMultiplier>1;$('#combat-title').textContent=charging?'섬광 연참 · 기 모으기':'섬광 연참';$('#combat-clock').textContent=charging?`${swordUlt.elapsed.toFixed(1)} / 3초`:'연속 베기';$('#combat-detail').textContent=charging?`${alive} / 5명 조준${solo?' · 단일 대상 2배':''} · 받는 피해 80% 감소 · 손을 떼면 발동`:`연속 베기${solo?' · 단일 대상 2배':''} · 받는 피해 80% 감소`;$('#combat-bar').style.width=`${swordUlt.elapsed/3*100}%`;}
- else if(guardTime>0){$('#combat-title').textContent='막기';$('#combat-clock').textContent=`${guardTime.toFixed(1)}초`;$('#combat-detail').textContent='공격 차단 · 공격/스킬 사용 불가';$('#combat-bar').style.width=`${guardTime*100}%`;}
+ else if(guardTime>0){$('#combat-title').textContent='막기';$('#combat-clock').textContent=`${guardTime.toFixed(1)}초`;$('#combat-detail').textContent='E 다시 누르기 · 전진 발도';$('#combat-bar').style.width=`${guardTime/effectiveSkill(player,'e').guard*100}%`;}
  else if(recovery){$('#combat-title').textContent=isPowered(player)?'근육 각성 · 한 번 더!':'한 번 더!';$('#combat-clock').textContent=`${recovery.remaining.toFixed(1)}초`;$('#combat-detail').textContent='HP 회복 · 피해 50% 감소 · 이동 60% · 공격 불가';$('#combat-bar').style.width=`${recovery.remaining/recovery.duration*100}%`;}
  else if(catCharge){$('#combat-title').textContent='화염병 · 사거리 충전';$('#combat-clock').textContent=`${catCharge.elapsed.toFixed(1)} / 1초`;$('#combat-detail').textContent='차징·투척 중 이동 불가 · 1초에 자동 발동';$('#combat-bar').style.width=`${catCharge.elapsed*100}%`;}
  if(hackerUlt||chickCharge||chickStealth>0){const u=hackerUlt;$('#combat-title').textContent=u?'해킹':chickCharge?'시스템 정지 · 차징':'시크릿 모드';$('#combat-clock').textContent=u?`${Math.ceil(u.remaining)}초`:chickCharge?`${chickCharge.elapsed.toFixed(1)} / ${chickCharge.skill.charge}초`:`${chickStealth.toFixed(1)}초`;$('#combat-detail').textContent=u?(u.phase==='selecting'?'가까운 적 우선 · 피해 80% 감소':'해킹당함! · 5초 경직과 지속 피해 · 피해 80% 감소'):chickCharge?'이동 불가 · E 놓으면 발동 · 은신 유지':'이동속도 +50% · 다음 공격 +20%';$('#combat-bar').style.width=`${(u?u.remaining/(u.phase==='selecting'?u.skill.selection:u.skill.duration):chickCharge?chickCharge.elapsed/chickCharge.skill.charge:chickStealth/5)*100}%`;}
@@ -1174,9 +1176,28 @@ function attack(){
  if(player.job)effects.push(swingEffect(player.x,player.y-45-pz,powered?160:sword?120:100,.22));beep(300,.06,'triangle');
  monsters.filter(m=>!m.dead&&Math.abs(m.y-player.y)<(powered?105:sword?86.4:72)&&Math.abs(m.x-player.x)<(powered?195:sword?156:130)&&(m.x-player.x)*facing>-25&&pz<110).forEach(m=>hitMonster(m,basicAttackPower(player)));
 }
+function releaseSwordGuard(){
+ if(player?.job!=='swordsman'||guardTime<=0)return;
+ const skill=effectiveSkill(player,'e'),fromX=player.x;
+ guardTime=0;resetJump();player.x=clamp(fromX+facing*skill.releaseDash,45,MAPS[player.map].width-45);
+ attackTimer=Math.max(attackTimer,skill.releaseDuration);
+ playCombatMotion('draw',skill.releaseDuration,{fromX,toX:player.x,guardRelease:true});
+ const x=(fromX+player.x)/2,y=player.y-45;
+ effects.push({type:'guardDraw',x,y,dir:facing,size:skill.releaseRange,life:.32,max:.32,...FX_PALETTES.electric},
+  {type:'dash',x:fromX,y,toX:player.x,toY:y,life:.32,max:.32,...FX_PALETTES.electric,sword:true,travelDuration:skill.releaseDuration*.82});
+ attackImpactAt(player.x,y,110);shake=Math.max(shake,4);beep(800,.12,'triangle');
+ // Sweep around the short dash, including enemies behind the guarding player.
+ for(const m of [...monsters])if(canTarget(m)&&Math.hypot(m.x-x,(m.y-player.y)*1.4)<=skill.releaseRange){
+  hitMonster(m,Math.round(attackPower(player)*skill.releaseDamage));
+  if(scene!=='playing'||modal)return;
+ }
+ refreshHUD();save();
+}
 function cast(key){
  if(hackerUlt||chickCharge||otterConcert)return;
- if(scene!=='playing'||modal||swordUlt||guardTime>0||recovery)return;
+ if(scene!=='playing'||modal||swordUlt||recovery||combatMotion?.guardRelease)return;
+ // The second E belongs to the active guard, so it must precede cooldown checks.
+ if(guardTime>0){if(key==='e')releaseSwordGuard();return;}
  if(player.classId==='chick'){castChick(key);return;}
  if(player.classId==='otter'){castOtter(key);return;}
  if(player.classId==='rabbit'){castRabbit(key);return;}
@@ -1434,7 +1455,7 @@ function isolatedCombatFrame(asset,index,img,frame){
  }catch{}frames.set(key,result);return result;
 }
 function combatPose(){
- if(guardTime>0)return {kind:'guard',frame:guardTime>.9?0:hurtTime>0?2:1,dir:facing};
+ if(guardTime>0)return {kind:'guard',frame:guardTime>effectiveSkill(player,'e').guard-.1?0:hurtTime>0?2:1,dir:facing};
  if(swordUlt?.phase==='charging')return {kind:'draw',frame:0,dir:facing};
  if(combatMotion){const t=combatMotion.elapsed/combatMotion.duration;return {...combatMotion,frame:t<.12?0:t<.48?1:t<.82?2:3};}
  if(recovery)return {kind:'recover',frame:recovery.remaining>1.4?0:hurtTime>0?2:1,dir:facing};
@@ -1611,7 +1632,16 @@ function drawCatFields(){
  if(catBallot){const b=catBallot,x=b.x-camera,y=b.y,t=b.remaining/b.skill.duration;ctx.save();ctx.globalAlpha=Math.min(1,t*3);ctx.strokeStyle='#f4d8c0';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y-43,b.skill.range*.82,b.skill.range*.36,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle=b.hit>0?'#ffffff':'#ece6d9';ctx.strokeStyle='#493f49';ctx.lineWidth=3;ctx.fillRect(x-24,y-75,48,69);ctx.strokeRect(x-24,y-75,48,69);ctx.fillStyle='#aeb9bb';ctx.fillRect(x-28,y-82,56,12);ctx.fillStyle='#403b43';ctx.fillRect(x-9,y-79,18,3);roundedRect(x-43,y-114,86,7,3,'#29252ddd');roundedRect(x-43,y-114,86*b.hp/b.maxHp,7,3,'#a8e7c4');label(`투표함 · ${Math.ceil(b.hp)} / ${b.maxHp}`,x,y-135,'#d9ffe8',11);for(let i=0;i<15;i++){const a=i*2.4+worldTime*3,r=(45+(i%5)*35)*b.skill.range/245;ctx.save();ctx.translate(x+Math.cos(a)*r,y-95+Math.sin(a*1.3)*42*b.skill.range/245);ctx.rotate(a);ctx.fillStyle='#fffaf0';ctx.fillRect(-7,-4,14,8);ctx.strokeStyle='#d6bc8e';ctx.strokeRect(-7,-4,14,8);ctx.restore();}ctx.restore();}
  if(catCharge){const skill=catCharge.skill,t=catCharge.elapsed/skill.charge,reach=skill.range+(skill.maxRange-skill.range)*t,x=player.x+facing*reach-camera;ctx.save();ctx.strokeStyle='#ffb777';ctx.setLineDash([9,7]);ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(player.x-camera,player.y-20);ctx.quadraticCurveTo((player.x-camera+x)/2,player.y-150,x,player.y-20);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.ellipse(x,player.y-20,skill.radius*.7,skill.radius*.25,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
 }
-function drawEffects(){effects.forEach(e=>{const t=e.life/e.max,route=e.followDash,x=route?route.fromX+(route.toX-route.fromX)*dashProgress(e.max-e.life,route.duration):e.x;ctx.save();ctx.translate(x-camera,e.y);ctx.globalAlpha=Math.min(1,t*2);ctx.strokeStyle=e.color;ctx.fillStyle=e.color;ctx.shadowColor=e.glow||e.color;ctx.shadowBlur=18;ctx.lineWidth=e.type==='slash'?9:4;if(e.type==='lightning'){
+function drawGuardDraw(e,t){
+ ctx.scale(e.dir,1);ctx.lineCap='round';
+ const angle=(1-t)*Math.PI*2-.8;
+ for(let i=0;i<3;i++){
+  const radius=e.size*(1-i*.12);
+  ctx.beginPath();ctx.ellipse(0,0,radius,radius/1.4,0,angle-i*.3,angle+2.8-i*.3);
+  ctx.strokeStyle=i===1?e.accent:e.color;ctx.lineWidth=i===0?8:3;ctx.stroke();
+ }
+}
+function drawEffects(){effects.forEach(e=>{const t=e.life/e.max,route=e.followDash,x=route?route.fromX+(route.toX-route.fromX)*dashProgress(e.max-e.life,route.duration):e.x;ctx.save();ctx.translate(x-camera,e.y);ctx.globalAlpha=Math.min(1,t*2);ctx.strokeStyle=e.color;ctx.fillStyle=e.color;ctx.shadowColor=e.glow||e.color;ctx.shadowBlur=18;ctx.lineWidth=e.type==='slash'?9:4;if(e.type==='guardDraw'){drawGuardDraw(e,t);}else if(e.type==='lightning'){
   ctx.scale(e.dir||1,1);const phase=(1-t)*4;
   for(let bolt=0;bolt<3;bolt++){ctx.beginPath();for(let i=0;i<6;i++){const x=-e.size*.4+i*e.size*.2,y=Math.sin(i*2.2+bolt*2+e.seed+phase)*e.size*.19+(bolt-1)*e.size*.17;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.lineWidth=bolt===1?4:2;ctx.stroke();ctx.strokeStyle='#fffbd5';ctx.lineWidth=1;ctx.stroke();ctx.strokeStyle=e.color;}
  }else if(e.type==='hackZone'){drawHackGrid(e.width,e.height,1-t,false);}else if(e.type==='claw'){ctx.scale(e.dir||1,1);ctx.lineCap='round';for(let i=-1;i<=1;i++){ctx.beginPath();ctx.moveTo(-e.size*.4,-e.size*.3+i*e.size*.22);ctx.quadraticCurveTo(e.size*.15,-e.size*.55+i*e.size*.22,e.size*.48,e.size*.18+i*e.size*.22);ctx.lineWidth=5;ctx.stroke();}}else if(e.type==='impact'){drawImpact(e,t);}else if(e.type==='windSwing'){drawWindSwing(e,t);}else if(e.type==='dash'){drawDashTrail(e);}else if(e.type==='swordBlink'){drawSwordBlink(e,t);}else if(e.type==='blink'){ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(e.toX-e.x,e.toY-e.y);ctx.lineWidth=5;ctx.stroke();}else if(e.type==='slash'){ctx.scale(e.dir||1,1);ctx.beginPath();ctx.ellipse(30,0,e.size*.65,e.size*.4,-.2,-1.4+(.9-t)*.5,1.4+(.9-t)*.5);ctx.stroke();ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(40,-1,e.size*.52,e.size*.31,-.2,-1.3,1.3);ctx.stroke();}else if(e.type==='ring'){ctx.beginPath();ctx.ellipse(0,0,e.size*(1-t+.2),e.size*(1-t+.2)*.45,0,0,Math.PI*2);ctx.stroke();}else{for(let i=0;i<6;i++){const a=i*Math.PI/3;ctx.fillRect(Math.cos(a)*e.size*(1-t),Math.sin(a)*e.size*(1-t),5,5);}}ctx.restore();});texts.forEach(t=>{ctx.save();ctx.globalAlpha=Math.min(1,t.life*2);ctx.font=`bold ${t.text.length>10?16:22}px "Space Grotesk","IBM Plex Sans KR",sans-serif`;ctx.textAlign='center';ctx.strokeStyle='#0c2533';ctx.lineWidth=4;ctx.strokeText(t.text,t.x-camera,t.y);ctx.fillStyle=t.color;ctx.fillText(t.text,t.x-camera,t.y);ctx.restore();});}

@@ -226,7 +226,7 @@ export function effectiveSkill(p,key){
  if(p.job==='swordsman'&&key==='w')skill={...skill,name:'발도 돌진',range:skill.range*1.2,dash:skill.dash*1.2,description:'검을 뽑으며 앞으로 돌진해 경로의 적을 베어요.'};
  if(p.job==='bodybuilder'&&key==='q')skill={...skill,cooldown:1.7};
  if(p.job==='bodybuilder'&&key==='w')skill={...skill,name:'어깨 돌진',description:'어깨를 내밀어 전방의 적에게 강하게 부딪혀요.'};
- if(p.job==='swordsman'&&key==='e')skill={...skill,name:'막기',icon:'◈',heal:0,recovery:0,reduction:0,guard:1,description:'1초 동안 검으로 공격을 막아요. 방어 중에는 다른 공격과 스킬을 사용할 수 없어요.',enhanced:''};
+ if(p.job==='swordsman'&&key==='e')skill={...skill,name:'막기',icon:'◈',heal:0,recovery:0,reduction:0,guard:2,releaseDash:90,releaseRange:180,releaseDamage:1.8,releaseDuration:.28,description:'2초 동안 검으로 공격을 막아요. 막는 동안 E를 다시 누르면 즉시 막기를 풀고 짧게 전진하며 주변을 발도로 베어요. 추가 MP 소모 없이 기존 재사용 시간을 유지합니다. 방어 중에는 다른 공격과 스킬을 사용할 수 없어요.',enhanced:''};
  if(p.job==='swordsman'&&key==='r')skill={...skill,name:'섬광 연참',icon:'⚔',range:'map',cameraRange:650,damage:7,singleTargetMultiplier:2,charge:3,maxTargets:5,reduction:.8,description:'R을 눌러 현재 맵 전체에서 가까운 적부터 최대 5명을 조준해요. 손을 떼거나 3초가 지나면 순간이동하며 베어요. 발동 시 살아 있는 조준 대상이 1명이면 피해가 2배가 돼요. 기 모으기와 연속 베기 중 받는 피해가 80% 감소해요.',enhanced:''};
  if(p.job==='bodybuilder'&&key==='r')skill={...skill,cooldown:40};
  if(!isPowered(p)||key==='r')return skill;
