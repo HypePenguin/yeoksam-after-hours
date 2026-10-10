@@ -301,6 +301,22 @@ test('single-target bonus is frozen at release and never grows when a multi-targ
  assert.equal(empty.h.api.get().effects.some(e=>e.type==='swordBlink'),false);
 });
 
+test('each ultimate strike uses the quickdraw front and back blade plane in both directions, including solo bonus',()=>{
+ for(const dir of [-1,1])for(const solo of [false,true]){
+  const {h,p,monsters}=swordHarness();p.x=1300;monsters.forEach((m,i)=>Object.assign(m,{dead:solo&&i>0,respawnIn:100,x:p.x+dir*(150+i*90),home:p.x+dir*(150+i*90),y:p.y}));
+  h.api.startSwordCharge();if(!solo)h.api.update(.65);h.api.releaseSword('keyboard');h.api.update(.01);
+  const state=h.api.get(),cut=state.effects.find(e=>e.type==='swordCut');
+  assert.ok(cut);assert.equal(cut.dir,dir);assert.equal(cut.size,solo?235:195);assert.equal(state.effects.some(e=>e.type==='slash'||e.type==='lightning'),false);assert.ok(state.effects.some(e=>e.type==='swordBlink'),'teleport trail stays intact');
+  assert.equal(monsters[0].hp,10000-Math.round(core.attackPower(p)*core.effectiveSkill(p,'r').damage*(solo?2:1)),'visual change preserves damage');
+  state.effects.splice(0,state.effects.length,cut);cut.life=cut.max*.5;
+  h.strokes.length=0;h.fills.length=0;h.api.drawGuardBack();const back=h.strokes.splice(0);h.api.drawEffects();const front=h.strokes;
+  assert.ok(back.length&&front.length,'blade passes behind and in front of the body');
+  assert.ok(Math.max(...front.map(s=>s.width))>Math.max(...back.map(s=>s.width)),'foreground edge carries depth');
+  const points=h.fills.flatMap(f=>f.path),ys=points.map(p=>p.y);assert.ok(Math.max(...ys)-Math.min(...ys)<cut.size*.7,'horizontal sweep replaces the vertical electric fan');
+  assert.ok(points.every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)));assert.ok(h.fills.some(f=>f.color==='#ffe45c'));assert.ok(h.fills.some(f=>f.color==='#fffef2'));
+ }
+});
+
 test('ultimate dash trail follows actual left, right, diagonal, edge and zero-distance teleports and expires',()=>{
  for(const [fromX,toX,fromY,toY] of [[900,2400,580,720],[2400,80,720,580],[45,2555,650,650],[1000,1038,650,650]]){
   const {h,p,monsters}=swordHarness();Object.assign(p,{x:fromX,y:fromY});monsters.forEach((m,i)=>Object.assign(m,{dead:i!==0,respawnIn:100,x:toX,home:toX,y:toY}));
@@ -1082,7 +1098,7 @@ test('sword W retains lightning while powered recovery uses one combined status 
   const {h}=combatHarness(job);skill==='a'?h.api.attack():h.api.cast(skill);assert.equal(h.api.get().effects.some(e=>e.type==='lightning'&&e.color==='#ffe45c'),skill==='w',`${job} ${skill}`);
  }
  const builder=combatHarness();builder.h.api.cast('r');assert.ok(builder.h.api.get().effects.some(e=>e.type==='impact'&&e.color==='#f7fcff'));builder.h.api.cast('e');assert.equal(builder.h.el('#power-banner').hidden,true);assert.equal(builder.h.el('#combat-banner').hidden,false);assert.match(builder.h.el('#combat-title').textContent,/근육 각성.*한 번 더/);builder.h.api.update(1.51);assert.equal(builder.h.el('#power-banner').hidden,false);assert.equal(builder.h.el('#combat-banner').hidden,true);
- const sword=counterHarness();sword.h.api.startSwordCharge();sword.h.api.releaseSword('keyboard');sword.h.api.update(.01);assert.ok(sword.h.api.get().effects.some(e=>e.type==='lightning'&&e.color==='#ffe45c'));
+ const sword=counterHarness();sword.h.api.startSwordCharge();sword.h.api.releaseSword('keyboard');sword.h.api.update(.01);assert.ok(sword.h.api.get().effects.some(e=>e.type==='swordCut'&&e.color==='#ffe45c'));
 });
 
 

@@ -154,6 +154,6 @@ test('class combat effects regression coverage',async t=>{
   }
   const h=harness('swordsman');h.target();assert.equal(h.api.startSwordCharge(),true);h.api.update(.2);h.clearDraws();h.api.drawCombatIndicators();
   assert.ok(h.strokes.some(s=>s.color==='#ffe45c'));assert.ok(h.strokes.some(s=>s.color==='#101014'));
-  h.api.releaseSword('keyboard');h.api.update(.01);assert.ok(h.api.get().effects.some(e=>e.type==='lightning'&&e.color==='#ffe45c'));
+  h.api.releaseSword('keyboard');h.api.update(.01);assert.ok(h.api.get().effects.some(e=>e.type==='swordCut'&&e.color==='#ffe45c'&&e.outline==='#111117'));
  });
 });
