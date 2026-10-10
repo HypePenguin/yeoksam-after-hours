@@ -19,7 +19,7 @@ export const JOBS = {
 export const jobName=p=>JOBS[p?.job]?.name||(CLASSES.find(c=>c.id===p?.classId)?.name||'펭귄 모험가');
 export const ITEMS = {
  mpPotions:{name:'아이스아메리카노',image:'assets/item-americano.png',icon:'🥤',description:'MP를 100 회복합니다. MP가 가득 차면 소모하지 않아요. 보스방에서는 HP 회복 아이템과 별도로 재사용 대기 10초가 적용됩니다.',usable:true,price:500},
- potions:{name:'삼각김밥',image:'assets/item-gimbap.png',icon:'🍙',description:'HP를 60 회복합니다. 체력이 가득 차면 소모하지 않아요. 보스전에서는 재사용 대기 10초가 적용됩니다.',usable:true,price:50,hpRestore:60},
+ potions:{name:'감자칩',image:'assets/item-chips.png',icon:'🥔',description:'HP를 60 회복합니다. 체력이 가득 차면 소모하지 않아요. 보스전에서는 재사용 대기 10초가 적용됩니다.',usable:true,price:50,hpRestore:60},
  largePotions:{name:'샌드위치',image:'assets/item-sandwich.png',icon:'🥪',description:'HP를 150 회복합니다. 체력이 가득 차면 소모하지 않아요. 보스전에서는 기존 HP 회복 아이템과 재사용 대기 10초를 공유합니다.',usable:true,price:500,hpRestore:150},
  returnScrolls:{name:'역삼역 1번 출구 이동장치',image:'assets/item-device.png',icon:'역',description:'역삼역 1번 출구로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'town',x:530,y:648}},
  gangnamScrolls:{name:'강남역 이동장치',image:'assets/item-device.png',icon:'강',description:'강남역 마을로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'gangnam',x:650,y:648}},
