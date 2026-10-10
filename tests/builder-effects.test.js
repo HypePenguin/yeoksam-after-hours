@@ -149,7 +149,7 @@ test('class combat effects regression coverage',async t=>{
   for(const job of ['swordsman'])for(const key of ['a','q','w']){
    const h=harness(job);h.target();key==='a'?h.api.attack():h.api.cast(key);const effects=h.api.get().effects;
    assert.ok(effects.some(e=>e.type==='lightning'&&e.color==='#ffe45c'));assert.equal(effects.some(e=>['impact','windSwing'].includes(e.type)),false);
-   if(key==='w'){h.api.update(.1);drawEffects(h);assert.ok(h.strokes.some(s=>s.color==='#ffe45c'&&s.width===17));assert.ok(h.strokes.some(s=>s.color==='#111117'&&s.width===30));}
+   if(key==='w'){h.api.update(.1);drawEffects(h);assert.ok(h.strokes.some(s=>s.color==='#ffe45c'&&s.width===6));assert.ok(h.strokes.some(s=>s.color==='#111117'&&s.width===9));}
    else assert.ok(effects.some(e=>e.type==='slash'&&e.color==='#ffe45c'));
   }
   const h=harness('swordsman');h.target();assert.equal(h.api.startSwordCharge(),true);h.api.update(.2);h.clearDraws();h.api.drawCombatIndicators();

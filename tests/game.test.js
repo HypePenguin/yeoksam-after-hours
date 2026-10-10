@@ -31,7 +31,7 @@ function harness({manualImages=false}={}){
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),hidden:false,activeElement:el('#game')};
  const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;requestedImages.push(this);this.complete=!manualImages;this.naturalWidth=v.includes('otter-')?1215:1500;this.naturalHeight=v.includes('otter-')?1295:1000;if(!manualImages)this.onload?.();}},Promise,Math,Date,Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
- vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,createModal,characterPortrait,sceneAssets,mapAssets,loadSceneAssets,loadImage,images,imageLoads,buildHUD,refreshHUD,refreshItemSlots,drawDrop,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,refreshHealthHUD,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
+ vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,createModal,characterPortrait,sceneAssets,mapAssets,loadSceneAssets,loadImage,images,imageLoads,buildHUD,refreshHUD,refreshItemSlots,drawDrop,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,drawGuardBack,refreshHealthHUD,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
  return {api:context.gameTest,persistence,requestedImages,finishImages(except){for(const img of requestedImages)if(!img.complete&&img.asset!==except){img.complete=true;img.onload?.();}},draws,labels,strokes,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
 }
 function advance(h,seconds){for(let t=0;t<seconds;t+=1/60)h.api.update(1/60);}
@@ -309,7 +309,7 @@ test('ultimate dash trail follows actual left, right, diagonal, edge and zero-di
   h.strokes.length=0;h.api.drawEffects();
   for(const stroke of h.strokes){assert.ok(Number.isFinite(stroke.width));for(const point of stroke.path){assert.ok(Number.isFinite(point.x));assert.ok(Number.isFinite(point.y));}}
   if(Math.hypot(trail.toX-trail.x,trail.toY-trail.y)>=1){
-   const spine=h.strokes.find(stroke=>stroke.color==='#ffe45c'&&stroke.width>20&&stroke.path.length===2);assert.ok(spine);
+   const spine=h.strokes.find(stroke=>stroke.color==='#ffe45c'&&stroke.width>=10&&stroke.path.length===2);assert.ok(spine);
    closeTo(spine.path[0].x,fromX-s.camera);closeTo(spine.path[0].y,fromY-50);closeTo(spine.path[1].x,p.x-s.camera);closeTo(spine.path[1].y,p.y-50);
    assert.ok(h.strokes.some(stroke=>stroke.color==='#111117'&&stroke.width>spine.width));assert.ok(h.strokes.some(stroke=>stroke.color==='#fff9ce'));
   }
@@ -890,7 +890,7 @@ test('second E releases guard through keyboard or HUD, sweeps both sides once an
   assert.equal(h.el('[data-skill="e"] .skill-symbol .skill-cue').textContent,'발도');
   if(input==='keyboard'){key(h,'KeyE');h.events.get('keyup')({code:'KeyE'});key(h,'KeyE');}
   else{const b=h.el('recast-e');b.dataset.skill='e';h.api.bindSkillButton(b);b.onclick({detail:1});b.onclick({detail:1});}
-  assert.equal(h.api.get().guardTime,0);closeTo(p.x,start+dir*90);assert.equal(p.mp,mp);assert.equal(p.cooldowns.e,cd);
+  assert.equal(h.api.get().guardTime,0);closeTo(p.x,start+dir*core.effectiveSkill(p,'w').dash/2);assert.equal(p.mp,mp);assert.equal(p.cooldowns.e,cd);
   assert.deepEqual(Array.from(enemies,m=>m.hp),[10000,10000,10000,10000].map((hp,i)=>hp-(i<3?Math.round(core.attackPower(p)*skill.releaseDamage):0)));
   assert.equal(h.api.combatPose().kind,'draw');assert.equal(h.api.combatDisplayX(),start);assert.ok(h.api.get().effects.some(e=>e.type==='guardDraw'));
   const health=enemies.map(m=>m.hp);h.api.attack();h.api.cast('q');assert.equal(h.api.startSwordCharge('pointer:1'),false);assert.equal(p.mp,mp);assert.deepEqual(enemies.map(m=>m.hp),health);
@@ -912,6 +912,32 @@ test('guard release clamps short dash at map edges and removes protection immedi
 test('guard release still respects boss counter and cannot reward or hit inactive bosses',()=>{
  const {h,p,b}=counterHarness();h.api.cast('e');const hp=b.hp;h.api.cast('e');assert.equal(b.hp,hp);assert.ok(p.hp<480,'counter reflects the release attack after protection ends');
  const idle=bossHarness();const target=idle.h.api.get().boss;idle.p.x=target.x;idle.h.api.cast('e');idle.h.api.cast('e');assert.equal(target.hp,target.maxHp);assert.equal(target.active,false);
+});
+
+test('guard follow-up travels half of W, retains its cost, and sweeps in a flat front/back plane',()=>{
+ for(const dir of [-1,1]){
+  const {h,p}=combatHarness('swordsman');h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');h.api.update(.01);h.api.keys.clear();
+  const x=p.x;h.api.cast('e');const mp=p.mp,cd=p.cooldowns.e;h.api.cast('e');
+  closeTo(Math.abs(p.x-x),core.effectiveSkill(p,'w').dash/2);assert.equal(p.mp,mp);assert.equal(p.cooldowns.e,cd);
+  const e=h.api.get().effects.find(e=>e.type==='guardDraw');h.api.get().effects.splice(0,h.api.get().effects.length,e);
+  h.api.update(.16);h.strokes.length=0;h.api.drawGuardBack();const back=h.strokes.splice(0);h.api.drawEffects();const front=h.strokes;
+  assert.ok(back.length&&front.length,'both halves of the sword plane render');
+  const ys=[...back,...front].flatMap(s=>s.path.map(p=>p.y));assert.ok(Math.max(...ys)-Math.min(...ys)<e.size*.7,'the sweep is horizontal, not a vertical wheel');
+  assert.ok(Math.max(...front.map(s=>s.width))>Math.max(...back.map(s=>s.width)),'foreground blade is thicker for depth');
+ }
+});
+
+test('sword electricity forks, stays stable across renders, mirrors and fades without changing other jobs',()=>{
+ for(const dir of [-1,1]){
+  const {h,p}=combatHarness('swordsman');h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');h.api.update(.01);h.api.keys.clear();h.api.attack();
+  const e=h.api.get().effects.find(e=>e.type==='lightning');assert.ok(e.bolts.length>1);assert.equal(e.dir,dir);
+  const main=e.bolts[0].points;assert.ok(main.length>20);assert.ok(e.bolts.slice(1).every(b=>main.some(p=>p.x===b.points[0].x&&p.y===b.points[0].y)),'branches connect to the main bolt');
+  const shape=JSON.stringify(e.bolts);h.api.drawEffects();h.api.drawEffects();assert.equal(JSON.stringify(e.bolts),shape,'frame rendering cannot jitter the stored bolt');
+  assert.ok(h.strokes.some(s=>s.color==='#fffef2'),'electricity has a bright white center');
+  for(const b of e.bolts)for(const p of b.points){assert.ok(Number.isFinite(p.x)&&Number.isFinite(p.y));}
+  advance(h,.3);assert.equal(h.api.get().effects.includes(e),false);
+ }
+ const builder=combatHarness('bodybuilder');builder.h.api.attack();assert.equal(builder.h.api.get().effects.some(e=>e.bolts),false);
 });
 
 test('builder E heals over exactly 1.5 active seconds, pauses with gameplay, and preserves normal and powered budgets',()=>{
@@ -1307,11 +1333,11 @@ test('advanced W draws straight class-colored trails only along the clamped dash
    h.api.update(dt);h.strokes.length=0;h.api.drawEffects();const s=h.api.get(),display=h.api.combatDisplayX();
    assert.ok(display>=Math.min(start,destination)-1e-8&&display<=Math.max(start,destination)+1e-8);closeTo(trail.x,start);closeTo(trail.toX,destination);closeTo(trail.y,y);closeTo(trail.toY,y);
    assert.equal(s.effects.some(e=>e.type==='slash'||e.type==='windSwing'),false,'W never renders a fan swing');
-   const spine=h.strokes.filter(stroke=>stroke.color===(job==='bodybuilder'?'#f7fcff':'#ffe45c')&&stroke.width===(job==='swordsman'?17:8));
+   const spine=h.strokes.filter(stroke=>stroke.color===(job==='bodybuilder'?'#f7fcff':'#ffe45c')&&stroke.width===(job==='swordsman'?6:8));
    if(start===destination){assert.equal(spine.length,0,'a blocked dash cannot invent travel');continue;}
    assert.equal(spine.length,1);const points=spine[0].path;assert.deepEqual(points.map(point=>point.kind),['move','line']);
    closeTo(points[0].x,start-s.camera);closeTo(points[0].y,y);closeTo(points[1].x,display-s.camera);closeTo(points[1].y,y);
-   const outline=h.strokes.find(stroke=>stroke.color===(job==='bodybuilder'?'#426679':'#111117')&&stroke.width===(job==='swordsman'?30:16));assert.ok(outline);assert.deepEqual(outline.path,points);
+   const outline=h.strokes.find(stroke=>stroke.color===(job==='bodybuilder'?'#426679':'#111117')&&stroke.width===(job==='swordsman'?9:16));assert.ok(outline);assert.deepEqual(outline.path,points);
    for(const stroke of h.strokes)for(const point of stroke.path){assert.ok(Number.isFinite(point.x));assert.ok(Number.isFinite(point.y));}
   }
  }
