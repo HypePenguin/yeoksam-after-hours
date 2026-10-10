@@ -31,7 +31,7 @@ function harness(){
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),hidden:false,activeElement:el('#game')};
  const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;this.complete=true;this.naturalWidth=v.includes('otter-')?1215:1500;this.naturalHeight=v.includes('otter-')?1295:1000;this.onload?.();}},Promise,Math,Date,Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
- vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,buildHUD,refreshHUD,refreshItemSlots,drawDrop,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,refreshHealthHUD,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
+ vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,createModal,characterPortrait,buildHUD,refreshHUD,refreshItemSlots,drawDrop,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,refreshHealthHUD,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
  return {api:context.gameTest,persistence,draws,labels,strokes,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
 }
 function advance(h,seconds){for(let t=0;t<seconds;t+=1/60)h.api.update(1/60);}
@@ -1433,7 +1433,7 @@ test('Maguri offers rabbit promotion at level ten in either town, then returns t
   const {h,p}=rabbitHarness(null);Object.assign(p,{map,x:1050,y:650,level:9});h.api.start(p);h.api.interact();assert.equal(h.api.get().modal,'shop');h.api.closeModal();
   p.level=10;h.api.interact();assert.equal(h.api.get().modal,'job');assert.match(h.el('#modal-root').innerHTML,/마구리 · 마법사 전직/);h.api.closeModal();h.api.interact();assert.equal(h.api.get().modal,'job');
   render(h);assert.ok(h.draws.some(d=>d.asset==='assets/rabbit-novice-motion.png'));
-  h.el('#advance-job').onclick();assert.equal(p.job,'mage');render(h);assert.ok(h.draws.some(d=>d.asset==='assets/rabbit-motion.png'));assert.match(h.el('.avatar').src,/rabbit-motion/);
+  h.el('#advance-job').onclick();assert.equal(p.job,'mage');render(h);assert.ok(h.draws.some(d=>d.asset==='assets/rabbit-motion.png'));assert.match(h.el('.avatar').src,/rabbit-mage-portrait/);
   h.api.interact();assert.equal(h.api.get().modal,'shop');assert.match(h.el('#modal-root').innerHTML,/아이스아메리카노/);
  }
 });
@@ -1586,7 +1586,7 @@ test('chick promotion is available only from Hyupro in Maple hideout at level 10
  p.map='maple';h.api.interact();assert.match(h.el('#modal-root').innerHTML,/휴프로/);assert.match(h.el('#modal-root').innerHTML,/해커/);
  assert.equal(core.advanceJob(p,'hacker').ok,true);assert.equal(core.equipmentName(p),'노트북');assert.equal(core.normalizeCharacter(p).job,'hacker');
  h.api.closeModal();render(h);assert.ok(h.draws.some(d=>d.asset==='assets/npc-hyupro.png'));
- h.api.characters([p],p.id);assert.match(h.el('#screens').innerHTML,/background-position:0 66.6667%/);
+ h.api.characters([p],p.id);assert.match(h.el('#screens').innerHTML,/chick-hacker-portrait.png/);
 });
 test('novice chick basic attack has extended reach while Q is a shorter scratch',()=>{
  const {h,p}=chickFixture('alley',null);const [inside,outside]=h.api.get().monsters;inside.x=p.x+190;outside.x=p.x+201;
@@ -1920,9 +1920,19 @@ test('otter walk, jump, punch, water, wave, shield and dance use directionally c
   if(job){h.api.cast('e');assert.equal(h.api.otterFrame(),12);h.api.cast('r');const dance=new Set();for(let i=0;i<50;i++){h.api.update(1/60);dance.add(h.api.otterFrame());}assert.deepEqual([...dance].sort(),[13,14]);render(h);assert.ok(h.labels.some(l=>l.text==='콘서트 ♡'));}
  }
 });
-test('otter selection portraits use the idle tile and both atlases have equal geometry',()=>{
- const h=harness();for(const job of [null,'idol']){const p=core.createCharacter('선택','otter');Object.assign(p,{job,level:15});h.api.characters([p],p.id);const html=h.el('#screens').innerHTML;assert.ok(html.includes('수달 '+(job?'아이돌':'모험가')+' 기본 자세'));assert.ok(html.includes(`assets/${job?'otter-idol-skirt-motion':'otter-motion'}.png`));}
- const a=fs.readFileSync(new URL('../dist/assets/otter-motion.png',import.meta.url)),b=fs.readFileSync(new URL('../dist/assets/otter-idol-skirt-motion.png',import.meta.url));assert.deepEqual(a.subarray(16,24),b.subarray(16,24));assert.equal(a[25],6,'RGBA retains transparency');assert.equal(b[25],6);
+test('saved character portraits use standalone idle images in every outfit',()=>{
+ for(const [classId,jobs] of [['rabbit',[null,'mage']],['chick',[null,'hacker']],['otter',[null,'idol']]])for(const job of jobs){
+  const h=harness(),p=core.createCharacter('선택',classId);Object.assign(p,{job,level:15});h.api.characters([p],p.id);
+  const name=`${classId}-${job||'novice'}-portrait.png`,html=h.el('#screens').innerHTML;
+  assert.ok(html.includes(`<img src="assets/${name}"`));assert.ok(!html.includes('-motion.png'));
+  const png=fs.readFileSync(new URL('../dist/assets/'+name,import.meta.url));
+  assert.equal(png.readUInt32BE(16),256);assert.equal(png.readUInt32BE(20),256);assert.equal(png[25],6,'portrait retains transparency');
+ }
+});
+test('new adventurer choices do not depend on motion assets completing their load',()=>{
+ const h=harness();h.api.createModal();const html=h.el('#modal-root').innerHTML;
+ for(const classId of ['rabbit','chick','otter'])assert.ok(html.includes(`src="assets/${classId}-novice-portrait.png"`));
+ assert.ok(!html.includes('-motion.png'),'first render cannot expose a complete motion sheet');
 });
 test('otter Q/W exclude the next row artwork while concert keeps the full head at the same scale',()=>{
  for(const job of [null,'idol']){
@@ -2010,18 +2020,15 @@ test('hacker E locks movement and facing while the preview advances, then resume
  h.windowEvents.get('blur').forEach(f=>f());h.api.keys.add('ArrowRight');h.api.update(.1);assert.ok(p.x>x);assert.equal(h.api.get().cooldowns.e,0);
 });
 
-test('otter entry shows only the idle portrait before motion assets finish loading',async()=>{
- for(const job of [null,'idol']){
-  const h=harness(),p=core.createCharacter('입장수달','otter');Object.assign(p,{level:20,job});h.api.start(p);
+test('entry shows a standalone portrait before motion assets finish loading',async()=>{
+ for(const [classId,jobs] of [['rabbit',[null,'mage']],['chick',[null,'hacker']],['otter',[null,'idol']]])for(const job of jobs){
+  const h=harness(),p=core.createCharacter('입장',classId);Object.assign(p,{level:20,job});h.api.start(p);
   const pending=h.api.enterWorld(p.id),html=h.el('#screens').innerHTML;
   assert.equal(h.api.get().scene,'loading');
-  assert.ok(html.includes('class="loading-icon otter-loading-portrait"'));
-  assert.ok(html.includes(`background-image:url(assets/${job==='idol'?'otter-idol-skirt-motion':'otter-motion'}.png)`));
-  assert.ok(!html.includes('<img'),'entry never falls back to the full motion sheet');
+  assert.ok(html.includes(`class="loading-icon" src="assets/${classId}-${job||'novice'}-portrait.png"`));
+  assert.ok(!html.includes('-motion.png'),'entry cannot fall back to a complete motion sheet');
   await h.flush();await pending;assert.equal(h.api.get().scene,'playing');
  }
- const css=fs.readFileSync(new URL('../dist/style.css',import.meta.url),'utf8');
- assert.match(css,/\.loading-icon\.otter-loading-portrait\{[^}]*background-size:400% 400%;background-position:0 0/);
 });
 
 test('renamed inventory items share artwork across shop, bag, quick slots and collectible drops',()=>{
