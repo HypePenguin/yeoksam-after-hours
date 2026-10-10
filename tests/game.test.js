@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import * as core from '../dist/core.js';
 import * as bossCore from '../dist/boss.js';
 import * as typeACore from '../dist/type-a.js';
+import * as catEffects from '../dist/cat-effects.js';
 
 // Runs the actual game loop against lightweight DOM/timer adapters. No live browser state.
 function harness({manualImages=false}={}){
@@ -30,7 +31,7 @@ function harness({manualImages=false}={}){
  },{get:(obj,key)=>key in obj?obj[key]:()=>{}});
  function el(selector){if(elements.has(selector))return elements.get(selector);const obj={parentElement:{},style:{},dataset:{},classList:{add(){},remove(){},toggle(){}},textContent:'',innerHTML:'',hidden:false,isConnected:true,disabled:false,onclick:null,listeners:new Map(),setPointerCapture(){},focus(){},setAttribute(k,v){this[k]=v;},getAttribute(k){return this[k]??null;},getBoundingClientRect(){return {width:1448,height:818};},addEventListener(n,f){this.listeners.set(n,f);},querySelector:child=>el(`${selector} ${child}`),querySelectorAll:()=>[],getContext:()=>drawing};elements.set(selector,obj);return obj;}
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),hidden:false,activeElement:el('#game')};
- const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;requestedImages.push(this);this.complete=!manualImages;this.naturalWidth=v.includes('otter-')?1215:1500;this.naturalHeight=v.includes('otter-')?1295:1000;if(!manualImages)this.onload?.();}},Promise,Math,Date:class extends Date{static now(){return clock.now;}},Number,String,Set});
+ const context=vm.createContext({...core,...bossCore,...typeACore,...catEffects,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;requestedImages.push(this);this.complete=!manualImages;this.naturalWidth=v.includes('otter-')?1215:1500;this.naturalHeight=v.includes('otter-')?1295:1000;if(!manualImages)this.onload?.();}},Promise,Math,Date:class extends Date{static now(){return clock.now;}},Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
  vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,createModal,characterPortrait,sceneAssets,mapAssets,loadSceneAssets,loadImage,images,imageLoads,buildHUD,refreshHUD,refreshItemSlots,drawDrop,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,drawGuardBack,refreshHealthHUD,recordSwordBlock,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,maguriHack,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,guardBlocks,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
  return {api:context.gameTest,clock,persistence,requestedImages,finishImages(except){for(const img of requestedImages)if(!img.complete&&img.asset!==except){img.complete=true;img.onload?.();}},draws,labels,strokes,fills,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
@@ -91,7 +92,7 @@ test('cat punches, claws and backsteps with a brief invulnerable jump',()=>{
 });
 test('cat walk, jump and every attack use distinct full-body motion poses',()=>{
  const h=harness(),p=core.createCharacter('동작','cat');p.level=15;p.job='protester';p.mp=core.maxMp(p);h.api.start(p);
- const current=()=>{render(h);return h.draws.find(d=>['assets/cat-protester-motion.webp','assets/cat-protester-skills.webp','assets/cat-protester.webp'].includes(d.asset));};
+ const current=()=>{render(h);return h.draws.find(d=>['assets/cat-protester-motion.webp','assets/cat-protester-skills-empty.webp','assets/cat-protester.webp'].includes(d.asset));};
  assert.equal(current().asset,'assets/cat-protester.webp');
  const walk=new Set();h.api.keys.add('ArrowRight');for(let i=0;i<42;i++){h.api.update(1/60);const pose=current();assert.equal(pose.asset,'assets/cat-protester-motion.webp');walk.add(pose.source.slice(0,2).join(','));assert.ok(Math.abs(pose.y+pose.height-p.y)<3);}
  assert.ok(walk.size>=3,'walking alternates visible arm and leg poses');h.api.keys.clear();
@@ -99,7 +100,7 @@ test('cat walk, jump and every attack use distinct full-body motion poses',()=>{
  h.api.attack();assert.equal(current().asset,'assets/cat-protester-motion.webp');advance(h,.08);assert.equal(current().source[1],2000/3,'A shows the extended punch');advance(h,.3);
  h.api.cast('q');advance(h,.08);assert.equal(current().source[1],2000/3,'Q shows the wide claw swipe');advance(h,.4);
  h.api.cast('w');assert.equal(current().source[1],2000/3,'W uses the backward-leap pose');advance(h,1);
- p.mp=core.maxMp(p);assert.equal(h.api.startCatCharge('test'),true);assert.equal(current().asset,'assets/cat-protester-skills.webp');assert.equal(current().source[0],95,'E holds the bottle while charging');
+ p.mp=core.maxMp(p);assert.equal(h.api.startCatCharge('test'),true);assert.equal(current().asset,'assets/cat-protester-skills-empty.webp');assert.equal(current().source[0],95,'E holds the bottle while charging');
  h.api.releaseCatCharge('test');assert.equal(current().source[0],736,'E shows the throw on release');advance(h,.35);
  p.mp=core.maxMp(p);h.api.cast('r');assert.equal(current().source[0],1518,'R places the ballot box');
  for(const asset of ['cat-motion','cat-skills']){const png=fs.readFileSync(new URL(`../art-source/${asset}.png`,import.meta.url)),width=png.readUInt32BE(16),height=png.readUInt32BE(20);assert.equal(width,asset==='cat-motion'?1145:2172);assert.equal(height,asset==='cat-motion'?1374:724);}
@@ -109,7 +110,7 @@ test('cat artwork consistently faces travel and attack direction across mirrored
  const motionHeading=[-1,-1,1,-1,-1,-1,-1,-1,-1];
  for(const dir of [-1,1]){
   const h=harness(),p=core.createCharacter('방향','cat');Object.assign(p,{level:15,job:'protester',x:1100});p.mp=core.maxMp(p);h.api.start(p);
-  const heading=()=>{render(h);const d=h.draws.find(d=>['assets/cat-protester.webp','assets/cat-protester-motion.webp','assets/cat-protester-skills.webp'].includes(d.asset));assert.ok(d);const sourceDir=d.asset==='assets/cat-protester.webp'?-1:d.asset==='assets/cat-protester-skills.webp'?(d.source[0]===95?-1:1):motionHeading[Math.round(d.source[1]/(1000/3))*3+Math.round(d.source[0]/500)];return sourceDir*Math.sign(d.matrix[0]);};
+  const heading=()=>{render(h);const d=h.draws.find(d=>['assets/cat-protester.webp','assets/cat-protester-motion.webp','assets/cat-protester-skills-empty.webp'].includes(d.asset));assert.ok(d);const sourceDir=d.asset==='assets/cat-protester.webp'?-1:d.asset==='assets/cat-protester-skills-empty.webp'?(d.source[0]===95?-1:1):motionHeading[Math.round(d.source[1]/(1000/3))*3+Math.round(d.source[0]/500)];return sourceDir*Math.sign(d.matrix[0]);};
   h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');const startX=p.x;
   for(let i=0;i<50;i++){h.api.update(1/60);assert.equal(heading(),dir,'every walking frame faces the movement direction');}
   assert.ok((p.x-startX)*dir>0);h.api.keys.clear();h.api.update(1/60);assert.equal(heading(),dir,'idle keeps the same heading');
@@ -1697,7 +1698,7 @@ test('cat bottle buffs explosion damage and independent explosion/fire radii at 
   const position=()=>{m.x=bottle.toX+(axis==='x'?radius+edge:0);m.y=bottle.toY+(axis==='y'?(radius+edge)/1.5:0);m.home=m.x;m.knockback=0;m.hp=10000;};
   if(phase==='explosion')position();h.api.update(.001);
   const fire=h.api.get().catFires[0];assert.equal(fire.radius,skill.burnRadius);assert.equal(fire.duration,3);
-  assert.equal(h.api.get().effects.find(e=>e.type==='ring'&&e.color==='#ffb565').size,skill.radius);
+  assert.equal(h.api.get().effects.find(e=>e.type==='catExplosion').size,skill.radius);
   if(phase==='fire'){position();fire.tick=0;h.api.update(.001);}
   assert.equal(10000-m.hp,edge<0?Math.round(core.attackPower(p)*(phase==='explosion'?2.75:.43)):0,`${phase} ${axis} ${edge}`);
  }
@@ -2412,4 +2413,27 @@ test('hacker selection timeout starts a fresh ten-second cooldown, successful ca
  assert.equal(JSON.parse(h.storage.get(core.SAVE_KEY)).characters[0].cooldowns.r,10);
  const used=chickFixture();used.h.api.cast('r');used.h.api.confirmHack();advance(used.h,5.1);
  assert.equal(used.h.api.get().hackerUlt,null);assert.ok(Math.abs(used.h.api.get().cooldowns.r-34.9)<.03);
+});
+
+
+test('Molotov trajectory starts at the throw paw and lands on the damage center in both directions',()=>{
+ for(const toX of [200,800]){
+  const b={x:500,y:550,toX,toY:620};
+  assert.deepEqual(catEffects.bottlePoint(b,0),{x:500,y:550});
+  const end=catEffects.bottlePoint(b,1);assert.equal(end.x,toX);assert.ok(Math.abs(end.y-620)<1e-10);
+  const mid=catEffects.bottlePoint(b,.5);assert.equal(mid.x,(500+toX)/2);assert.equal(mid.y,495);
+  assert.deepEqual(catEffects.bottlePoint(b,-1),catEffects.bottlePoint(b,0));
+ }
+});
+test('Ballot papers circle at different depths without changing the summon or its skill range',()=>{
+ const b={x:600,y:650,remaining:5,skill:{range:490}},original=JSON.stringify(b);
+ const before=Array.from({length:42},(_,i)=>catEffects.ballotPaper(b,1,i));
+ const after=Array.from({length:42},(_,i)=>catEffects.ballotPaper(b,1.01,i));
+ assert.ok(before.some(p=>p.depth<0)&&before.some(p=>p.depth>0));
+ for(let i=0;i<42;i++){
+  assert.ok(Number.isFinite(before[i].x)&&Number.isFinite(before[i].y));
+  assert.ok(Math.abs(before[i].x-b.x)<=b.skill.range);
+  assert.ok(Math.hypot(after[i].x-before[i].x,after[i].y-before[i].y)>0);
+ }
+ assert.equal(JSON.stringify(b),original);
 });

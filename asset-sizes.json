@@ -1,6 +1,6 @@
 {
-  "source_bytes": 219454824,
-  "bytes": 24437864,
+  "source_bytes": 220598891,
+  "bytes": 24634684,
   "assets": [
     {
       "name": "builder-recovery-walk",
@@ -118,6 +118,20 @@
       "name": "cat-protester-skills",
       "source_bytes": 1151593,
       "bytes": 207594,
+      "source_size": [
+        2172,
+        724
+      ],
+      "size": [
+        2172,
+        724
+      ],
+      "compact": false
+    },
+    {
+      "name": "cat-protester-skills-empty",
+      "source_bytes": 1144067,
+      "bytes": 196820,
       "source_size": [
         2172,
         724
