@@ -1,5 +1,5 @@
 // Visuals use encounter time; they never alter collision, damage or summon lifetime.
-import {catAreaRadii} from './core.js?v=137';
+import {catAreaRadii} from './core.js?v=138';
 const TAU=Math.PI*2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const noise=i=>{const n=Math.sin(i*127.1+311.7)*43758.5453;return n-Math.floor(n);};
@@ -168,17 +168,53 @@ function papers(ctx,b,camera,time,front){
  const g=ctx.createLinearGradient(-p.size,-p.size,p.size,p.size);g.addColorStop(0,'#fffdf3');g.addColorStop(1,'#b4c8d2');ctx.fillStyle=g;ctx.strokeStyle='#738a9870';ctx.lineWidth=.7;ctx.fillRect(-p.size,-p.size*.7,p.size*2,p.size*1.4);ctx.strokeRect(-p.size,-p.size*.7,p.size*2,p.size*1.4);
  ctx.strokeStyle='#6a829c';ctx.lineWidth=.8;for(let j=0;j<3;j++){ctx.strokeRect(-p.size*.7,-p.size*.45+j*p.size*.4,p.size*.23,p.size*.23);ctx.beginPath();ctx.moveTo(-p.size*.25,-p.size*.32+j*p.size*.4);ctx.lineTo(p.size*.6,-p.size*.32+j*p.size*.4);ctx.stroke();}ctx.strokeStyle='#cc4b51';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(-p.size*.72,-p.size*.1);ctx.lineTo(-p.size*.55,p.size*.03);ctx.lineTo(-p.size*.32,-p.size*.23);ctx.stroke();ctx.restore();}
 }
+function drawBallotBox(ctx,b,x,y){
+ ctx.save();ctx.translate(x,y);ctx.shadowBlur=0;
+ const panel=(points,fill,edge)=>{ctx.beginPath();points.forEach(([px,py],i)=>i?ctx.lineTo(px,py):ctx.moveTo(px,py));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(edge){ctx.strokeStyle=edge;ctx.lineWidth=.8;ctx.stroke();}};
+ const metal=(x1,y1,x2,y2,stops)=>{const g=ctx.createLinearGradient(x1,y1,x2,y2);stops.forEach(([at,color])=>g.addColorStop(at,color));return g;};
+ // Soft contact shadow and dark rubber feet plant the metal case on the street.
+ const shadow=ctx.createRadialGradient(5,-3,3,5,-3,48);shadow.addColorStop(0,'#07121eb3');shadow.addColorStop(1,'#07121e00');
+ ctx.save();ctx.scale(1,.27);ctx.fillStyle=shadow;ctx.beginPath();ctx.arc(5,-3,48,0,TAU);ctx.fill();ctx.restore();
+ panel([[-29,-12],[-21,-12],[-21,-5],[-29,-5]],'#28333d');panel([[22,-12],[30,-12],[30,-5],[22,-5]],'#27323b');panel([[39,-25],[45,-28],[45,-20],[39,-17]],'#202b34');
+ const face=metal(-33,-80,30,-7,[[0,'#e0e5e5'],[.22,'#c9d3d7'],[.55,'#aebbc4'],[.8,'#ced4d5'],[1,'#8496a4']]);
+ panel([[-32,-80],[30,-80],[30,-9],[-32,-9]],face,'#526574');
+ const side=metal(30,-78,47,-20,[[0,'#8c9ba5'],[.24,'#697d8c'],[.6,'#8d9da5'],[1,'#435c70']]);
+ panel([[30,-80],[46,-92],[46,-21],[30,-9]],side,'#435869');
+ // Recessed front panel, folded seams and brushed grain give the broad face material depth.
+ panel([[-28,-75],[26,-75],[26,-14],[-28,-14]],metal(-28,-74,26,-14,[[0,'#d8dedf'],[.5,'#b5c2c9'],[1,'#99abb7']]),'#ffffff70');
+ ctx.lineWidth=.65;for(let i=0;i<23;i++){ctx.strokeStyle=i%3?'#ffffff19':'#344b6015';ctx.beginPath();ctx.moveTo(-26,-72+i*2.4);ctx.lineTo(24,-72+i*2.4);ctx.stroke();}
+ ctx.strokeStyle='#ffffff8a';ctx.beginPath();ctx.moveTo(-31,-79);ctx.lineTo(-31,-11);ctx.lineTo(29,-11);ctx.stroke();
+ ctx.strokeStyle='#40576777';ctx.beginPath();ctx.moveTo(31,-78);ctx.lineTo(31,-10);ctx.moveTo(44,-88);ctx.lineTo(44,-24);ctx.stroke();
+ // The lid has real thickness, a raised rim and a dark recessed ballot slot.
+ panel([[-35,-82],[-19,-95],[47,-95],[31,-82]],metal(-20,-97,15,-80,[[0,'#eef0e9'],[.35,'#c8d2d6'],[.7,'#edf0e9'],[1,'#98aab5']]),'#647887');
+ panel([[-35,-82],[31,-82],[31,-78],[-35,-78]],'#7f94a3','#cbd6dc');panel([[31,-82],[47,-95],[47,-91],[31,-78]],'#506b7e');
+ ctx.strokeStyle='#fff4d1a8';ctx.lineWidth=.85;ctx.beginPath();ctx.moveTo(-31,-83);ctx.lineTo(-18,-93);ctx.lineTo(43,-93);ctx.stroke();
+ panel([[-11,-86],[-5,-91],[22,-91],[16,-86]],'#e5edf0','#8a9ca8');panel([[-9,-87],[-4,-90],[19,-90],[15,-87]],'#152835');
+ // A ballot just entering the slot makes the function legible at game scale.
+ panel([[-2,-100],[11,-104],[16,-91],[3,-87]],'#f1ead9','#b5b8af');
+ ctx.strokeStyle='#697989';ctx.lineWidth=.65;for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(1+i,-98+i*3);ctx.lineTo(10+i,-100+i*3);ctx.stroke();}
+ // Hinges, corner rivets and a latch cast tiny local shadows.
+ for(const px of [-26,21]){ctx.fillStyle='#526977';ctx.fillRect(px,-80,8,5);ctx.fillStyle='#d0d9dc';ctx.fillRect(px,-79,7,2);}
+ for(const [px,py] of [[-29,-73],[27,-73],[-29,-16],[27,-16],[43,-84],[43,-29]]){
+  ctx.fillStyle='#465d6ccc';ctx.beginPath();ctx.arc(px+.45,py+.6,1.5,0,TAU);ctx.fill();ctx.fillStyle='#dae2e5';ctx.beginPath();ctx.arc(px,py,1.1,0,TAU);ctx.fill();
+ }
+ panel([[32,-58],[38,-63],[38,-43],[32,-39]],'#4d6473','#9cadb7');ctx.strokeStyle='#d7dfe0';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(34,-53);ctx.quadraticCurveTo(36,-58,38,-55);ctx.lineTo(38,-48);ctx.stroke();
+ panel([[33,-49],[39,-53],[39,-44],[33,-40]],metal(33,-50,39,-42,[[0,'#c9b986'],[.5,'#8d774a'],[1,'#e0c897']]),'#5c5b48');
+ // Folded red tamper seals, plus a paper label rather than text floating on the face.
+ for(const px of [-31,22]){panel([[px,-85],[px+6,-85],[px+6,-66],[px+3,-63],[px,-66]],metal(px,-85,px+6,-63,[[0,'#b5534d'],[.4,'#e08a77'],[1,'#9c3938']]),'#6d373344');ctx.strokeStyle='#f5bfac99';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(px+1,-78);ctx.lineTo(px+5,-78);ctx.moveTo(px+1,-73);ctx.lineTo(px+5,-73);ctx.stroke();}
+ ctx.fillStyle='#536a7866';ctx.fillRect(-19,-59,40,31);ctx.fillStyle='#f2efdf';ctx.fillRect(-20,-60,39,30);ctx.strokeStyle='#8a999f';ctx.lineWidth=.65;ctx.strokeRect(-20,-60,39,30);
+ ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.fillStyle='#314451';ctx.fillText('투표함',-.5,-46);ctx.font='6px monospace';ctx.fillStyle='#6c7779';ctx.fillText('BALLOT BOX',-.5,-35);
+ ctx.strokeStyle='#b0544d88';ctx.lineWidth=.7;ctx.strokeRect(11,-39,5,5);
+ // Brief hit whitening stays local to the case, preserving the existing damage feedback.
+ if(b.hit>0)panel([[-32,-80],[30,-80],[46,-92],[46,-21],[30,-9],[-32,-9]],'#ffffff55');
+ ctx.restore();
+}
 export function drawBallotVortex(ctx,b,camera,time){
  const x=b.x-camera,y=b.y,fade=clamp(b.remaining/.45,0,1);ctx.save();ctx.globalAlpha=fade;
  // Open helical ribbons, rather than an opaque cone, leave enemies visible inside.
  ctx.lineWidth=1.2;ctx.shadowBlur=0;
  for(let strand=0;strand<3;strand++){ctx.strokeStyle=strand%2?'#d9f3ff30':'#fff8e530';ctx.beginPath();for(let j=0;j<=64;j++){const h=j/64,a=time*4.8+h*TAU*2+strand*TAU/3,r=(.17+.65*h)*b.skill.range,px=x+Math.cos(a)*r,py=y-14-h*220+Math.sin(a)*r*.24;if(!j)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.stroke();}
  papers(ctx,b,camera,time,false);
- ctx.fillStyle='#08101f55';ctx.beginPath();ctx.ellipse(x+6,y,46,12,0,0,TAU);ctx.fill();
- const face=ctx.createLinearGradient(x-32,y-85,x+28,y);face.addColorStop(0,b.hit>0?'#fff':'#f5f5ed');face.addColorStop(1,'#aab9c4');ctx.fillStyle=face;ctx.strokeStyle='#4b6274';ctx.lineWidth=1.5;ctx.fillRect(x-32,y-80,62,72);ctx.strokeRect(x-32,y-80,62,72);
- ctx.fillStyle='#758b9d';ctx.beginPath();ctx.moveTo(x+30,y-80);ctx.lineTo(x+46,y-92);ctx.lineTo(x+46,y-20);ctx.lineTo(x+30,y-8);ctx.closePath();ctx.fill();ctx.stroke();
- ctx.fillStyle='#e6edf1';ctx.beginPath();ctx.moveTo(x-35,y-81);ctx.lineTo(x-19,y-94);ctx.lineTo(x+47,y-94);ctx.lineTo(x+31,y-81);ctx.closePath();ctx.fill();ctx.stroke();
- ctx.strokeStyle='#152630';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x-7,y-86);ctx.lineTo(x+17,y-89);ctx.stroke();ctx.fillStyle='#d85551';ctx.fillRect(x-35,y-78,8,14);ctx.fillRect(x+25,y-78,8,14);
- ctx.fillStyle='#edf2f3';ctx.fillRect(x-20,y-62,38,34);ctx.strokeStyle='#597286';ctx.strokeRect(x-20,y-62,38,34);ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.fillStyle='#334e67';ctx.fillText('투표함',x-1,y-46);ctx.font='7px monospace';ctx.fillText('BALLOT',x-1,y-34);
+ drawBallotBox(ctx,b,x,y);
  papers(ctx,b,camera,time,true);ctx.restore();
 }
