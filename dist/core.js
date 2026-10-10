@@ -18,16 +18,16 @@ export const JOBS = {
 };
 export const jobName=p=>JOBS[p?.job]?.name||(CLASSES.find(c=>c.id===p?.classId)?.name||'펭귄 모험가');
 export const ITEMS = {
- mpPotions:{name:'MP 포션',icon:'💧',description:'MP를 100 회복합니다. MP가 가득 차면 소모하지 않아요. 보스방에서는 체력 물약과 별도로 재사용 대기 10초가 적용됩니다.',usable:true,price:500},
- potions:{name:'체력 물약',icon:'♥',description:'HP를 60 회복합니다. 체력이 가득 차면 소모하지 않아요. 보스전에서는 재사용 대기 10초가 적용됩니다.',usable:true,price:50,hpRestore:60},
- largePotions:{name:'고급 체력 물약',icon:'❤',description:'HP를 150 회복합니다. 체력이 가득 차면 소모하지 않아요. 보스전에서는 기존 체력 물약과 재사용 대기 10초를 공유합니다.',usable:true,price:500,hpRestore:150},
- returnScrolls:{name:'역삼역 1번 출구 귀환 주문서',icon:'역',description:'역삼역 1번 출구로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'town',x:530,y:648}},
- gangnamScrolls:{name:'강남역 귀환 주문서',icon:'강',description:'강남역 마을로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'gangnam',x:650,y:648}},
- yeoksamStreetScrolls:{name:'역삼역 주변 거리 귀환 주문서',icon:'거',description:'역삼역주변거리로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'yeoksamStreet',x:850,y:648}},
- scrap:{name:'로봇 부품',icon:'⚙',description:'로봇에게서 얻은 수집 재료입니다.',usable:false},
- typeATitle:{name:'A형',icon:'✧',description:'A형 처치 보상 칭호. 장착하면 닉네임 위에 은색으로 표시되고 공격력이 5% 증가합니다. 군복과 함께 장착할 수 있어요.',usable:false,equippable:true,equipmentType:'칭호'},
- uniform:{name:'군복',icon:'▣',description:'신원미상의 예비군의 결투 보상. 장착하면 위장 군복을 입고, 걷기와 공중 이동 속도가 20% 증가합니다.',usable:false,equippable:true},
- cores:{name:'에너지 코어',icon:'◇',description:'강한 로봇에게서 얻은 수집 재료입니다.',usable:false}
+ mpPotions:{name:'아이스아메리카노',image:'assets/item-americano.png',icon:'🥤',description:'MP를 100 회복합니다. MP가 가득 차면 소모하지 않아요. 보스방에서는 HP 회복 아이템과 별도로 재사용 대기 10초가 적용됩니다.',usable:true,price:500},
+ potions:{name:'삼각김밥',image:'assets/item-gimbap.png',icon:'🍙',description:'HP를 60 회복합니다. 체력이 가득 차면 소모하지 않아요. 보스전에서는 재사용 대기 10초가 적용됩니다.',usable:true,price:50,hpRestore:60},
+ largePotions:{name:'샌드위치',image:'assets/item-sandwich.png',icon:'🥪',description:'HP를 150 회복합니다. 체력이 가득 차면 소모하지 않아요. 보스전에서는 기존 HP 회복 아이템과 재사용 대기 10초를 공유합니다.',usable:true,price:500,hpRestore:150},
+ returnScrolls:{name:'역삼역 1번 출구 이동장치',image:'assets/item-device.png',icon:'역',description:'역삼역 1번 출구로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'town',x:530,y:648}},
+ gangnamScrolls:{name:'강남역 이동장치',image:'assets/item-device.png',icon:'강',description:'강남역 마을로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'gangnam',x:650,y:648}},
+ yeoksamStreetScrolls:{name:'역삼역 주변 거리 이동장치',image:'assets/item-device.png',icon:'거',description:'역삼역주변거리로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'yeoksamStreet',x:850,y:648}},
+ scrap:{name:'로봇 부품',image:'assets/item-parts.png',icon:'⚙',description:'로봇에게서 얻은 수집 재료입니다.',usable:false},
+ typeATitle:{name:'A형',image:'assets/item-badge.png',icon:'A',description:'A형 처치 보상 칭호. 장착하면 닉네임 위에 은색으로 표시되고 공격력이 5% 증가합니다. 군복과 함께 장착할 수 있어요.',usable:false,equippable:true,equipmentType:'칭호'},
+ uniform:{name:'군복',image:'assets/item-uniform.png',icon:'▣',description:'신원미상의 예비군의 결투 보상. 장착하면 위장 군복을 입고, 걷기와 공중 이동 속도가 20% 증가합니다.',usable:false,equippable:true},
+ cores:{name:'에너지 코어',image:'assets/item-core.png',icon:'◇',description:'강한 로봇에게서 얻은 수집 재료입니다.',usable:false}
 };
 export const equipmentName=p=>p?.job==='hacker'?'노트북':p?.job==='bodybuilder'?'핑크 덤벨':p?.job==='swordsman'?'일본도':'없음';
 export const jumpHeightMultiplier=p=>p?.classId==='cat'&&p?.job==='protester'?1.2:1;
@@ -57,8 +57,8 @@ export function buyItem(p,id){
 export function useItem(p,id){
  if(validItem(id)&&ITEMS[id].hpRestore)return usePotion(p,id);
  if(id==='mpPotions'){
-  if(MAPS[p.map]?.boss&&p.mpPotionCooldown>0)return {ok:false,message:`MP 포션은 ${Math.ceil(p.mpPotionCooldown)}초 뒤에 사용할 수 있어요.`};
-  if(!(p.mpPotions>0))return {ok:false,message:'MP 포션이 없어요. 마구리의 상점에서 구입하세요.'};
+  if(MAPS[p.map]?.boss&&p.mpPotionCooldown>0)return {ok:false,message:`아이스아메리카노는 ${Math.ceil(p.mpPotionCooldown)}초 뒤에 사용할 수 있어요.`};
+  if(!(p.mpPotions>0))return {ok:false,message:'아이스아메리카노가 없어요. 마구리의 상점에서 구입하세요.'};
   if(p.mp>=maxMp(p))return {ok:false,message:'MP가 이미 가득 찼어요.'};
   const restored=Math.min(100,maxMp(p)-p.mp);p.mpPotions--;p.mp+=restored;p.mpPotionCooldown=MAPS[p.map]?.boss?10:0;
   return {ok:true,message:`MP가 ${Math.round(restored)} 회복되었어요.`};
@@ -66,11 +66,11 @@ export function useItem(p,id){
  const item=validItem(id)?ITEMS[id]:null,destination=item?.recall;
  if(!destination)return {ok:false,message:'사용할 수 없는 아이템이에요.'};
  if(!(p[id]>0))return {ok:false,message:`${item.name}가 없어요. 마구리의 상점에서 구입할 수 있어요.`};
- if(p.map===destination.map)return {ok:false,message:`이미 ${MAPS[destination.map].name}에 있어요. 주문서는 소모하지 않았어요.`};
+ if(p.map===destination.map)return {ok:false,message:`이미 ${MAPS[destination.map].name}에 있어요. 이동장치는 소모하지 않았어요.`};
  // Apply consumption and destination together so saves never lose an in-flight recall.
  p[id]--;p.map=destination.map;p.x=destination.x;p.y=destination.y;
  if(!p.visited.includes(p.map))p.visited.push(p.map);
- return {ok:true,recalled:true,message:`${MAPS[p.map].name} 귀환 완료!`};
+ return {ok:true,recalled:true,message:`${MAPS[p.map].name} 이동 완료!`};
 }
 export const SKILLS = [
  {key:'q',name:'펭귄 펀치',icon:'✦',level:3,mp:8,cooldown:2.2,damage:2.1,range:210,description:'전방의 적을 힘껏 공격해요.',enhanced:'피해 2배 · 범위 1.5배 · 재사용 시간 절반'},
@@ -279,7 +279,7 @@ export const xpReward=(p,amount)=>Math.round(Math.max(0,amount)*(p.classId==='ch
 export function gainXp(p,amount){p.xp+=xpReward(p,amount);let gained=0;while(p.xp>=xpNeeded(p.level)&&p.level<99){p.xp-=xpNeeded(p.level);p.level++;gained++;p.hp=maxHp(p);p.mp=maxMp(p);}return gained;}
 export function respawn(p){p.map='town';p.x=530;p.y=648;p.hp=maxHp(p);p.mp=maxMp(p);p.powerTime=0;p.respectTime=0;p.concertTime=0;p.hp=maxHp(p);p.mpPotionCooldown=0;return p;}
 export function buyPotion(p){return buyItem(p,'potions');}
-export function usePotion(p,id='potions'){const amount=validItem(id)?ITEMS[id].hpRestore:0;if(!amount||!(p[id]>0))return {ok:false,message:'물약이 없어요. 마을의 물약 상인을 찾아보세요.'};if(p.hp>=maxHp(p))return {ok:false,message:'체력이 이미 가득 찼어요.'};const restored=Math.min(amount,maxHp(p)-p.hp);p[id]--;p.hp+=restored;return {ok:true,message:`체력이 ${Math.round(restored)} 회복되었어요.`};}
+export function usePotion(p,id='potions'){const amount=validItem(id)?ITEMS[id].hpRestore:0;if(!amount||!(p[id]>0))return {ok:false,message:'회복 아이템이 없어요. 마구리의 상점을 찾아보세요.'};if(p.hp>=maxHp(p))return {ok:false,message:'체력이 이미 가득 찼어요.'};const restored=Math.min(amount,maxHp(p)-p.hp);p[id]--;p.hp+=restored;return {ok:true,message:`체력이 ${Math.round(restored)} 회복되었어요.`};}
 export function canUseSkill(p,key,cooldown=p.cooldowns?.[key]??0){
  const s=effectiveSkill(p,key);if(!s)return {ok:false,message:'알 수 없는 스킬이에요.'};
  if(p.level<s.level)return {ok:false,message:`${s.name}은 Lv. ${s.level}에 배울 수 있어요.`};

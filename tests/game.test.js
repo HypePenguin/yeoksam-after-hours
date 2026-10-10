@@ -31,7 +31,7 @@ function harness(){
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),hidden:false,activeElement:el('#game')};
  const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;this.complete=true;this.naturalWidth=v.includes('otter-')?1215:1500;this.naturalHeight=v.includes('otter-')?1295:1000;this.onload?.();}},Promise,Math,Date,Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
- vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,buildHUD,refreshHUD,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,refreshHealthHUD,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
+ vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,buildHUD,refreshHUD,refreshItemSlots,drawDrop,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,refreshHealthHUD,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
  return {api:context.gameTest,persistence,draws,labels,strokes,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
 }
 function advance(h,seconds){for(let t=0;t<seconds;t+=1/60)h.api.update(1/60);}
@@ -412,7 +412,7 @@ test('buying repeatedly preserves the shop dialog and refreshes stock, balance a
 test('both recall scrolls appear in the bag, bind independently and work between towns after reload',async()=>{
  const h=harness(),p=core.createCharacter('왕복귀환');Object.assign(p,{returnScrolls:2,gangnamScrolls:2,hp:31,mp:17});h.api.start(p);
  h.api.inventory('returnScrolls');key(h,'Digit2');h.api.inventory('gangnamScrolls');key(h,'Digit3');
- assert.match(h.el('#modal-root').innerHTML,/강남역 귀환 주문서/);assert.match(h.el('#modal-root').innerHTML,/역삼역 1번 출구 귀환 주문서/);
+ assert.match(h.el('#modal-root').innerHTML,/강남역 이동장치/);assert.match(h.el('#modal-root').innerHTML,/역삼역 1번 출구 이동장치/);
  assert.deepEqual(p.quickSlots,['potions','returnScrolls','gangnamScrolls']);assert.equal(p.returnScrolls,2);assert.equal(p.gangnamScrolls,2);
  h.api.closeModal();key(h,'Digit3');assert.equal(p.map,'gangnam');assert.equal(p.gangnamScrolls,1);assert.equal(p.returnScrolls,2);assert.equal(p.hp,31);assert.equal(p.mp,17);
  key(h,'Digit3');assert.equal(p.gangnamScrolls,1);h.api.selectCharacters();const pending=h.api.enterWorld(p.id);await h.flush();await pending;
@@ -1434,7 +1434,7 @@ test('Maguri offers rabbit promotion at level ten in either town, then returns t
   p.level=10;h.api.interact();assert.equal(h.api.get().modal,'job');assert.match(h.el('#modal-root').innerHTML,/마구리 · 마법사 전직/);h.api.closeModal();h.api.interact();assert.equal(h.api.get().modal,'job');
   render(h);assert.ok(h.draws.some(d=>d.asset==='assets/rabbit-novice-motion.png'));
   h.el('#advance-job').onclick();assert.equal(p.job,'mage');render(h);assert.ok(h.draws.some(d=>d.asset==='assets/rabbit-motion.png'));assert.match(h.el('.avatar').src,/rabbit-motion/);
-  h.api.interact();assert.equal(h.api.get().modal,'shop');assert.match(h.el('#modal-root').innerHTML,/MP 포션/);
+  h.api.interact();assert.equal(h.api.get().modal,'shop');assert.match(h.el('#modal-root').innerHTML,/아이스아메리카노/);
  }
 });
 test('Hyuntori remains a guide for rabbits and other characters keep Maguri shop access',()=>{
@@ -1504,7 +1504,7 @@ test('graduation exit requires equipped title before challenge and after victory
 
 test('large HP potion is sold for 500, heals 150, caps at max HP and persists in slots',()=>{
  const h=harness(),p=core.createCharacter('고급물약');Object.assign(p,{level:20,hp:100,money:1000});h.api.start(p);h.api.shop();
- assert.match(h.el('#modal-root').innerHTML,/고급 체력 물약/);assert.match(h.el('#modal-root').innerHTML,/HP \+150/);
+ assert.match(h.el('#modal-root').innerHTML,/샌드위치/);assert.match(h.el('#modal-root').innerHTML,/HP \+150/);
  h.el('#buy-largePotions').onclick();assert.equal(p.money,500);assert.equal(p.largePotions,1);h.el('#buy-largePotions').onclick();assert.equal(p.money,0);assert.equal(p.largePotions,2);assert.equal(h.el('#buy-largePotions').disabled,true);
  assert.equal(core.buyItem(p,'largePotions').ok,false);h.api.closeModal();core.assignQuickSlot(p,2,'largePotions');h.api.useQuickSlot(2);assert.equal(p.hp,250);assert.equal(p.largePotions,1);
  p.hp=core.maxHp(p)-20;h.api.useQuickSlot(2);assert.equal(p.hp,core.maxHp(p));assert.equal(p.largePotions,0);
@@ -1559,7 +1559,7 @@ test('cat bottle buffs explosion damage and independent explosion/fire radii at 
 
 test('Yeoksam street shop replaces destination scrolls while keeping potions and purchase scroll position',()=>{
  const h=harness(),p=core.createCharacter('거리상점');Object.assign(p,{map:'yeoksamStreet',money:300});h.api.start(p);h.api.shop();
- const html=h.el('#modal-root').innerHTML;assert.match(html,/역삼역 주변 거리 귀환 주문서/);assert.doesNotMatch(html,/buy-returnScrolls|buy-gangnamScrolls/);
+ const html=h.el('#modal-root').innerHTML;assert.match(html,/역삼역 주변 거리 이동장치/);assert.doesNotMatch(html,/buy-returnScrolls|buy-gangnamScrolls/);
  for(const id of ['potions','largePotions','mpPotions'])assert.ok(html.includes(`buy-${id}`));
  assert.equal(core.buyItem(p,'returnScrolls').ok,false);assert.equal(core.buyItem(p,'gangnamScrolls').ok,false);assert.equal(p.money,300);
  const body=h.el('.npc-dialog-body');body.scrollTop=110;const button=h.el('#buy-yeoksamStreetScrolls');h.document.activeElement=button;
@@ -1974,4 +1974,18 @@ test('otter skill art persists under cooldown and ride cues while unlearned skil
  h.api.cast('q');h.api.refreshHUD();assert.equal(h.el('[data-skill="q"] .skill-symbol .skill-cue').textContent,'3');assert.equal(h.el('[data-skill="q"] .skill-symbol .skill-cue').hidden,false);assert.ok(symbol('q').innerHTML.includes('otter-skill-q.png'));
  h.api.cast('w');h.api.refreshHUD();assert.equal(h.el('[data-skill="w"] .skill-symbol .skill-cue').textContent,'↗');
  const rabbit=core.createCharacter('그대로','rabbit');h.api.start(rabbit);assert.equal(h.api.skillSymbolMarkup('a','◉'),'◉');
+});
+
+test('renamed inventory items share artwork across shop, bag, quick slots and collectible drops',()=>{
+ const h=harness(),p=core.createCharacter('기존아이템');Object.assign(p,{money:2000,mpPotions:2,returnScrolls:3,uniform:1,typeATitle:1,scrap:4,cores:5,quickSlots:['potions','mpPotions','returnScrolls']});h.api.start(p);
+ h.api.inventory();let html=h.el('#modal-root').innerHTML;
+ for(const item of Object.values(core.ITEMS)){assert.ok(html.includes(item.name));assert.ok(html.includes(item.image));}
+ h.api.closeModal();h.api.shop();html=h.el('#modal-root').innerHTML;
+ for(const id of core.shopItemsFor(p)){assert.ok(html.includes(core.ITEMS[id].name));assert.ok(html.includes(core.ITEMS[id].image));}
+ h.api.closeModal();const slots=[0,1,2].map(i=>{const b=h.el('test-slot-'+i);b.dataset.itemSlot=String(i);return b;});h.document.querySelectorAll=selector=>selector==='[data-item-slot]'?slots:[];
+ p.map='hangar';p.mpPotionCooldown=7;h.api.refreshItemSlots();
+ slots.forEach((b,i)=>assert.ok(b.innerHTML.includes(core.ITEMS[p.quickSlots[i]].image)));assert.ok(slots[1].innerHTML.includes('item-cooldown">7'));assert.ok(slots[2].title.includes('역삼역 1번 출구 이동장치'));
+ h.draws.length=0;for(const type of ['potions','scrap','cores'])h.api.drawDrop({type,x:p.x,y:p.y});
+ for(const type of ['potions','scrap','cores'])assert.ok(h.draws.some(d=>d.asset===core.ITEMS[type].image));
+ assert.equal(p.potions,3);assert.equal(p.mpPotions,2);assert.equal(p.returnScrolls,3);assert.equal(p.uniform,1);assert.equal(p.typeATitle,1);assert.equal(p.scrap,4);assert.equal(p.cores,5);
 });
