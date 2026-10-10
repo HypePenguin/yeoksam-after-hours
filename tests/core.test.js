@@ -87,8 +87,8 @@ test('save roundtrip preserves dungeon coordinates and rejects invalid data',()=
  const safe=normalizeCharacter({...p,map:'missing',x:Infinity,y:-500,hp:NaN,money:-99});assert.equal(safe.map,'town');assert.equal(safe.y,580);assert.equal(safe.hp,100);assert.equal(safe.money,0);
 });
 
-test('boss deaths and dead-save recovery use each boss recovery town for every class without awarding a title',()=>{
- for(const [map,destination,x] of [['pocha','gangnam',650],['hangar','yeoksamStreet',850]])for(const classId of ['wanderer','cat','rabbit','chick','otter']){
+test('boss deaths and dead-save recovery use each boss recovery location for every class without awarding a title',()=>{
+ for(const [map,destination,x] of [['pocha','gangnam',650],['hangar','hangar',300]])for(const classId of ['wanderer','cat','rabbit','chick','otter']){
   const p=createCharacter('보스부활',classId);Object.assign(p,{level:35,xp:251,map,x:950,y:680,hp:0,mp:0,money:834,potions:7,mpPotions:4,uniform:1,uniformEquipped:true,mpPotionCooldown:9,visited:['town',map]});
   const raw=JSON.parse(JSON.stringify(p)),restored=normalizeCharacter(raw);
   for(const revived of [respawn(p),restored]){

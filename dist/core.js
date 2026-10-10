@@ -102,7 +102,7 @@ export const MAPS = {
  accelerator:{id:'accelerator',name:'가속 실험구역',subtitle:'고레벨 던전 · Lv. 31–33',en:'ACCELERATOR LAB',description:'중앙 제어실 뒤의 폐쇄 실험구역. 푸른 가속 코일 사이를 고속 정찰 로봇이 지켜요.',width:3800,danger:9,minLevel:31,maxLevel:33,color:'#7cdcf2',background:'endgame-dungeons',backgroundTile:0,monster:'가속 정찰 로봇',monsterCount:10,robotTint:'hue-rotate(35deg) saturate(1.6)',portals:[]},
  arsenal:{id:'arsenal',name:'병기 조립라인',subtitle:'고레벨 던전 · Lv. 34–36',en:'WEAPONS ASSEMBLY',description:'전투 로봇이 생산되는 심층 공장. 조립 로봇을 돌파하고 적색 동력로로 이동하세요.',width:4000,danger:10,minLevel:34,maxLevel:36,color:'#bea6f7',background:'endgame-dungeons',backgroundTile:1,monster:'병기 조립 로봇',monsterCount:11,robotTint:'hue-rotate(120deg) saturate(1.7)',portals:[]},
  reactor:{id:'reactor',name:'적색 동력로',subtitle:'고레벨 던전 · Lv. 37–40',en:'CRIMSON REACTOR',description:'Lv. 40까지 사냥할 수 있는 최심부. 오른쪽 빨간 포탈은 Lv. 40 A형이 있는 수료조건으로 연결됩니다.',width:4200,danger:11,minLevel:37,maxLevel:40,color:'#ff8e9d',background:'endgame-dungeons',backgroundTile:2,monster:'동력로 수호 로봇',monsterCount:12,robotTint:'hue-rotate(185deg) saturate(2.2)',portals:[]},
- hangar:{id:'hangar',name:'수료조건',subtitle:'보스 · Lv. 40 A형',en:'GRADUATION REQUIREMENT',description:'대형 전투 로봇 A형. F로 가동합니다. HP 40%에 5초 안전지대 시험, 20%에 광폭화합니다. 파란 영역으로 이동하거나 무적기로 즉사를 피하세요. 오른쪽 포탈은 A형 칭호를 장착한 상태에서만 역삼역주변거리로 이동할 수 있어요. 전투 중에는 이용할 수 없습니다.',width:1800,danger:0,boss:true,respawn:{map:'yeoksamStreet',x:850,y:648},bossName:'A형',bossLevel:40,minLevel:40,maxLevel:40,color:'#ff7088',background:'endgame-dungeons',backgroundTile:3,portals:[]},
+ hangar:{id:'hangar',name:'수료조건',subtitle:'보스 · Lv. 40 A형',en:'GRADUATION REQUIREMENT',description:'대형 전투 로봇 A형. F로 가동합니다. HP 40%에 5초 안전지대 시험, 20%에 광폭화합니다. 파란 영역으로 이동하거나 무적기로 즉사를 피하세요. 오른쪽 포탈은 A형 칭호를 장착한 상태에서만 역삼역주변거리로 이동할 수 있어요. 전투 중에는 이용할 수 없습니다.',width:1800,danger:0,boss:true,respawn:{map:'hangar',x:300,y:648},bossName:'A형',bossLevel:40,minLevel:40,maxLevel:40,color:'#ff7088',background:'endgame-dungeons',backgroundTile:3,portals:[]},
  yeoksamStreet:{id:'yeoksamStreet',name:'역삼역주변거리',subtitle:'마을 · 안전 구역',en:'YEOKSAM NEIGHBORHOOD',description:'수료조건 너머의 조용한 역삼 거리. 마구리에게 물약을 구입하고 쉬어 갈 수 있어요. 왼쪽 포탈은 수료조건으로 돌아갑니다.',width:2200,danger:0,minLevel:1,maxLevel:1,color:'#9ce1a5',background:'city',portals:[]}
 
 };
@@ -279,7 +279,7 @@ export function normalizeCharacter(raw){
 export const xpReward=(p,amount)=>Math.round(Math.max(0,amount)*(p.classId==='chick'&&p.job==='hacker'?1.3:1));
 export function gainXp(p,amount){p.xp+=xpReward(p,amount);let gained=0;while(p.xp>=xpNeeded(p.level)&&p.level<99){p.xp-=xpNeeded(p.level);p.level++;gained++;p.hp=maxHp(p);p.mp=maxMp(p);}return gained;}
 export function respawn(p){
- // Each boss room specifies its recovery town independently of portal requirements.
+ // Each boss room specifies its recovery location independently of portal requirements.
  const destination=MAPS[p.map]?.respawn||{map:'town',x:530,y:648};
  p.map=destination.map;p.x=destination.x;p.y=destination.y;
  p.powerTime=0;p.respectTime=0;p.concertTime=0;p.hp=maxHp(p);p.mp=maxMp(p);p.mpPotionCooldown=0;
