@@ -1,7 +1,8 @@
-import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawFireFootprint,drawBallotVortex} from './cat-effects.js?v=138';
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections,catAreaRadii,catAreaContains} from './core.js?v=138';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=138';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=138';
+import {otterMouthPoint,drawWaterJet,drawWaterSplash,drawWaterWave,drawWaterOrb,drawWaterShield} from './otter-effects.js?v=139';
+import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawFireFootprint,drawBallotVortex} from './cat-effects.js?v=139';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections,catAreaRadii,catAreaContains} from './core.js?v=139';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=139';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=139';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -29,7 +30,7 @@ function loadImage(name){
  imageLoads.set(name,promise);img.src=`assets/${name}.webp`;return promise;
 }
 function characterAssets(p){
- let assets=p.classId==='otter'?[otterAsset(p)]:p.classId==='rabbit'?[rabbitAsset(p)]:p.classId==='chick'?['chick-motion','chick-actions',...(p.job==='hacker'?['chick-typing']:[])]:p.classId==='cat'?[...['cat','cat-motion','cat-skills'].map(name=>catAsset(name,p)),...(p.job==='protester'?['cat-fire-v136','cat-fire-ground-v137']:[])]:
+ let assets=p.classId==='otter'?[otterAsset(p),'otter-wave-v139']:p.classId==='rabbit'?[rabbitAsset(p)]:p.classId==='chick'?['chick-motion','chick-actions',...(p.job==='hacker'?['chick-typing']:[])]:p.classId==='cat'?[...['cat','cat-motion','cat-skills'].map(name=>catAsset(name,p)),...(p.job==='protester'?['cat-fire-v136','cat-fire-ground-v137']:[])]:
   ['penguin','penguin-hurt','penguin-walk','penguin-jump',...(p.job==='swordsman'?['combat-swordsman','sword-guard-walk','swordsman-skill-e-draw']:['combat-brawler']),...(p.job==='bodybuilder'?['builder-recovery-walk','penguin-power','penguin-power-poses','penguin-power-walk','penguin-power-jump','combat-power','power-recovery-walk']:[])];
  if(hasUniform(p))assets=[...assets,...assets.filter(name=>UNIFORM_ASSETS.has(name)).map(name=>'uniform-'+name)];
  if(p.job&&p.classId==='wanderer')assets.push('job-equipment');
@@ -807,8 +808,10 @@ function castOtter(key){
  if(key==='q'){
   const target=monsters.filter(m=>canTarget(m)&&(m.x-player.x)*facing>=0&&(m.x-player.x)*facing<=s.range&&Math.abs(m.y-player.y)<=s.halfLane&&pz<120).sort((a,b)=>Math.hypot(a.x-player.x,a.y-player.y)-Math.hypot(b.x-player.x,b.y-player.y))[0];
   attackTimer=Math.max(attackTimer,.42);playCombatMotion('otterWater',.42);
-  effects.push({type:'otterJet',x:player.x+facing*30,y:player.y-84-pz,toX:target?.x??clamp(player.x+facing*s.range,45,MAPS[player.map].width-45),toY:target?target.y-(target.isBoss?160:48):player.y-92-pz,dir:facing,life:.38,max:.38,color:'#bcf5ff'});
-  if(target)hitMonster(target,Math.round(attackPower(player)*s.damage));beep(600,.16);
+  const img=images[otterAsset()],mouth=otterMouthPoint(player.x,player.y,pz,facing,player.job==='idol',img?.naturalWidth||1215,img?.naturalHeight||1295),toX=target?.x??clamp(player.x+facing*s.range,45,MAPS[player.map].width-45),toY=target?target.y-(target.isBoss?160:48):mouth.y;
+  const travel=.045+Math.hypot(toX-mouth.x,toY-mouth.y)/1800,max=travel+.22;
+  effects.push({type:'otterJet',...mouth,toX,toY,dir:facing,elapsed:0,travel,target,damage:Math.round(attackPower(player)*s.damage),impacted:false,life:max,max,color:'#bcf5ff'});
+  beep(600,.16);
  }else if(key==='w'){
   const x=clamp(player.x+facing*35,45,MAPS[player.map].width-45);
   otterWave={x,y:player.y,dir:facing,elapsed:0,remaining:Math.min(s.range,facing>0?MAPS[player.map].width-45-x:x-45),skill:s,hit:new Set(),riding:false,damage:Math.round(attackPower(player)*s.damage)};
@@ -831,10 +834,22 @@ function sweptOrbDistance(m,from,to){
  return Math.hypot(m.x-from.x-t*dx,(m.y-from.y)*1.5-t*dy);
 }
 function updateOtterCombat(dt){
+ // Damage and splash occur when the visible stream reaches its locked target.
+ for(const jet of effects.filter(e=>e.type==='otterJet')){
+  jet.elapsed+=dt;
+  if(!jet.impacted&&jet.elapsed>=jet.travel){
+   jet.impacted=true;
+   effects.push({type:'otterSplash',x:jet.toX,y:jet.toY,life:.32,max:.32});
+   if(jet.target&&monsters.includes(jet.target)&&canTarget(jet.target)){
+    hitMonster(jet.target,jet.damage,14,'water');if(scene!=='playing'||modal)return;
+   }
+  }
+ }
+
  if(otterWave){
   const w=otterWave,from=w.x,step=Math.min(w.remaining,w.skill.speed*dt);w.elapsed+=dt;w.x=clamp(w.x+w.dir*step,45,MAPS[player.map].width-45);w.remaining=Math.max(0,w.remaining-step);
   if(w.riding){player.x=w.x;player.y=w.y;facing=w.dir;walking=false;}
-  for(const m of [...monsters])if(canTarget(m)&&!w.hit.has(m.id)&&Math.abs(m.y-w.y)<=w.skill.halfLane&&m.x>=Math.min(from,w.x)-45&&m.x<=Math.max(from,w.x)+45){w.hit.add(m.id);hitMonster(m,w.damage);if(scene!=='playing'||modal)return;}
+  for(const m of [...monsters])if(canTarget(m)&&!w.hit.has(m.id)&&Math.abs(m.y-w.y)<=w.skill.halfLane&&m.x>=Math.min(from,w.x)-45&&m.x<=Math.max(from,w.x)+45){w.hit.add(m.id);effects.push({type:'otterSplash',x:m.x,y:m.y-48,life:.32,max:.32});hitMonster(m,w.damage,14,'water');if(scene!=='playing'||modal)return;}
   if(otterWave===w&&w.remaining<=1e-8)otterWave=null;
  }
  if(otterShield){otterShield.remaining=Math.max(0,otterShield.remaining-dt);if(!otterShield.remaining)otterShield=null;}
@@ -842,7 +857,7 @@ function updateOtterCombat(dt){
   const b=otterBubbles,step=Math.min(dt,b.remaining);b.elapsed+=step;b.remaining=Math.max(0,b.remaining-step);
   for(const orb of b.orbs){if(!orb.active)continue;const to=otterOrbPoint(b,orb.index),from=orb.previous||to;orb.previous=to;
    const target=monsters.filter(m=>canTarget(m)&&pz<120&&sweptOrbDistance(m,from,to)<(m.isBoss?80:38)).sort((a,c)=>Math.hypot(a.x-to.x,a.y-to.y)-Math.hypot(c.x-to.x,c.y-to.y))[0];
-   if(target){orb.active=false;effects.push({type:'ring',x:to.x,y:to.y-55-pz,life:.3,max:.3,color:'#b8f2ff',size:50});hitMonster(target,Math.round(attackPower(player)*b.skill.damage));if(scene!=='playing'||modal)return;}
+   if(target){orb.active=false;effects.push({type:'otterSplash',x:to.x,y:to.y-55-pz,life:.32,max:.32});hitMonster(target,Math.round(attackPower(player)*b.skill.damage),14,'water');if(scene!=='playing'||modal)return;}
   }
   if(otterBubbles===b&&b.remaining<=1e-8)otterBubbles=null;
  }
@@ -902,17 +917,10 @@ function otterHeart(x,y,size,alpha=1){
  ctx.beginPath();ctx.moveTo(0,.85);ctx.bezierCurveTo(-1.25,.1,-1.15,-.65,-.55,-.7);ctx.bezierCurveTo(-.2,-.72,0,-.4,0,-.3);ctx.bezierCurveTo(.15,-.8,1.05,-.95,1.05,-.25);ctx.bezierCurveTo(1.05,.2,.45,.65,0,.85);ctx.fill();ctx.stroke();ctx.restore();
 }
 function drawOtterEffects(){
- for(const e of effects)if(e.type==='otterJet'){
-  ctx.save();ctx.globalAlpha=e.life/e.max;ctx.strokeStyle='#4cb7e3aa';ctx.lineWidth=18;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(e.x-camera,e.y);ctx.quadraticCurveTo((e.x+e.toX)/2-camera,e.y-15,e.toX-camera,e.toY);ctx.stroke();ctx.strokeStyle='#cefbff';ctx.lineWidth=6;ctx.stroke();
-  for(let i=1;i<=5;i++){const t=i/5;waterBubble(e.x+(e.toX-e.x)*t-camera,e.y+(e.toY-e.y)*t+Math.sin(i*2+worldTime*25)*5,4+2*t,e.life/e.max);}ctx.restore();
- }
- if(otterWave){const w=otterWave,x=w.x-camera,y=w.y;ctx.save();ctx.translate(x,y);ctx.scale(w.dir,1);ctx.shadowColor='#5ddbff';ctx.shadowBlur=12;
-  const g=ctx.createLinearGradient(0,-80,0,10);g.addColorStop(0,'#defaff');g.addColorStop(.35,'#5bcff5');g.addColorStop(1,'#126b9c88');ctx.fillStyle=g;ctx.strokeStyle='#d4faff';ctx.lineWidth=3;
-  ctx.beginPath();ctx.moveTo(-80,4);ctx.bezierCurveTo(-55,-15,-23,-7,-2,-49);ctx.bezierCurveTo(25,-108,74,-78,50,-44);ctx.bezierCurveTo(50,-70,19,-66,16,-35);ctx.bezierCurveTo(13,-10,56,-15,77,1);ctx.closePath();ctx.fill();ctx.stroke();
-  for(let i=0;i<6;i++)waterBubble(-68+i*26,3+Math.sin(worldTime*10+i)*4,3+i%3,.75);ctx.restore();
- }
- if(otterShield){ctx.save();ctx.strokeStyle='#b6f4ff';ctx.lineWidth=3;ctx.fillStyle='#8bdfff18';ctx.shadowColor='#9ae8ff';ctx.shadowBlur=12;ctx.beginPath();ctx.ellipse(player.x-camera,player.y-64-pz,57,77,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore();}
- if(otterBubbles){const b=otterBubbles;for(const orb of b.orbs)if(orb.active){const p=otterOrbPoint(b,orb.index);waterBubble(p.x-camera,p.y-55-pz,17,Math.min(1,b.remaining));}}
+ for(const e of effects){if(e.type==='otterJet')drawWaterJet(ctx,e,camera);else if(e.type==='otterSplash')drawWaterSplash(ctx,e,camera);}
+ if(otterWave)drawWaterWave(ctx,otterWave,camera,images['otter-wave-v139']);
+ if(otterShield)drawWaterShield(ctx,player.x-camera,player.y-64-pz,worldTime);
+ if(otterBubbles){const b=otterBubbles;for(const orb of b.orbs)if(orb.active){const p=otterOrbPoint(b,orb.index);drawWaterOrb(ctx,p.x-camera,p.y-55-pz,20,b.elapsed,Math.min(1,b.remaining));}}
  if(otterConcert){
   const c=otterConcert,x=player.x-camera,y=player.y,fade=Math.min(1,c.elapsed*4,c.remaining*2);ctx.save();ctx.globalAlpha=fade;
   const g=ctx.createLinearGradient(x,30,x,y);g.addColorStop(0,'#fff0fa66');g.addColorStop(1,'#ffabdb0a');ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(x-16,0);ctx.lineTo(x+16,0);ctx.lineTo(x+155,y+8);ctx.lineTo(x-155,y+8);ctx.closePath();ctx.fill();
@@ -1367,7 +1375,7 @@ function reflectBossAttack(b,rawDamage){
  if(player.hp<=0){die();return;}
  refreshHUD();save();
 }
-function hitMonster(m,damage,knockback=14,impact='default'){if(scene!=='playing'||!canTarget(m))return;if(m.isBoss){if(m!==boss)return;if(isTypeA(m)){const dealt=damageTypeA(m,damage,player);textAt(String(dealt),m.x,m.y-300,'#ffbdad');if(m.hp<=0)winBoss();return;}const reflected=chickStunned(m)?0:counterDamage(m,damage);if(reflected){reflectBossAttack(m,reflected);return;}m.hp=Math.max(0,m.hp-damage);m.hit=.16;textAt(String(damage),m.x,m.y-180,!player.job?'#e0e5e8':player.job==='bodybuilder'?FX_PALETTES.builder.color:undefined);if(m.hp<=0)winBoss();return;}m.hp-=damage;m.hit=.28;m.hitDir=facing;if(!chickStunned(m))m.x=clamp(m.x+facing*knockback,60,MAPS[player.map].width-60);textAt(String(damage),m.x,m.y-90,!player.job?'#e0e5e8':player.job==='bodybuilder'?FX_PALETTES.builder.color:undefined);if(player.classId==='rabbit')effects.push({type:'ring',x:m.x,y:m.y-45,life:.22,max:.22,color:'#d5a6ff',size:48});else if(impact!=='blade')attackImpactAt(m.x,m.y-38,42);shake=Math.max(shake,isPowered(player)?5:2.5);if(player.job&&impact!=='blade')effects.push({type:'spark',x:m.x,y:m.y-38,life:.2,max:.2,color:player.job==='hacker'?'#a7ffe2':player.job==='mage'?'#d8baff':player.job==='bodybuilder'?FX_PALETTES.builder.accent:'#ffd79a',size:25});if(m.hp>0)return;m.dead=true;m.deathFx=.28;m.respawnIn=12;player.kills++;drops.push({x:m.x-17,y:m.y+6,type:'money',amount:14+m.level*8,life:60},{x:m.x+20,y:m.y-3,type:m.level>=4?'cores':'scrap',amount:1,life:60});if(Math.random()<.22)drops.push({x:m.x+4,y:m.y+23,type:'potions',amount:1,life:60});const gained=gainXp(player,12+m.level*7,m.level);if(gained){textAt(`LEVEL UP · ${player.level}`,player.x,player.y-155,'#b8ffe3');const unlocked=skillsFor(player).filter(s=>skillUnlocked(player,s)&&s.level>player.level-gained);toast(`Lv. ${player.level} 달성! HP·MP 완전 회복${unlocked.length?' · '+unlocked.map(s=>s.key.toUpperCase()+' '+s.name).join(', ')+' 습득':''}${!player.job&&player.level>=10&&player.level-gained<10?(['chick','otter'].includes(player.classId)?' · 메이플아지트에서 전직 가능':player.classId==='rabbit'?' · 마구리에게 전직 가능':player.classId==='cat'?' · 올림픽공원에서 전직 가능':' · 헬스장/검도장에서 전직 가능'):''}`);effects.push({type:'ring',x:player.x,y:player.y-40,life:1,max:1,color:'#ffe6a6',size:160});beep(900,.45);}save();}
+function hitMonster(m,damage,knockback=14,impact='default'){if(scene!=='playing'||!canTarget(m))return;if(m.isBoss){if(m!==boss)return;if(isTypeA(m)){const dealt=damageTypeA(m,damage,player);textAt(String(dealt),m.x,m.y-300,'#ffbdad');if(m.hp<=0)winBoss();return;}const reflected=chickStunned(m)?0:counterDamage(m,damage);if(reflected){reflectBossAttack(m,reflected);return;}m.hp=Math.max(0,m.hp-damage);m.hit=.16;textAt(String(damage),m.x,m.y-180,!player.job?'#e0e5e8':player.job==='bodybuilder'?FX_PALETTES.builder.color:undefined);if(m.hp<=0)winBoss();return;}m.hp-=damage;m.hit=.28;m.hitDir=facing;if(!chickStunned(m))m.x=clamp(m.x+facing*knockback,60,MAPS[player.map].width-60);textAt(String(damage),m.x,m.y-90,!player.job?'#e0e5e8':player.job==='bodybuilder'?FX_PALETTES.builder.color:undefined);if(player.classId==='rabbit')effects.push({type:'ring',x:m.x,y:m.y-45,life:.22,max:.22,color:'#d5a6ff',size:48});else if(!['blade','water'].includes(impact))attackImpactAt(m.x,m.y-38,42);shake=Math.max(shake,isPowered(player)?5:2.5);if(player.job&&!['blade','water'].includes(impact))effects.push({type:'spark',x:m.x,y:m.y-38,life:.2,max:.2,color:player.job==='hacker'?'#a7ffe2':player.job==='mage'?'#d8baff':player.job==='bodybuilder'?FX_PALETTES.builder.accent:'#ffd79a',size:25});if(m.hp>0)return;m.dead=true;m.deathFx=.28;m.respawnIn=12;player.kills++;drops.push({x:m.x-17,y:m.y+6,type:'money',amount:14+m.level*8,life:60},{x:m.x+20,y:m.y-3,type:m.level>=4?'cores':'scrap',amount:1,life:60});if(Math.random()<.22)drops.push({x:m.x+4,y:m.y+23,type:'potions',amount:1,life:60});const gained=gainXp(player,12+m.level*7,m.level);if(gained){textAt(`LEVEL UP · ${player.level}`,player.x,player.y-155,'#b8ffe3');const unlocked=skillsFor(player).filter(s=>skillUnlocked(player,s)&&s.level>player.level-gained);toast(`Lv. ${player.level} 달성! HP·MP 완전 회복${unlocked.length?' · '+unlocked.map(s=>s.key.toUpperCase()+' '+s.name).join(', ')+' 습득':''}${!player.job&&player.level>=10&&player.level-gained<10?(['chick','otter'].includes(player.classId)?' · 메이플아지트에서 전직 가능':player.classId==='rabbit'?' · 마구리에게 전직 가능':player.classId==='cat'?' · 올림픽공원에서 전직 가능':' · 헬스장/검도장에서 전직 가능'):''}`);effects.push({type:'ring',x:player.x,y:player.y-40,life:1,max:1,color:'#ffe6a6',size:160});beep(900,.45);}save();}
 function die(){
  if(scene!=='playing')return;closeModal();setScene('dead');beep(130,.5,'triangle');respawn(player);
  const townName=escapeHtml(MAPS[player.map].name);
@@ -1852,7 +1860,7 @@ function drawGuardBack(){
   ctx.save();ctx.translate(e.x-camera,e.y);ctx.globalAlpha=Math.min(1,e.life/e.max*2)*.5;drawGuardDraw(e,e.life/e.max,true);ctx.restore();
  }
 }
-function drawEffects(){effects.forEach(e=>{const t=e.life/e.max,route=e.followDash,x=route?route.fromX+(route.toX-route.fromX)*dashProgress(e.max-e.life,route.duration):e.x;ctx.save();ctx.translate(x-camera,e.y);ctx.globalAlpha=Math.min(1,t*2);ctx.strokeStyle=e.color;ctx.fillStyle=e.color;ctx.shadowColor=e.glow||e.color;ctx.shadowBlur=18;ctx.lineWidth=e.type==='slash'?9:4;if(e.type==='catExplosion'){drawMolotovExplosion(ctx,e,t,images['cat-fire-v136']);}else if(e.type==='guardDraw'||e.type==='swordCut'){drawGuardDraw(e,t);}else if(e.type==='lightning'){drawLightning(e,t);} else if(e.type==='hackZone'){drawHackGrid(e.width,e.height,1-t,false);}else if(e.type==='claw'){ctx.scale(e.dir||1,1);ctx.lineCap='round';for(let i=-1;i<=1;i++){ctx.beginPath();ctx.moveTo(-e.size*.4,-e.size*.3+i*e.size*.22);ctx.quadraticCurveTo(e.size*.15,-e.size*.55+i*e.size*.22,e.size*.48,e.size*.18+i*e.size*.22);ctx.lineWidth=5;ctx.stroke();}}else if(e.type==='impact'){drawImpact(e,t);}else if(e.type==='windSwing'){drawWindSwing(e,t);}else if(e.type==='dash'){drawDashTrail(e);}else if(e.type==='swordBlink'){drawSwordBlink(e,t);}else if(e.type==='blink'){ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(e.toX-e.x,e.toY-e.y);ctx.lineWidth=5;ctx.stroke();}else if(e.type==='slash'&&e.bladeOnly){drawBladeSlash(e,t);}else if(e.type==='slash'&&e.electric){drawElectricSlash(e,t);}else if(e.type==='slash'){ctx.scale(e.dir||1,1);ctx.beginPath();ctx.ellipse(30,0,e.size*.65,e.size*.4,-.2,-1.4+(.9-t)*.5,1.4+(.9-t)*.5);ctx.stroke();ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(40,-1,e.size*.52,e.size*.31,-.2,-1.3,1.3);ctx.stroke();}else if(e.type==='ring'){ctx.beginPath();ctx.ellipse(0,0,e.size*(1-t+.2),e.size*(1-t+.2)*.45,0,0,Math.PI*2);ctx.stroke();}else{for(let i=0;i<6;i++){const a=i*Math.PI/3;ctx.fillRect(Math.cos(a)*e.size*(1-t),Math.sin(a)*e.size*(1-t),5,5);}}ctx.restore();});texts.forEach(t=>{ctx.save();ctx.globalAlpha=Math.min(1,t.life*2);ctx.font=`bold ${t.text.length>10?16:22}px "Space Grotesk","IBM Plex Sans KR",sans-serif`;ctx.textAlign='center';ctx.strokeStyle='#0c2533';ctx.lineWidth=4;ctx.strokeText(t.text,t.x-camera,t.y);ctx.fillStyle=t.color;ctx.fillText(t.text,t.x-camera,t.y);ctx.restore();});}
+function drawEffects(){effects.forEach(e=>{if(e.type==='otterJet'||e.type==='otterSplash')return;const t=e.life/e.max,route=e.followDash,x=route?route.fromX+(route.toX-route.fromX)*dashProgress(e.max-e.life,route.duration):e.x;ctx.save();ctx.translate(x-camera,e.y);ctx.globalAlpha=Math.min(1,t*2);ctx.strokeStyle=e.color;ctx.fillStyle=e.color;ctx.shadowColor=e.glow||e.color;ctx.shadowBlur=18;ctx.lineWidth=e.type==='slash'?9:4;if(e.type==='catExplosion'){drawMolotovExplosion(ctx,e,t,images['cat-fire-v136']);}else if(e.type==='guardDraw'||e.type==='swordCut'){drawGuardDraw(e,t);}else if(e.type==='lightning'){drawLightning(e,t);} else if(e.type==='hackZone'){drawHackGrid(e.width,e.height,1-t,false);}else if(e.type==='claw'){ctx.scale(e.dir||1,1);ctx.lineCap='round';for(let i=-1;i<=1;i++){ctx.beginPath();ctx.moveTo(-e.size*.4,-e.size*.3+i*e.size*.22);ctx.quadraticCurveTo(e.size*.15,-e.size*.55+i*e.size*.22,e.size*.48,e.size*.18+i*e.size*.22);ctx.lineWidth=5;ctx.stroke();}}else if(e.type==='impact'){drawImpact(e,t);}else if(e.type==='windSwing'){drawWindSwing(e,t);}else if(e.type==='dash'){drawDashTrail(e);}else if(e.type==='swordBlink'){drawSwordBlink(e,t);}else if(e.type==='blink'){ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(e.toX-e.x,e.toY-e.y);ctx.lineWidth=5;ctx.stroke();}else if(e.type==='slash'&&e.bladeOnly){drawBladeSlash(e,t);}else if(e.type==='slash'&&e.electric){drawElectricSlash(e,t);}else if(e.type==='slash'){ctx.scale(e.dir||1,1);ctx.beginPath();ctx.ellipse(30,0,e.size*.65,e.size*.4,-.2,-1.4+(.9-t)*.5,1.4+(.9-t)*.5);ctx.stroke();ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(40,-1,e.size*.52,e.size*.31,-.2,-1.3,1.3);ctx.stroke();}else if(e.type==='ring'){ctx.beginPath();ctx.ellipse(0,0,e.size*(1-t+.2),e.size*(1-t+.2)*.45,0,0,Math.PI*2);ctx.stroke();}else{for(let i=0;i<6;i++){const a=i*Math.PI/3;ctx.fillRect(Math.cos(a)*e.size*(1-t),Math.sin(a)*e.size*(1-t),5,5);}}ctx.restore();});texts.forEach(t=>{ctx.save();ctx.globalAlpha=Math.min(1,t.life*2);ctx.font=`bold ${t.text.length>10?16:22}px "Space Grotesk","IBM Plex Sans KR",sans-serif`;ctx.textAlign='center';ctx.strokeStyle='#0c2533';ctx.lineWidth=4;ctx.strokeText(t.text,t.x-camera,t.y);ctx.fillStyle=t.color;ctx.fillText(t.text,t.x-camera,t.y);ctx.restore();});}
 function draw(){
  const isPlay=(scene==='playing'||scene==='dead')&&player;
  ctx.clearRect(0,0,screenWidth,810);

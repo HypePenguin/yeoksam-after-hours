@@ -6,6 +6,7 @@ import * as core from '../dist/core.js';
 import * as bossCore from '../dist/boss.js';
 import * as typeACore from '../dist/type-a.js';
 import * as catEffects from '../dist/cat-effects.js';
+import * as otterEffects from '../dist/otter-effects.js';
 
 // Runs the actual game loop against lightweight DOM/timer adapters. No live browser state.
 function harness({manualImages=false}={}){
@@ -31,7 +32,7 @@ function harness({manualImages=false}={}){
  },{get:(obj,key)=>key in obj?obj[key]:()=>{}});
  function el(selector){if(elements.has(selector))return elements.get(selector);const obj={parentElement:{},style:{},dataset:{},classList:{add(){},remove(){},toggle(){}},textContent:'',innerHTML:'',hidden:false,isConnected:true,disabled:false,onclick:null,listeners:new Map(),setPointerCapture(){},focus(){},setAttribute(k,v){this[k]=v;},getAttribute(k){return this[k]??null;},getBoundingClientRect(){return {width:1448,height:818};},addEventListener(n,f){this.listeners.set(n,f);},querySelector:child=>el(`${selector} ${child}`),querySelectorAll:()=>[],getContext:()=>drawing};elements.set(selector,obj);return obj;}
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),hidden:false,activeElement:el('#game')};
- const context=vm.createContext({...core,...bossCore,...typeACore,...catEffects,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;requestedImages.push(this);this.complete=!manualImages;this.naturalWidth=v.includes('otter-')?1215:1500;this.naturalHeight=v.includes('otter-')?1295:1000;if(!manualImages)this.onload?.();}},Promise,Math,Date:class extends Date{static now(){return clock.now;}},Number,String,Set});
+ const context=vm.createContext({...core,...bossCore,...typeACore,...catEffects,...otterEffects,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;requestedImages.push(this);this.complete=!manualImages;this.naturalWidth=v.includes('otter-')?1215:1500;this.naturalHeight=v.includes('otter-')?1295:1000;if(!manualImages)this.onload?.();}},Promise,Math,Date:class extends Date{static now(){return clock.now;}},Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
  vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,createModal,characterPortrait,sceneAssets,mapAssets,loadSceneAssets,loadImage,images,imageLoads,buildHUD,refreshHUD,refreshItemSlots,drawDrop,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,drawGuardBack,refreshHealthHUD,recordSwordBlock,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,maguriHack,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,guardBlocks,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
  return {api:context.gameTest,clock,persistence,requestedImages,finishImages(except){for(const img of requestedImages)if(!img.complete&&img.asset!==except){img.complete=true;img.onload?.();}},draws,labels,strokes,fills,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
@@ -1995,12 +1996,31 @@ test('Hyupro offers idol advancement to otters and keeps hacker advancement for 
 test('otter punches with no MP cost and water Q only damages the nearest valid front target',()=>{
  const {h,p}=otterFixture('alley',null),near=placeOtterEnemy(h,0,p.x+110,p.y),far=placeOtterEnemy(h,1,p.x+300,p.y),behind=placeOtterEnemy(h,2,p.x-60,p.y),offLane=placeOtterEnemy(h,3,p.x+50,p.y+85);
  const mp=p.mp;h.api.attack();assert.equal(p.mp,mp);assert.equal(near.hp,10000-core.basicAttackPower(p));assert.equal(far.hp,10000);assert.equal(behind.hp,10000);
- advance(h,.4);const hp=near.hp;h.api.cast('q');assert.equal(p.mp,mp-core.effectiveSkill(p,'q').mp);assert.equal(near.hp,hp-Math.round(core.attackPower(p)*2.4));assert.equal(far.hp,10000);assert.equal(behind.hp,10000);assert.equal(offLane.hp,10000);assert.equal(h.api.otterFrame(),9);
+ advance(h,.4);const hp=near.hp;h.api.cast('q');assert.equal(p.mp,mp-core.effectiveSkill(p,'q').mp);assert.equal(near.hp,hp,'water has not reached its target at launch');assert.equal(h.api.otterFrame(),9);advance(h,.2);assert.equal(near.hp,hp-Math.round(core.attackPower(p)*2.4));assert.equal(far.hp,10000);assert.equal(behind.hp,10000);assert.equal(offLane.hp,10000);assert.equal(h.api.otterFrame(),9);
  h.api.cast('q');assert.equal(near.hp,hp-Math.round(core.attackPower(p)*2.4),'cooldown prevents a duplicate shot');
 });
 test('water Q and wave aim left after moving left instead of following the original artwork direction',()=>{
  const {h,p}=otterFixture();h.api.keys.add('ArrowLeft');h.api.update(.01);h.api.keys.clear();const m=placeOtterEnemy(h,0,p.x-150,p.y);
- h.api.cast('q');assert.ok(m.hp<10000);const jet=h.api.get().effects.find(e=>e.type==='otterJet');assert.ok(jet.toX<jet.x);h.api.cast('w');assert.equal(h.api.get().otterWave.dir,-1);
+ h.api.cast('q');assert.equal(m.hp,10000);advance(h,.2);assert.ok(m.hp<10000);const jet=h.api.get().effects.find(e=>e.type==='otterJet');assert.ok(jet.toX<jet.x);h.api.cast('w');assert.equal(h.api.get().otterWave.dir,-1);
+});
+test('water Q starts at the rendered mouth in either outfit and facing, then hits once on arrival at different frame rates',()=>{
+ for(const job of [null,'idol'])for(const dir of [-1,1])for(const fps of [30,144]){
+  const {h,p}=otterFixture('alley',job);h.api.get().monsters.forEach(m=>m.respawnIn=999);h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');h.api.update(.01);h.api.keys.clear();
+  const m=placeOtterEnemy(h,0,p.x+dir*320,p.y);h.api.cast('q');const jet=h.api.get().effects.find(e=>e.type==='otterJet');
+  h.api.render();const pose=h.draws.find(d=>d.asset.includes(job?'otter-idol-skirt-motion-q-clean':'otter-motion-q-clean'));
+  const mouth=job?{x:503,y:764}:{x:501,y:756},source=pose.source;
+  // Locate the mouth through the actual cropped draw, including left mirroring.
+  const renderedX=dir>0?pose.x+(mouth.x-source[0])/source[2]*pose.width:pose.x+pose.width-(mouth.x-source[0])/source[2]*pose.width;
+  const renderedY=pose.y+(mouth.y-source[1])/source[3]*pose.height;
+  assert.ok(Math.abs(jet.x-h.api.get().camera-renderedX)<.01);assert.ok(Math.abs(jet.y-renderedY)<.01);
+  const hp=m.hp;h.api.update(jet.travel*.5);assert.equal(m.hp,hp);const head=otterEffects.waterJetPoint(jet,jet.elapsed/jet.travel);assert.ok((jet.toX-head.x)*dir>0);
+  for(let i=0;i<fps*.6;i++)h.api.update(1/fps);
+  assert.equal(m.hp,hp-Math.round(core.attackPower(p)*2.4));
+ }
+});
+test('water Q does not damage a dead target or follow it into another map',async()=>{
+ const {h,p}=otterFixture(),m=placeOtterEnemy(h,0,p.x+300,p.y);h.api.cast('q');m.dead=true;m.respawnIn=999;advance(h,.5);assert.equal(m.hp,10000);
+ h.api.get().cooldowns.q=0;m.dead=false;h.api.cast('q');const travel=h.api.travel(core.MAPS.alley.portals.find(portal=>portal.to==='town'));await h.flush();await travel;advance(h,.5);assert.equal(m.hp,10000);assert.equal(h.api.get().effects.some(e=>e.type==='otterJet'),false);
 });
 test('small wave crosses multiple enemies, hits each once and has a bounded travel distance',()=>{
  const {h,p}=otterFixture(),a=placeOtterEnemy(h,0,p.x+180,p.y),b=placeOtterEnemy(h,1,p.x+480,p.y),outside=placeOtterEnemy(h,2,p.x+780,p.y);const hp=p.hp,x=p.x;
