@@ -2258,3 +2258,33 @@ test('contact overlap counts by enemy attack cadence and boss melee or beam hits
   const {h,p}=bossHarness();h.api.startBossFight();const b=h.api.get().boss;Object.assign(b,{phase:'recover',elapsed:-10});advance(h,1.2);p.x=900;p.y=650;Object.assign(b,{x:800,y:650,dir:1,phase:phase==='wave'?'recover':phase,elapsed:0,strikes:0});h.api.cast('e');if(phase==='wave')b.projectiles=[{x:890,y:650,dir:1,life:3,spent:false}];advance(h,.5);assert.ok(h.api.get().guardBlocks>=2);assert.equal(p.hp,480);
  }
 });
+
+test('K opens and closes the skill book without spending resources or advancing combat',()=>{
+ const h=harness(),p=core.createCharacter('스킬 확인','chick');Object.assign(p,{level:15,job:'hacker',map:'alley',x:900});p.mp=core.maxMp(p);h.api.start(p);h.api.buildHUD();
+ h.api.keys.add('ArrowRight');const before={x:p.x,hp:p.hp,mp:p.mp};key(h,'KeyK');
+ assert.equal(h.api.get().modal,'skills');assert.equal(h.api.keys.size,0);advance(h,2);assert.deepEqual({x:p.x,hp:p.hp,mp:p.mp},before);
+ key(h,'KeyK',true);assert.equal(h.api.get().modal,'skills','holding K does not immediately close the book');
+ key(h,'KeyA');assert.equal(p.mp,before.mp);assert.equal(h.api.get().chickCodes.length,0);
+ key(h,'KeyK');assert.equal(h.api.get().modal,null);assert.equal(h.api.keys.size,0);
+ h.el('#skills-button').onclick();assert.equal(h.api.get().modal,'skills');key(h,'Escape');assert.equal(h.api.get().modal,null);
+ h.api.selectCharacters();key(h,'KeyK');assert.equal(h.api.get().modal,null,'book opens only in game');
+});
+
+test('skill book shows all five images, descriptions and live values for every advanced job',()=>{
+ for(const [classId,job,prefix] of [['wanderer','swordsman','swordsman'],['wanderer','bodybuilder','builder'],['cat','protester','cat'],['chick','hacker','hacker'],['rabbit','mage','rabbit'],['otter','idol','otter']]){
+  const h=harness(),p=core.createCharacter('스킬',classId);Object.assign(p,{level:15,job});h.api.start(p);key(h,'KeyK');const html=h.el('#modal-root').innerHTML;
+  for(const k of ['a','q','w','e','r'])assert.ok(html.includes(`data-book-skill="${k}"`));
+  for(const k of ['q','w','e','r']){const s=core.effectiveSkill(p,k);assert.ok(html.includes(s.name));assert.ok(html.includes(`MP ${s.mp} · 재사용 ${s.cooldown}초`));}
+  assert.equal((html.match(/alt="[^\"]+ 스킬 이미지"/g)||[]).length,5);
+  assert.ok(html.includes(`${prefix}-skill-e.webp`));
+  assert.equal(html.includes('class="skill-book-enhanced"'),job==='bodybuilder');
+  for(const src of [...html.matchAll(/<img src="([^"]+)"/g)].map(m=>m[1]))assert.ok(fs.existsSync(new URL(`../dist/${src}`,import.meta.url)));
+ }
+});
+
+test('skill book explains locked levels and updates novice art after advancement',()=>{
+ const h=harness(),p=core.createCharacter('토끼','rabbit');h.api.start(p);key(h,'KeyK');let html=h.el('#modal-root').innerHTML;
+ for(const level of [3,6,10,15])assert.ok(html.includes(`🔒 Lv.${level}`));assert.ok(html.includes('전직 필요'));assert.ok(html.includes('MP 2'));assert.ok(html.includes('rabbit-skill-w.webp'));
+ h.api.closeModal();Object.assign(p,{level:15,job:'mage'});key(h,'KeyK');html=h.el('#modal-root').innerHTML;
+ assert.ok(html.includes('rabbit-skill-w-mage.webp'));assert.ok(html.includes('순간 이동'));assert.ok(!html.includes('🔒 Lv.'));
+});
