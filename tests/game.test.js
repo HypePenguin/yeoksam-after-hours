@@ -31,7 +31,7 @@ function harness({manualImages=false}={}){
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),hidden:false,activeElement:el('#game')};
  const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;requestedImages.push(this);this.complete=!manualImages;this.naturalWidth=v.includes('otter-')?1215:1500;this.naturalHeight=v.includes('otter-')?1295:1000;if(!manualImages)this.onload?.();}},Promise,Math,Date,Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
- vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,createModal,characterPortrait,sceneAssets,mapAssets,loadSceneAssets,loadImage,images,imageLoads,buildHUD,refreshHUD,refreshItemSlots,drawDrop,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,showMapView,showMapDetails,showMapTab,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,refreshHealthHUD,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapView,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
+ vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,createModal,characterPortrait,sceneAssets,mapAssets,loadSceneAssets,loadImage,images,imageLoads,buildHUD,refreshHUD,refreshItemSlots,drawDrop,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,refreshHealthHUD,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
  return {api:context.gameTest,persistence,requestedImages,finishImages(except){for(const img of requestedImages)if(!img.complete&&img.asset!==except){img.complete=true;img.onload?.();}},draws,labels,strokes,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
 }
 function advance(h,seconds){for(let t=0;t<seconds;t+=1/60)h.api.update(1/60);}
@@ -171,7 +171,7 @@ test('travel preserves awakening and cooldowns, death removes awakening, re-entr
 test('map hotkey toggles the map, pauses gameplay and keeps keyboard state clean',()=>{
  const h=harness(),p=core.createCharacter('지도');h.api.start(p);h.api.keys.add('ArrowRight');const x=p.x;
  const event={code:'KeyM',repeat:false,preventDefault(){},target:{matches(){return false;}}};h.events.get('keydown')(event);
- assert.equal(h.api.get().modal,'world-map');assert.equal(h.api.keys.size,0);advance(h,2);assert.equal(p.x,x);assert.match(h.el('#modal-root').innerHTML,/23 지역 탐험/);for(const id of Object.keys(core.MAPS))assert.match(h.el('#modal-root').innerHTML,new RegExp(`data-map="${id}"`));
+ assert.equal(h.api.get().modal,'world-map');assert.equal(h.api.keys.size,0);advance(h,2);assert.equal(p.x,x);assert.match(h.el('#modal-root').innerHTML,/현재 위치 <strong>역삼역 1번 출구/);for(const id of Object.keys(core.MAPS))assert.match(h.el('#modal-root').innerHTML,new RegExp(`data-map="${id}"`));
  h.events.get('keydown')(event);assert.equal(h.api.get().modal,null);assert.equal(h.api.keys.size,0);
 });
 test('new regions are playable via portals and record exploration; training room heals',async()=>{
@@ -516,13 +516,14 @@ test('crossroads robots hurt the player and award loot, while exit six remains s
 });
 
 
-test('map recommends the Lv13 hunting area and gives the next real portal from the player position',()=>{
+test('map gives the next real portal from the player position without a detailed guide',()=>{
  const h=harness(),p=core.createCharacter('경로');p.level=13;p.x=530;h.api.start(p);h.api.worldMap();
- assert.match(h.el('#modal-root').innerHTML,/Lv. 13 추천 사냥터/);assert.match(h.el('#modal-root').innerHTML,/고레벨 던전/);
- h.el('#map-recommend').onclick();let detail=h.el('#map-details').innerHTML;assert.match(detail,/<h3>방치된 중계소<\/h3>/);assert.match(detail,/포탈 4번/);assert.match(detail,/왼쪽으로 이동/);assert.match(detail,/왼쪽부터 1번째 포탈/);assert.match(detail,/data-map-link="park"/);
+ h.api.selectMapDestination('relay');let selection=h.el('#atlas-selection').innerHTML;
+ assert.match(selection,/방치된 중계소/);assert.match(selection,/포탈 4번/);assert.match(selection,/왼쪽의/);assert.match(selection,/왼쪽부터 1번째 포탈/);assert.match(selection,/달빛 근린공원부터/);
  assert.equal(p.map,'town');assert.equal(p.x,530);assert.equal(h.api.get().modal,'world-map');
- h.api.showMapDetails('dojo');detail=h.el('#map-details').innerHTML;assert.match(detail,/포탈 3번/);assert.match(detail,/오른쪽으로 이동/);assert.match(detail,/왼쪽부터 4번째 포탈/);
- h.api.showMapDetails('nexus');assert.match(h.el('#map-details').innerHTML,/Lv. 25–30/);assert.match(h.el('#map-details').innerHTML,/현재 레벨보다 강한 적/);
+ h.api.selectMapDestination('dojo');selection=h.el('#atlas-selection').innerHTML;
+ assert.match(selection,/포탈 3번/);assert.match(selection,/오른쪽의/);assert.match(selection,/왼쪽부터 4번째 포탈/);
+ h.api.selectMapDestination('nexus');assert.match(h.el('#modal-root').innerHTML,/Lv. 25–30/);
 });
 test('every new dungeon supports combat rewards, respawning and exact saved re-entry',async()=>{
  for(const id of ['relay','canal','foundry','nexus']){
@@ -827,31 +828,28 @@ test('bodybuilder reduces contact and all boss attack patterns in normal and pow
 });
 
 
-test('M opens the overview every time and retains the old detailed route guide as a tab',()=>{
+test('M opens one map without detail tabs while retaining every location and connection',()=>{
  const h=harness(),p=core.createCharacter('지도보기');h.api.start(p);h.api.worldMap();
- assert.equal(h.api.get().mapView,'overview');assert.equal(h.el('#map-view-overview').hidden,false);assert.equal(h.el('#map-view-details').hidden,true);
- const html=h.el('#modal-root').innerHTML;assert.match(html,/role="tablist"/);assert.match(html,/상세 안내/);assert.match(html,/초반 사냥/);assert.match(html,/고레벨 던전/);assert.match(html,/마을 · 전직/);
+ const html=h.el('#modal-root').innerHTML;
+ assert.doesNotMatch(html,/role="tablist"|상세 안내|map-view-details|atlas-open-details|map-recommend/);
  const graph=html.slice(html.indexOf('<div class="atlas-board">'),html.indexOf('<div class="atlas-legend">'));
  assert.equal([...graph.matchAll(/data-map="/g)].length,23);assert.equal([...graph.matchAll(/data-map-edge="/g)].length,23);assert.equal([...graph.matchAll(/aria-current="location"/g)].length,1);
- h.api.showMapView('details');assert.equal(h.el('#map-view-overview').hidden,true);assert.equal(h.el('#map-view-details').hidden,false);
- h.api.closeModal();h.api.worldMap();assert.equal(h.api.get().mapView,'overview');assert.equal(h.api.get().mapSelection,p.map);
+ h.api.selectMapDestination('pocha');h.api.closeModal();h.api.worldMap();assert.equal(h.api.get().mapSelection,p.map);
 });
-
-test('overview selects a destination without moving the current location and shares it with details',()=>{
+test('map selects a destination without moving the current location and can locate the player again',()=>{
  const h=harness(),p=core.createCharacter('연결보기');p.map='canal';p.x=2000;p.visited.push('canal');h.api.start(p);h.api.worldMap();
  const before=JSON.stringify(p);h.api.selectMapDestination('pocha');
- assert.equal(h.api.get().mapView,'overview');assert.equal(h.api.get().mapSelection,'pocha');assert.equal(JSON.stringify(p),before);
+ assert.equal(h.api.get().mapSelection,'pocha');assert.equal(JSON.stringify(p),before);
  assert.match(h.el('#atlas-selection').innerHTML,/한사발포차 역삼점/);assert.match(h.el('#atlas-selection').innerHTML,/포탈 3번/);assert.match(h.el('#atlas-selection').innerHTML,/자동화 주조소부터/);assert.match(h.el('#atlas-selection').innerHTML,/왼쪽부터 2번째 포탈/);
  assert.match(h.el('#modal-root').innerHTML,/atlas-node hunt current visited" data-map="canal"/);
- h.api.showMapView('details');assert.match(h.el('#map-details').innerHTML,/<h3>한사발포차 역삼점<\/h3>/);
- h.api.showMapView('overview');h.el('#atlas-locate').onclick();assert.equal(h.api.get().mapSelection,'canal');assert.match(h.el('#atlas-selection').innerHTML,/바로 연결된 지역/);
+ h.el('#atlas-locate').onclick();assert.equal(h.api.get().mapSelection,'canal');assert.match(h.el('#atlas-selection').innerHTML,/바로 연결된 지역/);
 });
 test('the new safe town shows its current location and only its actual foundry and boss neighbors',()=>{
  const h=harness(),p=core.createCharacter('강남지도');p.map='gangnam';p.visited.push('gangnam');h.api.start(p);h.api.worldMap();
  assert.match(h.el('#modal-root').innerHTML,/atlas-node safe current visited" data-map="gangnam"/);
  const here=h.el('#atlas-selection').innerHTML;assert.match(here,/data-atlas-link="foundry"/);assert.match(here,/data-atlas-link="pocha"/);assert.doesNotMatch(here,/data-atlas-link="canal"/);
  h.api.selectMapDestination('pocha');assert.match(h.el('#atlas-selection').innerHTML,/포탈 1번/);assert.match(h.el('#atlas-selection').innerHTML,/왼쪽부터 2번째 포탈/);
- h.api.showMapView('details');assert.match(h.el('#map-details').innerHTML,/강남역/);assert.doesNotMatch(h.el('#map-details').innerHTML,/냉각수로 끝/);
+ assert.match(h.el('#atlas-selection').innerHTML,/data-atlas-link="gangnam"/);assert.doesNotMatch(h.el('#atlas-selection').innerHTML,/냉각수로 끝/);
 });
 
 function combatHarness(job='bodybuilder',power=0){
@@ -1983,7 +1981,7 @@ test('otter skill art persists under cooldown and ride cues while unlearned skil
  for(const key of ['q','w','e','r']){assert.equal(symbol(key).dataset.art,key);assert.ok(symbol(key).innerHTML.includes(`otter-skill-${key}.webp`));}
  h.api.cast('q');h.api.refreshHUD();assert.equal(h.el('[data-skill="q"] .skill-symbol .skill-cue').textContent,'3');assert.equal(h.el('[data-skill="q"] .skill-symbol .skill-cue').hidden,false);assert.ok(symbol('q').innerHTML.includes('otter-skill-q.webp'));
  h.api.cast('w');h.api.refreshHUD();assert.equal(h.el('[data-skill="w"] .skill-symbol .skill-cue').textContent,'↗');
- const rabbit=core.createCharacter('그대로','rabbit');h.api.start(rabbit);assert.equal(h.api.skillSymbolMarkup('a','◉'),'◉');
+ const penguin=core.createCharacter('그대로');h.api.start(penguin);assert.equal(h.api.skillSymbolMarkup('a','╱'),'╱');
 });
 
 test('hacker advancement swaps skill art while novice icons and locked levels stay intact',()=>{

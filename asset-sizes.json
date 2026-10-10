@@ -1,6 +1,6 @@
 {
-  "source_bytes": 181083681,
-  "bytes": 23172404,
+  "source_bytes": 194063220,
+  "bytes": 23304256,
   "assets": [
     {
       "name": "builder-recovery-walk",
@@ -1241,6 +1241,104 @@
       "source_size": [
         256,
         256
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "rabbit-skill-a",
+      "source_bytes": 1604705,
+      "bytes": 10698,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "rabbit-skill-e",
+      "source_bytes": 2065840,
+      "bytes": 26788,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "rabbit-skill-q",
+      "source_bytes": 1473427,
+      "bytes": 6892,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "rabbit-skill-r",
+      "source_bytes": 2040384,
+      "bytes": 21810,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "rabbit-skill-r-v2",
+      "source_bytes": 1909613,
+      "bytes": 21510,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "rabbit-skill-w",
+      "source_bytes": 1864571,
+      "bytes": 19440,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "compact": true
+    },
+    {
+      "name": "rabbit-skill-w-mage",
+      "source_bytes": 2020999,
+      "bytes": 24714,
+      "source_size": [
+        1254,
+        1254
       ],
       "size": [
         256,
