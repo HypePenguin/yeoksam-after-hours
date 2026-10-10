@@ -1,4 +1,5 @@
 // Visuals use encounter time; they never alter collision, damage or summon lifetime.
+import {catAreaRadii} from './core.js?v=137';
 const TAU=Math.PI*2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const noise=i=>{const n=Math.sin(i*127.1+311.7)*43758.5453;return n-Math.floor(n);};
@@ -65,6 +66,33 @@ function fireAtlas(ctx,img,row,phase,x,y,width,alpha=1){
  }
  ctx.restore();return true;
 }
+// Upright flames communicate height; this separate fuel surface communicates damage depth.
+// The boundary and the clipping mask use precisely the same ellipse as catAreaContains.
+export function drawFireFootprint(ctx,x,y,radius,phase,texture,alpha=1){
+ const r=catAreaRadii(radius);
+ ctx.save();ctx.translate(x,y);ctx.globalAlpha*=alpha;
+ ctx.beginPath();ctx.ellipse(0,0,r.x,r.y,0,0,TAU);ctx.clip();
+ const bed=ctx.createRadialGradient(0,0,0,0,0,1);
+ bed.addColorStop(0,'#ed711742');bed.addColorStop(.65,'#d254174d');bed.addColorStop(.94,'#ea682453');bed.addColorStop(1,'#e76e3442');
+ ctx.save();ctx.scale(r.x,r.y);ctx.fillStyle=bed;ctx.fillRect(-1,-1,2,2);ctx.restore();
+ if(texture?.complete&&texture.naturalWidth){
+  const cw=texture.naturalWidth/2,ch=texture.naturalHeight/2,frame=Math.floor(phase),mix=phase-frame;
+  // Dedicated overhead fire atlas: never stretch an upright plume into floor depth.
+  for(const [index,weight] of [[frame,1-mix],[(frame+1)%4,mix]]){
+   if(weight<=0)continue;ctx.save();ctx.globalAlpha*=weight*.8;
+   ctx.drawImage(texture,(index%2)*cw+cw*.05,Math.floor((index%4)/2)*ch+ch*.12,cw*.9,ch*.79,-r.x,-r.y,r.x*2,r.y*2);ctx.restore();
+  }
+ }
+ for(let i=0;i<65;i++){
+  const a=i*2.399,d=Math.sqrt(noise(i+31))*.98,px=Math.cos(a)*d*r.x,py=Math.sin(a)*d*r.y;
+  const flicker=.5+.5*Math.sin(phase*TAU+i*1.7);
+  ctx.fillStyle=i%3?'#ffce8299':'#fff4bcaa';ctx.beginPath();ctx.ellipse(px,py,1.2+flicker*2,.7+flicker,0,0,TAU);ctx.fill();
+ }
+ ctx.restore();
+ // A restrained ember edge keeps the complete footprint readable, including its front/back.
+ ctx.save();ctx.globalAlpha*=alpha;ctx.strokeStyle='#ff9a5266';ctx.lineWidth=1.5;
+ for(let i=0;i<36;i++){const a=i*TAU/36;ctx.beginPath();ctx.ellipse(x,y,r.x,r.y,0,a,a+TAU/36*.65);ctx.stroke();}ctx.restore();
+}
 export function drawMolotovExplosion(ctx,e,t,texture){
  const age=clamp(1-t,0,1),r=e.size,seed=(e.x||0)*.013+(e.y||0)*.021;
  ctx.save();ctx.shadowBlur=0;
@@ -72,14 +100,14 @@ export function drawMolotovExplosion(ctx,e,t,texture){
  const spread=r*(.14+.8*(1-Math.exp(-age*7))),heat=Math.exp(-age*3.8);
  const ground=ctx.createRadialGradient(0,0,1,0,0,spread);
  ground.addColorStop(0,`rgba(255,205,106,${heat*.64})`);ground.addColorStop(.55,`rgba(255,104,18,${heat*.28})`);ground.addColorStop(1,'#ff680000');
- ctx.save();ctx.scale(1,.5);ctx.fillStyle=ground;ctx.beginPath();ctx.arc(0,0,spread,0,TAU);ctx.fill();ctx.restore();
+ ctx.save();ctx.scale(1,catAreaRadii(1).y);ctx.fillStyle=ground;ctx.beginPath();ctx.arc(0,0,spread,0,TAU);ctx.fill();ctx.restore();
  // Smoke starts behind the flame and expands as combustion cools.
  for(let i=0;i<13;i++){
   const n=noise(i+seed),a=i*2.399,reach=(.15+age*.62)*r*Math.sqrt(n);
   const x=Math.cos(a)*reach+age*18,y=Math.sin(a)*reach*.4-15-age*(45+n*62);
   smoke(ctx,x,y,14+age*(24+n*32),Math.sin(Math.PI*age)*(.12+n*.09));
  }
- const textured=fireAtlas(ctx,texture,0,Math.min(3,age*3.6),0,0,r*2.4,clamp(t*2,0,1));
+ const textured=fireAtlas(ctx,texture,0,Math.min(3,age*3.6),0,0,r*1.9,clamp(t*2,0,1));
  if(!textured)for(let i=0;i<21;i++){
   const n=noise(i+seed+51),a=i*2.399,reach=(.08+age*.68)*r*Math.sqrt(n),ignition=clamp(age*14-noise(i+8)*.7,0,1);
   const x=Math.cos(a)*reach,y=Math.sin(a)*reach*.42-8-age*(20+n*45);
@@ -115,7 +143,7 @@ export function drawFireField(ctx,f,camera,time,texture){
   smoke(ctx,x+Math.cos(a)*rr+life*26,y+Math.sin(a)*rr*.57-life*(75+n*50)-14,11+life*26,Math.sin(Math.PI*life)*.13*ignite);
  }
  const points=Array.from({length:40},(_,i)=>{const a=i*2.399,rr=Math.sqrt(noise(i+80))*r*.89;return {i,x:x+Math.cos(a)*rr,y:y+Math.sin(a)*rr*.6};}).sort((a,b)=>a.y-b.y);
- const textured=fireAtlas(ctx,texture,1,(age*5)%4,x,y,r*2.4,ignite);
+ const textured=fireAtlas(ctx,texture,1,(age*5)%4,x,y,r*.95,ignite*.6);
  if(!textured)for(const p of points){
   const n=noise(p.i+seed),cycle=(age*(1.25+n*.9)+n)%1;
   const lift=Math.sin(Math.PI*cycle),w=4+n*6,h=(20+n*43)*(.45+lift*.75)*ignite*(.55+fade*.45);

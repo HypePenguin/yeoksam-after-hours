@@ -1,7 +1,7 @@
-import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawBallotVortex} from './cat-effects.js?v=136';
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=136';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=136';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=136';
+import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawFireFootprint,drawBallotVortex} from './cat-effects.js?v=137';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections,catAreaRadii,catAreaContains} from './core.js?v=137';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=137';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=137';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -29,7 +29,7 @@ function loadImage(name){
  imageLoads.set(name,promise);img.src=`assets/${name}.webp`;return promise;
 }
 function characterAssets(p){
- let assets=p.classId==='otter'?[otterAsset(p)]:p.classId==='rabbit'?[rabbitAsset(p)]:p.classId==='chick'?['chick-motion','chick-actions',...(p.job==='hacker'?['chick-typing']:[])]:p.classId==='cat'?[...['cat','cat-motion','cat-skills'].map(name=>catAsset(name,p)),...(p.job==='protester'?['cat-fire-v136']:[])]:
+ let assets=p.classId==='otter'?[otterAsset(p)]:p.classId==='rabbit'?[rabbitAsset(p)]:p.classId==='chick'?['chick-motion','chick-actions',...(p.job==='hacker'?['chick-typing']:[])]:p.classId==='cat'?[...['cat','cat-motion','cat-skills'].map(name=>catAsset(name,p)),...(p.job==='protester'?['cat-fire-v136','cat-fire-ground-v137']:[])]:
   ['penguin','penguin-hurt','penguin-walk','penguin-jump',...(p.job==='swordsman'?['combat-swordsman','sword-guard-walk','swordsman-skill-e-draw']:['combat-brawler']),...(p.job==='bodybuilder'?['builder-recovery-walk','penguin-power','penguin-power-poses','penguin-power-walk','penguin-power-jump','combat-power','power-recovery-walk']:[])];
  if(hasUniform(p))assets=[...assets,...assets.filter(name=>UNIFORM_ASSETS.has(name)).map(name=>'uniform-'+name)];
  if(p.job&&p.classId==='wanderer')assets.push('job-equipment');
@@ -1022,7 +1022,7 @@ function releaseCatCharge(input='keyboard'){
  catCastLock=.28;playCombatMotion('catThrow',catCastLock);textAt(strength>.95?'최대 사거리!':'화염병!',player.x,player.y-156,'#ffb47b');beep(570,.18);refreshHUD();save();return true;
 }
 function catAreaHit(x,y,radius,damage,pull=0){
- for(const m of [...monsters])if(canTarget(m)&&Math.hypot(m.x-x,(m.y-y)*1.5)<radius){
+ for(const m of [...monsters])if(canTarget(m)&&catAreaContains(m.x-x,m.y-y,radius)){
   const before=m.hp;
   // Ballot hits pull inward instead of applying the normal outward hit knockback.
   hitMonster(m,Math.round(attackPower(player)*damage),pull?0:14);
@@ -1811,11 +1811,16 @@ function drawWindSwing(e,t){
  ctx.scale(e.dir||1,1);ctx.lineCap='round';
  for(let i=0;i<3;i++){const scale=1-i*.19;ctx.strokeStyle=i===1?e.accent:e.color;ctx.lineWidth=i===0?7:2.5;ctx.beginPath();ctx.ellipse(e.size*.18+(1-t)*e.size*.15,-i*3,e.size*.52*scale,e.size*.25*scale,-.12,-1.45+(1-t)*.35,1.1+(1-t)*.35);ctx.stroke();}
 }
+function drawCatGround(){
+ const ground=images['cat-fire-ground-v137'];
+ for(const fire of catFires){const age=Math.max(0,fire.duration-fire.remaining);drawFireFootprint(ctx,fire.x-camera,fire.y,fire.radius,(age*5)%4,ground,clamp(fire.remaining/.65,0,1)*clamp(age/.16,0,1));}
+ for(const e of effects)if(e.type==='catExplosion'){const t=e.life/e.max;drawFireFootprint(ctx,e.x-camera,e.y,e.size,(1-t)*3.6,ground,clamp(t*3,0,1)*.8);}
+}
 function drawCatFields(){
  for(const fire of catFires)drawFireField(ctx,fire,camera,worldTime,images['cat-fire-v136']);
  for(const bottle of catProjectiles)drawMolotov(ctx,bottle,camera,worldTime);
  if(catBallot){const b=catBallot,x=b.x-camera,y=b.y;drawBallotVortex(ctx,b,camera,worldTime);roundedRect(x-43,y-119,86,7,3,'#29252ddd');roundedRect(x-43,y-119,86*b.hp/b.maxHp,7,3,'#a8e7c4');label(`투표함 · ${Math.ceil(b.hp)} / ${b.maxHp}`,x,y-138,'#d9ffe8',11);}
- if(catCharge){const skill=catCharge.skill,t=catCharge.elapsed/skill.charge,reach=skill.range+(skill.maxRange-skill.range)*t,toX=clamp(player.x+facing*reach,45,MAPS[player.map].width-45),preview={x:player.x+facing*20,y:player.y-82,toX,toY:player.y-24};ctx.save();ctx.strokeStyle='#ffb777';ctx.setLineDash([7,7]);ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<=24;i++){const p=bottlePoint(preview,i/24);if(i===0)ctx.moveTo(p.x-camera,p.y);else ctx.lineTo(p.x-camera,p.y);}ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.ellipse(toX-camera,preview.toY,skill.radius,skill.radius/1.5,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
+ if(catCharge){const skill=catCharge.skill,t=catCharge.elapsed/skill.charge,reach=skill.range+(skill.maxRange-skill.range)*t,toX=clamp(player.x+facing*reach,45,MAPS[player.map].width-45),preview={x:player.x+facing*20,y:player.y-82,toX,toY:player.y-24};ctx.save();ctx.strokeStyle='#ffb777';ctx.setLineDash([7,7]);ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<=24;i++){const p=bottlePoint(preview,i/24);if(i===0)ctx.moveTo(p.x-camera,p.y);else ctx.lineTo(p.x-camera,p.y);}ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.ellipse(toX-camera,preview.toY,catAreaRadii(skill.radius).x,catAreaRadii(skill.radius).y,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
 }
 function drawGuardDraw(e,t,back=false){
  // A flat sword plane: thin behind the body, wide and bright across the foreground.
@@ -1869,7 +1874,7 @@ function draw(){
    ...(boss?[{y:boss.y,draw:drawBoss}]:[]),
    {y:player.y,draw:drawPlayer}
   ];
-  drawGuardBack();entities.sort((a,b)=>a.y-b.y).forEach(e=>e.draw());drawCatFields();
+  drawCatGround();drawGuardBack();entities.sort((a,b)=>a.y-b.y).forEach(e=>e.draw());drawCatFields();
   drawCombatIndicators();drawEffects();drawRabbitEffects();drawChickEffects();drawOtterEffects();
   if(MAPS[player.map].danger>=2){
    for(let i=0;i<20;i++){const x=(i*163+worldTime*13)%screenWidth,y=120+(i*97)%520;ctx.fillStyle=`rgba(190,163,243,${.15+Math.sin(worldTime+i)*.1})`;ctx.fillRect(x,y,3,3);}

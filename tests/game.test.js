@@ -2449,3 +2449,29 @@ test('town panorama draws each landmark once and covers wider and scrolled viewp
   for(const sx of [0,width/2,width])assert.ok(pieces.some(d=>sx>=d.x&&sx<=d.x+d.width),'pavement must fill the viewport');
  }
 });
+
+test('Molotov ground footprint and damage share front/back and diagonal boundaries at every camera offset',()=>{
+ const h=harness(),p=core.createCharacter('불길 범위','cat');Object.assign(p,{level:30,job:'protester',map:'alley',x:1000,y:650});h.api.start(p);
+ const group=h.api.get().monsters,m=group[0];group.slice(1).forEach(m=>m.dead=true);
+ const skill=core.effectiveSkill(p,'e');
+ for(const radius of [skill.radius,skill.burnRadius])for(const camera of [0,725]){
+  const ellipses=[],images=[],texture={complete:true,naturalWidth:1500,naturalHeight:1000};
+  const ctx=new Proxy({globalAlpha:1,createRadialGradient:()=>({addColorStop(){}}),ellipse:(...a)=>ellipses.push(a),drawImage:(_, ...a)=>images.push(a)},{get:(o,k)=>k in o?o[k]:()=>{}});
+  catEffects.drawFireFootprint(ctx,p.x-camera,p.y,radius,3.7,texture);
+  const [x,y,rx,ry]=ellipses.at(-1);assert.equal(x,p.x-camera);assert.equal(y,p.y);assert.equal(rx,radius);assert.equal(ry,radius/1.5);
+  for(const [sx,sy,sw,sh] of images){assert.ok(sx>=0&&sy>=0&&sx+sw<=texture.naturalWidth&&sy+sh<=texture.naturalHeight);}
+  for(let i=0;i<8;i++)for(const scale of [.999,1.001]){
+   const angle=i*Math.PI/4;m.x=p.x+Math.cos(angle)*rx*scale;m.y=p.y+Math.sin(angle)*ry*scale;m.hp=m.maxHp=100000;m.knockback=0;m.dead=false;
+   h.api.catAreaHit(p.x,p.y,radius,1);assert.equal(m.hp<100000,scale<1,`camera ${camera}, angle ${angle}, scale ${scale}`);
+  }
+ }
+});
+
+test('Molotov uses the overhead atlas for the floor and the upright atlas for explosion and flames',async()=>{
+ const h=harness(),p=core.createCharacter('화염 레이어','cat');Object.assign(p,{level:30,job:'protester',map:'alley',x:1000});p.mp=core.maxMp(p);h.api.start(p);
+ await Promise.all([h.api.loadImage('cat-fire-v136'),h.api.loadImage('cat-fire-ground-v137')]);
+ h.api.startCatCharge('test');h.api.releaseCatCharge('test');advance(h,.4);render(h);
+ const ground=h.draws.filter(d=>d.asset==='assets/cat-fire-ground-v137.webp'),upright=h.draws.filter(d=>d.asset==='assets/cat-fire-v136.webp');
+ assert.ok(ground.length);assert.ok(upright.length);
+ assert.ok(ground.every(d=>d.source[2]===1500/2*.9));assert.ok(upright.every(d=>d.source[2]===1500/4));
+});

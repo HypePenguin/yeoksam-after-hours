@@ -185,6 +185,10 @@ export function findMapRoute(from,to){
 }
 
 export const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+// Ground-space ellipse shared by cat area damage, previews and flame footprints.
+export const CAT_AREA_Y_SCALE=1.5;
+export const catAreaRadii=radius=>({x:radius,y:radius/CAT_AREA_Y_SCALE});
+export const catAreaContains=(dx,dy,radius)=>Math.hypot(dx,dy*CAT_AREA_Y_SCALE)<radius;
 export const xpNeeded=level=>(level<10?48:80)*level;
 const classFor=p=>CLASSES.find(c=>c.id===p.classId)||CLASSES[0];
 // Round the rabbit's 70% base HP before applying temporary max-HP buffs.
