@@ -610,24 +610,20 @@ test('boss defeat gives one reward per victory, saves XP and equips the unique u
  h.el('#equip-reward').onclick();assert.equal(p.uniformEquipped,true);const x=p.x;h.api.keys.add('ArrowRight');for(let i=0;i<30;i++)h.api.update(1/60);h.api.keys.clear();assert.ok(Math.abs(p.x-x-188.1)<.01);assert.equal(JSON.parse(h.storage.get(core.SAVE_KEY)).characters[0].uniformEquipped,true);
  h.api.startBossFight();h.api.hitMonster(b,bossCore.SOLDIER.hp);assert.equal(p.uniform,1);assert.equal(p.bossWins,2);
 });
-test('boss abandonment, recall, death and reload reset combat without carrying projectiles or potion time',async()=>{
+test('boss abandonment, death and reload reset combat without carrying projectiles or potion time',async()=>{
  const {h,p}=bossHarness();h.api.startBossFight();p.hp=200;h.api.useInventoryItem('potions');const hp=p.hp;h.api.abandonBoss();assert.equal(p.hp,hp);assert.equal(h.api.get().boss.active,false);assert.equal(h.api.get().boss.hp,bossCore.SOLDIER.hp);assert.equal(h.api.get().potionCooldown,0);
  h.api.startBossFight();h.api.hitMonster(h.api.get().boss,1000);h.api.save();h.api.selectCharacters();const entry=h.api.enterWorld(p.id);await h.flush();await entry;const restored=h.api.get().player;assert.equal(restored.map,'pocha');assert.equal(h.api.get().boss.active,false);assert.equal(h.api.get().boss.hp,bossCore.SOLDIER.hp);
- h.api.startBossFight();h.api.useInventoryItem('returnScrolls');assert.equal(restored.map,'town');assert.equal(h.api.get().boss,null);assert.equal(h.api.get().potionCooldown,0);assert.equal(restored.returnScrolls,1);
+ h.api.startBossFight();h.api.useInventoryItem('returnScrolls');assert.equal(restored.map,'pocha');assert.equal(h.api.get().boss.active,true);assert.equal(restored.returnScrolls,2);
  const again=bossHarness();again.h.api.startBossFight();again.h.api.die();assert.equal(again.p.map,'town');assert.equal(again.h.api.get().boss,null);assert.equal(again.p.bossWins,0);
 });
-test('either scroll escapes a live boss by bag or shortcut and resets combat without healing or rewards',()=>{
- for(const id of ['returnScrolls','gangnamScrolls'])for(const fromBag of [false,true]){
-  const {h,p}=bossHarness();h.api.startBossFight();const b=h.api.get().boss;b.phase='recover';b.elapsed=-30;
-  p.hp=120;h.api.useInventoryItem('potions');assert.equal(h.api.get().potionCooldown,10);
-  if(fromBag){h.api.jump();advance(h,.2);assert.ok(h.api.get().pz>0);}else{h.api.startSwordCharge();assert.ok(h.api.get().swordUlt);}
-  b.projectiles=[{x:400,y:650,dir:1,life:1,spent:false}];const hp=p.hp,mp=p.mp;p.quickSlots[2]=id;
+test('all movement devices stay blocked before, during and after both bosses by bag and shortcut',()=>{
+ for(const map of ['pocha','hangar'])for(const phase of ['waiting','fighting','defeated'])for(const id of ['returnScrolls','gangnamScrolls','yeoksamStreetScrolls'])for(const fromBag of [false,true]){
+  const h=harness(),p=core.createCharacter('이동금지');Object.assign(p,{level:35,job:'swordsman',map,x:1000,y:650,[id]:2});p.hp=core.maxHp(p);p.mp=core.maxMp(p);p.quickSlots[2]=id;h.api.start(p);
+  if(phase!=='waiting')h.api.startBossFight();const b=h.api.get().boss;
+  if(phase==='defeated'){if(core.MAPS[map].bossName==='A형')b.safetyUsed=true;h.api.hitMonster(b,b.maxHp);h.api.closeModal();assert.equal(b.dead,true);}
+  h.api.save();const before=JSON.stringify(p),saved=h.storage.get(core.SAVE_KEY);
   if(fromBag){h.api.inventory(id);h.el('#bag-use').onclick();}else key(h,'Digit3');
-  const state=h.api.get(),destination=core.ITEMS[id].recall;
-  assert.equal(p.map,destination.map);assert.equal(p[id],1);assert.equal(p.hp,hp);assert.equal(p.mp,mp);assert.equal(p.bossWins,0);assert.equal(p.uniform,0);
-  assert.equal(state.boss,null);assert.equal(state.potionCooldown,0);assert.equal(state.monsters.length,0);assert.equal(state.swordUlt,null);assert.equal(state.pz,0);assert.equal(state.pvz,0);assert.equal(state.modal,null);assert.equal(state.guardTime,0);
-  const saved=JSON.parse(h.storage.get(core.SAVE_KEY)).characters[0];assert.equal(saved.map,destination.map);assert.equal(saved.x,destination.x);assert.equal(saved[id],1);assert.equal(saved.hp,hp);assert.equal(saved.mp,mp);
-  assert.equal(saved.cooldowns.r,fromBag?0:30);
+  const state=h.api.get();assert.equal(JSON.stringify(p),before);assert.equal(h.storage.get(core.SAVE_KEY),saved);assert.equal(state.boss,b);assert.equal(b.active,phase==='fighting');assert.equal(state.modal,fromBag?'inventory':null);assert.match(h.el('#toast').textContent,/보스방에서는 이동장치를 사용할 수 없어요/);
  }
 });
 test('sword ultimate marks boss once and waits for an already-marked airborne target before striking',()=>{
@@ -1415,12 +1411,12 @@ test('A-type safety execution kills outside even with damage reduction, but safe
   assert.equal(h.api.get().scene,['outside','recovery'].includes(mode)?'dead':'playing',mode);
  }
 });
-test('A-type encounter requires interaction, awards once, and abandon/recall clears its hazards',()=>{
+test('A-type encounter requires interaction, awards once, and abandonment clears its hazards',()=>{
  const h=harness(),p=core.createCharacter('로봇결투');Object.assign(p,{level:35,job:'swordsman',map:'hangar',x:1150,y:650,returnScrolls:2});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);const b=h.api.get().boss;assert.equal(b.active,false);
  h.api.interact();assert.match(h.el('#modal-root').innerHTML,/Lv.35 A형/);h.el('#challenge-boss').onclick();assert.equal(b.active,true);
  b.safetyUsed=true;b.hp=1;const money=p.money,cores=p.cores;h.api.hitMonster(b,2);assert.equal(b.dead,true);assert.equal(p.typeAWins,1);assert.equal(p.money,money+6000);assert.equal(p.cores,cores+15);h.api.winBoss();assert.equal(p.typeAWins,1);
  h.api.closeModal();h.api.startBossFight();const rematch=h.api.get().boss;assert.equal(rematch.hp,typeACore.TYPE_A.hp);assert.equal(rematch.safetyUsed,false);h.api.abandonBoss();assert.equal(h.api.get().boss.active,false);
- h.api.startBossFight();h.api.useInventoryItem('returnScrolls');assert.equal(p.map,'town');assert.equal(h.api.get().boss,null);
+ h.api.startBossFight();h.api.useInventoryItem('returnScrolls');assert.equal(p.map,'hangar');assert.equal(h.api.get().boss.active,true);assert.equal(p.returnScrolls,2);
 });
 test('A-type pull changes position inside its radius and spin deals repeated damage with visible animation frames',()=>{
  const h=harness(),p=core.createCharacter('회전시험');Object.assign(p,{level:35,job:'swordsman',map:'hangar',x:1100,y:650});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);h.api.startBossFight();const b=h.api.get().boss;b.phase='recover';b.elapsed=-20;advance(h,1);
@@ -1628,7 +1624,7 @@ test('Yeoksam street shop replaces destination scrolls while keeping potions and
  for(const map of ['town','gangnam']){p.map=map;assert.equal(core.buyItem(p,'yeoksamStreetScrolls').ok,false);assert.ok(!core.shopItemsFor(p).includes('yeoksamStreetScrolls'));assert.ok(core.shopItemsFor(p).includes('returnScrolls'));assert.ok(core.shopItemsFor(p).includes('gangnamScrolls'));}
 });
 test('street scroll saves and binds, recalls from combat, preserves HP/MP and never consumes at destination',()=>{
- const h=harness(),p=core.createCharacter('거리귀환');Object.assign(p,{level:35,map:'hangar',yeoksamStreetScrolls:2,hp:200,mp:90,typeATitle:1});h.api.start(p);h.api.inventory('yeoksamStreetScrolls');key(h,'Digit2');h.api.closeModal();h.api.startBossFight();
+ const h=harness(),p=core.createCharacter('거리귀환');Object.assign(p,{level:35,map:'foundry',yeoksamStreetScrolls:2,hp:200,mp:90,typeATitle:1});h.api.start(p);h.api.inventory('yeoksamStreetScrolls');key(h,'Digit2');h.api.closeModal();
  key(h,'Digit2');assert.equal(p.map,'yeoksamStreet');assert.equal(p.yeoksamStreetScrolls,1);assert.equal(p.hp,200);assert.equal(p.mp,90);assert.equal(h.api.get().boss,null);assert.ok(p.visited.includes('yeoksamStreet'));
  key(h,'Digit2');assert.equal(p.yeoksamStreetScrolls,1);const saved=JSON.parse(h.storage.get(core.SAVE_KEY)).characters[0],restored=core.normalizeCharacter(saved);assert.equal(restored.yeoksamStreetScrolls,1);assert.equal(restored.quickSlots[1],'yeoksamStreetScrolls');assert.equal(restored.map,'yeoksamStreet');
  const old={...p};delete old.yeoksamStreetScrolls;assert.equal(core.normalizeCharacter(old).yeoksamStreetScrolls,0);

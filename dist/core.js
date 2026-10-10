@@ -21,9 +21,9 @@ export const ITEMS = {
  mpPotions:{name:'아이스아메리카노',image:'assets/item-americano.webp',icon:'🥤',description:'MP를 100 회복합니다. MP가 가득 차면 소모하지 않아요. 보스방에서는 HP 회복 아이템과 별도로 재사용 대기 10초가 적용됩니다.',usable:true,price:500},
  potions:{name:'감자칩',image:'assets/item-chips.webp',icon:'🥔',description:'HP를 60 회복합니다. 체력이 가득 차면 소모하지 않아요. 보스전에서는 재사용 대기 10초가 적용됩니다.',usable:true,price:50,hpRestore:60},
  largePotions:{name:'샌드위치',image:'assets/item-sandwich.webp',icon:'🥪',description:'HP를 150 회복합니다. 체력이 가득 차면 소모하지 않아요. 보스전에서는 기존 HP 회복 아이템과 재사용 대기 10초를 공유합니다.',usable:true,price:500,hpRestore:150},
- returnScrolls:{name:'역삼역 1번 출구 이동장치',image:'assets/item-device.webp',icon:'역',description:'역삼역 1번 출구로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'town',x:530,y:648}},
- gangnamScrolls:{name:'강남역 이동장치',image:'assets/item-device.webp',icon:'강',description:'강남역 마을로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'gangnam',x:650,y:648}},
- yeoksamStreetScrolls:{name:'역삼역 주변 거리 이동장치',image:'assets/item-device.webp',icon:'거',description:'역삼역주변거리로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요.',usable:true,price:100,recall:{map:'yeoksamStreet',x:850,y:648}},
+ returnScrolls:{name:'역삼역 1번 출구 이동장치',image:'assets/item-device.webp',icon:'역',description:'역삼역 1번 출구로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요. 보스방에서는 사용할 수 없어요.',usable:true,price:100,recall:{map:'town',x:530,y:648}},
+ gangnamScrolls:{name:'강남역 이동장치',image:'assets/item-device.webp',icon:'강',description:'강남역 마을로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요. 보스방에서는 사용할 수 없어요.',usable:true,price:100,recall:{map:'gangnam',x:650,y:648}},
+ yeoksamStreetScrolls:{name:'역삼역 주변 거리 이동장치',image:'assets/item-device.webp',icon:'거',description:'역삼역주변거리로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요. 보스방에서는 사용할 수 없어요.',usable:true,price:100,recall:{map:'yeoksamStreet',x:850,y:648}},
  scrap:{name:'로봇 부품',image:'assets/item-parts.webp',icon:'⚙',description:'로봇에게서 얻은 수집 재료입니다.',usable:false},
  typeATitle:{name:'A형',image:'assets/item-badge.webp',icon:'A',description:'A형 처치 보상 칭호. 장착하면 닉네임 위에 은색으로 표시되고 공격력이 5% 증가합니다. 군복과 함께 장착할 수 있어요.',usable:false,equippable:true,equipmentType:'칭호'},
  uniform:{name:'군복',image:'assets/item-uniform.webp',icon:'▣',description:'신원미상의 예비군의 결투 보상. 장착하면 위장 군복을 입고, 걷기와 공중 이동 속도가 20% 증가합니다.',usable:false,equippable:true},
@@ -65,6 +65,7 @@ export function useItem(p,id){
  }
  const item=validItem(id)?ITEMS[id]:null,destination=item?.recall;
  if(!destination)return {ok:false,message:'사용할 수 없는 아이템이에요.'};
+ if(MAPS[p.map]?.boss)return {ok:false,message:'보스방에서는 이동장치를 사용할 수 없어요.'};
  if(!(p[id]>0))return {ok:false,message:`${item.name}가 없어요. 마구리의 상점에서 구입할 수 있어요.`};
  if(p.map===destination.map)return {ok:false,message:`이미 ${MAPS[destination.map].name}에 있어요. 이동장치는 소모하지 않았어요.`};
  // Apply consumption and destination together so saves never lose an in-flight recall.

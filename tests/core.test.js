@@ -127,7 +127,7 @@ test('both scrolls charge the town price, recall between towns and preserve reso
   const price=id==='gangnamScrolls'?1500:100;p.money=price-1;
   const refused=buyItem(p,id);assert.equal(refused.ok,false);assert.ok(refused.message.includes(price.toLocaleString()));assert.equal(p.money,price-1);assert.equal(p[id],0);
   p.money=price;assert.equal(buyItem(p,id).ok,true);assert.equal(p[id],1);assert.equal(p.money,0);assert.equal(assignQuickSlot(p,2,id).ok,true);
-  for(const from of ['town','gangnam','gym','dojo','station6','foundry','pocha']){
+  for(const from of ['town','gangnam','gym','dojo','station6','foundry']){
    Object.assign(p,{map:from,x:710,y:680,hp:24,mp:11,xp:39,[id]:2});p.cooldowns.q=2;
    const before={hp:p.hp,mp:p.mp,xp:p.xp,money:p.money},result=useItem(p,id);
    assert.equal(result.ok,from!==destination,`${id} from ${from}`);assert.equal(p[id],from===destination?2:1);
@@ -242,4 +242,12 @@ test('hacker XP passive applies to new normal and boss rewards without reboostin
   for(const reward of [19,100,12000]){const p=createCharacter('경험치',classId);Object.assign(p,{level:50,job,xp:0});let expected=Math.round(reward*multiplier),level=50;while(expected>=xpNeeded(level)){expected-=xpNeeded(level++);}gainXp(p,reward);assert.equal(p.level,level);assert.equal(p.xp,expected);const restored=normalizeCharacter(p);assert.equal(restored.xp,expected);gainXp(p,0);assert.equal(p.xp,expected);}
  }
  const p=createCharacter('전직','chick');p.level=10;p.xp=100;gainXp(p,100);assert.equal(p.xp,200);p.job='hacker';gainXp(p,100);assert.equal(p.xp,330);gainXp(p,-100);assert.equal(p.xp,330);
+});
+
+test('all movement devices are refused in every boss room without changing character data',async()=>{
+ const {ITEMS,useItem}=await import('../dist/core.js');
+ for(const map of Object.values(MAPS).filter(m=>m.boss))for(const [id,item] of Object.entries(ITEMS).filter(([,item])=>item.recall)){
+  const p=createCharacter('이동제한');Object.assign(p,{map:map.id,x:710,y:680,hp:24,mp:11,[id]:2});
+  const before=JSON.stringify(p),result=useItem(p,id);assert.equal(result.ok,false);assert.match(result.message,/보스방에서는 이동장치를 사용할 수 없어요/);assert.equal(JSON.stringify(p),before);
+ }
 });
