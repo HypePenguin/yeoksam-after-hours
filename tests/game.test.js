@@ -1978,9 +1978,12 @@ test('otter skill art persists under cooldown and ride cues while unlearned skil
 
 test('hacker advancement swaps skill art while novice icons and locked levels stay intact',()=>{
  const h=harness(),p=core.createCharacter('해커아이콘','chick');Object.assign(p,{level:10,map:'maple'});h.api.start(p);h.api.buildHUD();
- for(const key of ['a','q','w'])assert.equal(h.api.skillSymbolMarkup(key,'novice'),'novice');
+ for(const key of ['a','q'])assert.ok(h.api.skillSymbolMarkup(key,'novice').includes(`assets/chick-skill-${key}.png`));
+ const noviceW=h.api.skillSymbolMarkup('w','novice');assert.ok(noviceW.includes('assets/hacker-skill-w.png'));
+ for(const key of ['a','q'])assert.deepEqual([...fs.readFileSync(new URL(`../dist/assets/chick-skill-${key}.png`,import.meta.url)).subarray(0,8)],[137,80,78,71,13,10,26,10]);
  h.api.jobModal('hacker');h.el('#advance-job').onclick();assert.equal(p.job,'hacker');
  assert.ok(h.el('#game-ui').innerHTML.includes('class="skill hacker-skill"'));
+ assert.equal(h.api.skillSymbolMarkup('w','novice'),noviceW,'W shares the exact same image before and after advancement');
  for(const key of ['a','q','w','e','r']){
   const path=`assets/hacker-skill-${key}.png`;
   assert.ok(h.api.skillSymbolMarkup(key,'novice').includes(path));
@@ -1990,7 +1993,8 @@ test('hacker advancement swaps skill art while novice icons and locked levels st
  assert.equal(symbol('r').textContent,'🔒');assert.equal(h.el('[data-skill="r"] .lock-level').textContent,'Lv.15');
  p.level=15;h.api.refreshHUD();for(const key of ['q','w','e','r'])assert.ok(symbol(key).innerHTML.includes(`hacker-skill-${key}.png`));
  h.api.cast('w');h.api.refreshHUD();assert.equal(h.el('[data-skill="w"] .skill-symbol .skill-cue').textContent,'10');assert.ok(symbol('w').innerHTML.includes('hacker-skill-w.png'));
- p.job=null;h.api.buildHUD();for(const key of ['a','q','w'])assert.equal(h.api.skillSymbolMarkup(key,'novice'),'novice');
+ p.job=null;h.api.buildHUD();for(const key of ['a','q'])assert.ok(h.api.skillSymbolMarkup(key,'novice').includes(`assets/chick-skill-${key}.png`));
+ p.level=1;h.api.refreshHUD();for(const key of ['q','w','e','r']){assert.equal(symbol(key).textContent,'🔒');assert.equal(symbol(key).dataset.art,undefined);}
 });
 
 test('hacker E locks movement and facing while the preview advances, then resumes on release or cancel',()=>{
