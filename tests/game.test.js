@@ -2054,7 +2054,7 @@ test('concert can finish either boss safely without accessing a cleared concert'
 });
 test('otter walk, jump, punch, water, wave, shield and dance use directionally consistent dedicated poses',()=>{
  for(const job of [null,'idol']){
-  const {h,p}=otterFixture('town',job);const asset=job?'assets/otter-idol-skirt-motion.webp':'assets/otter-motion.webp';render(h);assert.ok(h.draws.some(d=>d.asset===asset));assert.equal(h.api.otterFrame(),0);
+  const {h,p}=otterFixture('town',job);const asset=job?'assets/otter-idol-skirt-motion-q-clean.webp':'assets/otter-motion-q-clean.webp';render(h);assert.ok(h.draws.some(d=>d.asset===asset));assert.equal(h.api.otterFrame(),0);
   h.api.keys.add('ArrowLeft');const seen=new Set();for(let i=0;i<48;i++){h.api.update(1/60);seen.add(h.api.otterFrame());}assert.deepEqual([...seen].sort(),[1,2,3]);render(h);assert.ok(h.draws.find(d=>d.asset===asset).matrix[0]<0);
   h.api.keys.clear();h.api.jump();assert.equal(h.api.otterFrame(),4);advance(h,.18);assert.equal(h.api.otterFrame(),5);advance(h,1);h.api.attack();assert.equal(h.api.otterFrame(),7);advance(h,.15);assert.equal(h.api.otterFrame(),8);advance(h,.4);
   h.api.cast('q');assert.equal(h.api.otterFrame(),9);h.api.cast('w');assert.equal(h.api.otterFrame(),10);h.api.cast('w');assert.equal(h.api.otterFrame(),11);advance(h,1.1);
@@ -2077,7 +2077,7 @@ test('new adventurer choices do not depend on motion assets completing their loa
 });
 test('otter Q/W exclude the next row artwork while concert keeps the full head at the same scale',()=>{
  for(const job of [null,'idol']){
-  const {h}=otterFixture('town',job),asset=job?'assets/otter-idol-skirt-motion.webp':'assets/otter-motion.webp';
+  const {h}=otterFixture('town',job),asset=job?'assets/otter-idol-skirt-motion-q-clean.webp':'assets/otter-motion-q-clean.webp';
   h.api.cast('q');render(h);const q=h.draws.find(d=>d.asset===asset);assert.ok(q.source[1]<=650);assert.ok(q.source[1]+q.source[3]<939,'Q cannot include row 4 head pixels');
   const scale=q.height/q.source[3];advance(h,.5);h.api.cast('w');render(h);const w=h.draws.find(d=>d.asset===asset);assert.ok(w.source[1]+w.source[3]<939);
   if(job){advance(h,.5);h.api.cast('r');render(h);const r=h.draws.find(d=>d.asset===asset);assert.ok(r.source[1]<=939,'dance includes top of head');assert.ok(Math.abs(r.height/r.source[3]-scale)<.01,'poses keep the same artwork scale');}
@@ -2086,7 +2086,7 @@ test('otter Q/W exclude the next row artwork while concert keeps the full head a
 
 test('otter punch includes the complete overflowing fist effect in both outfits and directions',()=>{
  for(const job of [null,'idol'])for(const direction of ['ArrowRight','ArrowLeft']){
-  const {h}=otterFixture('town',job),asset=job?'assets/otter-idol-skirt-motion.webp':'assets/otter-motion.webp';
+  const {h}=otterFixture('town',job),asset=job?'assets/otter-idol-skirt-motion-q-clean.webp':'assets/otter-motion-q-clean.webp';
   h.api.keys.add(direction);h.api.update(.01);h.api.keys.clear();h.api.attack();advance(h,.15);assert.equal(h.api.otterFrame(),8);render(h);
   const [body,overflow]=h.draws.filter(d=>d.asset===asset);
   assert.ok(overflow,'effect beyond the tile boundary is drawn');assert.equal(overflow.source[0],body.source[0]+body.source[2]);assert.equal(overflow.source[0]+overflow.source[2],340);
@@ -2111,7 +2111,7 @@ test('concert keeps running while walking in either direction with the normal mo
   const {h,p}=otterFixture('town');h.api.cast('r');const c=h.api.get().otterConcert,x=p.x,mp=p.mp;
   h.api.keys.add(dir===1?'ArrowRight':'ArrowLeft');h.api.update(.2);
   assert.ok(Math.abs(p.x-x-dir*285*1.2*.2)<1e-8);assert.equal(h.api.get().otterConcert,c);assert.equal(c.remaining,4.8);assert.ok(p.mp>=mp);
-  assert.ok([13,14].includes(h.api.otterFrame()));render(h);const pose=h.draws.find(d=>d.asset==='assets/otter-idol-skirt-motion.webp');assert.equal(Math.sign(pose.matrix[0]),dir);
+  assert.ok([13,14].includes(h.api.otterFrame()));render(h);const pose=h.draws.find(d=>d.asset==='assets/otter-idol-skirt-motion-q-clean.webp');assert.equal(Math.sign(pose.matrix[0]),dir);
   h.api.keys.clear();const stopped=p.x;h.api.update(.2);assert.equal(p.x,stopped);assert.equal(h.api.get().otterConcert,c);
  }
 });
@@ -2198,7 +2198,7 @@ test('entry waits for the chosen scene but never waits for unrelated boss art', 
  h.finishImages('assets/type-a.webp');await h.flush();await pending;assert.equal(h.api.get().scene,'playing');
  assert.equal(h.requestedImages.find(img=>img.asset==='assets/type-a.webp').complete,false);
  assert.ok(!h.requestedImages.some(img=>img.asset==='assets/endgame-dungeons.webp'));
- assert.ok(!h.requestedImages.some(img=>img.asset==='assets/otter-motion.webp'));
+ assert.ok(!h.requestedImages.some(img=>img.asset==='assets/otter-motion-q-clean.webp'));
 });
 test('travel waits for destination art and only loads bosses in their own rooms', {timeout:1000},async()=>{
  const h=harness({manualImages:true}),p=core.createCharacter('지역로딩');h.api.start(p);h.finishImages();

@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=119';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=119';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=119';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=120';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=120';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=120';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -13,7 +13,7 @@ function characterImage(asset,p=player){
  return dressed?.complete&&dressed.naturalWidth?dressed:images[asset];
 }
 const catAsset=(asset,p=player)=>p?.job==='protester'?asset.replace('cat','cat-protester'):asset;
-const otterAsset=(p=player)=>p?.job==='idol'?'otter-idol-skirt-motion':'otter-motion';
+const otterAsset=(p=player)=>p?.job==='idol'?'otter-idol-skirt-motion-q-clean':'otter-motion-q-clean';
 const rabbitAsset=(p=player)=>p?.job==='mage'?'rabbit-motion':'rabbit-novice-motion';
 const characterPortrait=(p,powered=false)=>p?.classId==='otter'?`assets/otter-${p.job==='idol'?'idol':'novice'}-portrait.webp`:p?.classId==='chick'?`assets/chick-${p.job==='hacker'?'hacker':'novice'}-portrait.webp`:p?.classId==='rabbit'?`assets/rabbit-${p.job==='mage'?'mage':'novice'}-portrait.webp`:p?.classId==='cat'?`assets/${catAsset('cat',p)}.webp`:`assets/${characterAsset(powered?'penguin-power-poses':'penguin',p)}.webp`;
 const ITEM_ART_ASSETS=[...new Set(Object.values(ITEMS).map(item=>item.image).filter(Boolean))].map(src=>src.slice(7).replace(/\.[^.]+$/,''));
@@ -765,7 +765,7 @@ function castOtter(key){
  if(key==='q'){
   const target=monsters.filter(m=>canTarget(m)&&(m.x-player.x)*facing>=0&&(m.x-player.x)*facing<=s.range&&Math.abs(m.y-player.y)<=s.halfLane&&pz<120).sort((a,b)=>Math.hypot(a.x-player.x,a.y-player.y)-Math.hypot(b.x-player.x,b.y-player.y))[0];
   attackTimer=Math.max(attackTimer,.42);playCombatMotion('otterWater',.42);
-  effects.push({type:'otterJet',x:player.x+facing*30,y:player.y-108-pz,toX:target?.x??clamp(player.x+facing*s.range,45,MAPS[player.map].width-45),toY:target?target.y-(target.isBoss?160:48):player.y-92-pz,dir:facing,life:.38,max:.38,color:'#bcf5ff'});
+  effects.push({type:'otterJet',x:player.x+facing*30,y:player.y-84-pz,toX:target?.x??clamp(player.x+facing*s.range,45,MAPS[player.map].width-45),toY:target?target.y-(target.isBoss?160:48):player.y-92-pz,dir:facing,life:.38,max:.38,color:'#bcf5ff'});
   if(target)hitMonster(target,Math.round(attackPower(player)*s.damage));beep(600,.16);
  }else if(key==='w'){
   const x=clamp(player.x+facing*35,45,MAPS[player.map].width-45);

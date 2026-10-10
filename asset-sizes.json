@@ -1,6 +1,6 @@
 {
-  "source_bytes": 215539076,
-  "bytes": 23541990,
+  "source_bytes": 219454824,
+  "bytes": 24437864,
   "assets": [
     {
       "name": "builder-recovery-walk",
@@ -997,9 +997,37 @@
       "compact": false
     },
     {
+      "name": "otter-idol-skirt-motion-q-clean",
+      "source_bytes": 2237262,
+      "bytes": 541230,
+      "source_size": [
+        1215,
+        1295
+      ],
+      "size": [
+        1215,
+        1295
+      ],
+      "compact": false
+    },
+    {
       "name": "otter-motion",
       "source_bytes": 1443526,
       "bytes": 352938,
+      "source_size": [
+        1215,
+        1295
+      ],
+      "size": [
+        1215,
+        1295
+      ],
+      "compact": false
+    },
+    {
+      "name": "otter-motion-q-clean",
+      "source_bytes": 1678486,
+      "bytes": 354644,
       "source_size": [
         1215,
         1295

@@ -1,0 +1,9 @@
+{
+  "mode": "Built-in image_gen",
+  "prompt": "Use case: precise-object-edit. Asset type: transparent 4-by-4 game animation sprite atlas. Edit target: supplied otter sprite sheet. Change ONLY the water-spitting pose in row 3, column 2 (zero-based frame 9). Completely remove the blue water spray, droplets and blue effect extending rightward from its mouth; make those removed pixels transparent. Keep the otter standing in the exact same position with slightly puffed cheeks, pursed lips and a small forward lean, as if launching a projectile, but with NO projectile or effect drawn in the sprite. The game adds the water projectile separately. Preserve the exact character identity, outfit, proportions, scale, feet anchor and right-facing direction. Keep every other sprite pixel, pose, accessory, row and column unchanged. Keep the same 1215-by-1295 canvas and exact original layout. Transparent RGBA background. No new effects, water, glow, labels or borders.",
+  "targets": [
+    "otter-motion",
+    "otter-idol-skirt-motion"
+  ],
+  "integration": "Replace only the visible Q pose rectangle (x=340,y=640,width=268,height=290) with generated pixels. All other source pixels remain byte-identical; original source retained. Existing runtime water effect unchanged."
+}
