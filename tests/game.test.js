@@ -2390,3 +2390,26 @@ test('both bosses show and grant level-adjusted XP, including a level-up across 
  const h=harness(),p=core.createCharacter('보상 표시');Object.assign(p,{map:'pocha',level:34,xp:core.xpNeeded(34)-1});h.api.start(p);h.api.startBossFight();h.api.hitMonster(h.api.get().boss,999999);
  assert.ok(p.level>=35);assert.ok(h.el('#modal-root').innerHTML.includes('EXP +3,500'));
 });
+
+
+test('Escape and the cancel button restart hacker R cooldown at ten seconds and persist it',()=>{
+ for(const via of ['escape','button']){
+  const {h,p}=chickFixture();h.api.buildHUD();const mp=p.mp;h.api.cast('r');assert.equal(p.mp,mp-38);advance(h,2);const beforeCancel=p.mp;
+  if(via==='escape')key(h,'Escape');else h.el('#hack-cancel').onclick();
+  assert.equal(h.api.get().hackerUlt,null);assert.equal(h.api.get().cooldowns.r,10);assert.equal(p.mp,beforeCancel);
+  assert.equal(JSON.parse(h.storage.get(core.SAVE_KEY)).characters[0].cooldowns.r,10);
+  assert.equal(h.el('#hack-visor').hidden,true);assert.equal(h.el('#hack-controls').hidden,true);
+  advance(h,1);assert.ok(Math.abs(h.api.get().cooldowns.r-9)<.02);
+  h.api.cast('r');assert.equal(h.api.get().hackerUlt,null);
+  advance(h,9.1);h.api.cast('r');assert.equal(h.api.get().hackerUlt.phase,'selecting');
+ }
+});
+test('hacker selection timeout starts a fresh ten-second cooldown, successful casts keep forty',()=>{
+ const {h,p}=chickFixture();h.api.cast('r');advance(h,9.9);assert.equal(h.api.get().hackerUlt.phase,'selecting');
+ // Reach the exact deadline with one update; the cooldown starts when selection ends.
+ h.api.update(h.api.get().hackerUlt.remaining+.000001);
+ assert.equal(h.api.get().hackerUlt,null);assert.equal(h.api.get().cooldowns.r,10);
+ assert.equal(JSON.parse(h.storage.get(core.SAVE_KEY)).characters[0].cooldowns.r,10);
+ const used=chickFixture();used.h.api.cast('r');used.h.api.confirmHack();advance(used.h,5.1);
+ assert.equal(used.h.api.get().hackerUlt,null);assert.ok(Math.abs(used.h.api.get().cooldowns.r-34.9)<.03);
+});

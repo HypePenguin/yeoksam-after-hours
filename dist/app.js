@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=127';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=127';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=127';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=128';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=128';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=128';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -416,7 +416,7 @@ function refreshHackVisor(){
 }
 function refreshCombatHUD(){
  refreshHackVisor();
- const controls=$('#hack-controls');controls.hidden=hackerUlt?.phase!=='selecting';$('#hack-prev').onclick=()=>cycleHack(-1);$('#hack-next').onclick=()=>cycleHack(1);$('#hack-confirm').onclick=confirmHack;$('#hack-cancel').onclick=cancelChickAim;
+ const controls=$('#hack-controls');controls.hidden=hackerUlt?.phase!=='selecting';$('#hack-prev').onclick=()=>cycleHack(-1);$('#hack-next').onclick=()=>cycleHack(1);$('#hack-confirm').onclick=confirmHack;$('#hack-cancel').onclick=cancelHackSelection;
  const banner=$('#combat-banner');banner.classList.toggle('otter-status',player?.classId==='otter');banner.hidden=!hackerUlt&&!chickCharge&&chickStealth<=0&&!swordUlt&&guardTime<=0&&!recovery&&!catCharge&&!rabbitShield&&!otterShield&&!otterBubbles&&!otterConcert&&!otterWave&&!(player?.respectTime>0);
  if(player?.respectTime>0||rabbitShield){$('#combat-title').textContent=player.respectTime>0?'존경! · 아군 강화':'마력 방벽';$('#combat-clock').textContent=`${Math.ceil(player.respectTime||rabbitShield?.remaining||0)}초`;$('#combat-detail').textContent=player.respectTime>0?'이동·공격·최대 HP +20% / 피해 20% 감소':`남은 보호막 ${Math.ceil(rabbitShield.hp)}`;$('#combat-bar').style.width=`${(player.respectTime?player.respectTime/10:rabbitShield.remaining/3)*100}%`;}
  if(swordUlt){const charging=swordUlt.phase==='charging',alive=monsters.filter(m=>!m.dead&&swordUlt.targets.includes(m.id)).length,solo=charging?alive===1:swordUlt.damageMultiplier>1;$('#combat-title').textContent=charging?'섬광 연참 · 기 모으기':'섬광 연참';$('#combat-clock').textContent=charging?`${swordUlt.elapsed.toFixed(1)} / 3초`:'연속 베기';$('#combat-detail').textContent=charging?`${alive} / 5명 조준${solo?' · 단일 대상 2배':''} · 받는 피해 80% 감소 · 손을 떼면 발동`:`연속 베기${solo?' · 단일 대상 2배':''} · 받는 피해 80% 감소`;$('#combat-bar').style.width=`${swordUlt.elapsed/3*100}%`;}
@@ -1069,6 +1069,11 @@ function cancelChickAim(){
  if(hackerUlt?.phase==='channeling'){const m=monsters.find(m=>m.id===hackerUlt.targetId);if(m)m.hack=null;}
  hackerUlt=null;const visor=$('#hack-visor');if(visor)visor.hidden=true;keys?.delete('ArrowLeft');keys?.delete('ArrowRight');
 }
+function cancelHackSelection(){
+ if(hackerUlt?.phase!=='selecting')return false;
+ cooldowns.r=hackerUlt.skill.cancelCooldown;
+ cancelChickAim();refreshHUD();save();return true;
+}
 function consumeStealth(){const multiplier=chickStealth>0?1.2:1;chickStealth=0;return multiplier;}
 function chickBurst(m,size=90){
  effects.push({type:'impact',x:m.x,y:m.y-60,size,life:.32,max:.32,color:'#8bd8ff',accent:'#ffffff',glow:'#238dff',outline:'#286dc2'});
@@ -1134,13 +1139,13 @@ function hackCandidates(){
 const findHackTarget=id=>hackCandidates().find(target=>target.id===id);
 function cycleHack(dir){
  if(hackerUlt?.phase!=='selecting')return;const list=hackCandidates().sort((a,b)=>a.x-b.x||a.y-b.y);
- if(!list.length){cancelChickAim();toast('해킹할 적이 사라졌어요.');return;}
+ if(!list.length){cancelHackSelection();toast('해킹할 적이 사라졌어요.');return;}
  const i=list.findIndex(m=>m.id===hackerUlt.targetId);hackerUlt.targetId=list[(i+dir+list.length)%list.length].id;refreshHUD();
 }
 function confirmHack(){
  if(scene!=='playing'||modal||hackerUlt?.phase!=='selecting')return false;
  const u=hackerUlt,m=findHackTarget(u.targetId);
- if(!m){const list=hackCandidates();if(list.length){u.targetId=list[0].id;toast('대상이 바뀌었어요. 다시 확정하세요.');}else cancelChickAim();return false;}
+ if(!m){const list=hackCandidates();if(list.length){u.targetId=list[0].id;toast('대상이 바뀌었어요. 다시 확정하세요.');}else cancelHackSelection();return false;}
  if(m.npcId==='gm'){cancelChickAim();toast('감히 운영자를 해킹할 수는 없습니다.');refreshHUD();save();return false;}
  u.phase='channeling';u.remaining=u.skill.duration;const boost=consumeStealth();
  if(m.npcId==='shop'){
@@ -1171,9 +1176,9 @@ function updateChickCombat(dt){
  if(hackerUlt){
   const u=hackerUlt;u.remaining=Math.max(0,u.remaining-dt);
   if(u.phase==='selecting'){
-   const list=hackCandidates();if(!list.length){cancelChickAim();return;}
+   const list=hackCandidates();if(!list.length){cancelHackSelection();return;}
    if(!list.some(m=>m.id===u.targetId))u.targetId=list[0].id;
-   if(u.remaining<=0){cancelChickAim();toast('대상 선택 시간이 끝났어요.');}
+   if(u.remaining<=0){cancelHackSelection();toast('대상 선택 시간이 끝났어요. · 재사용 대기 10초');}
   }else if(u.remaining<=0||(!u.npcId&&!monsters.some(m=>m.id===u.targetId&&!m.dead&&m.hack)))cancelChickAim();
  }
 }
@@ -1870,7 +1875,7 @@ document.addEventListener('keydown',e=>{
  if(e.target.matches('input,textarea'))return;
  if(scene==='title'&&e.code==='Enter'){e.preventDefault();selectCharacters();return;}
  if(scene!=='playing')return;
- if(hackerUlt?.phase==='selecting'&&['ArrowLeft','ArrowRight','Enter','Escape'].includes(e.code)){e.preventDefault();if(!e.repeat){if(e.code==='Enter')confirmHack();else if(e.code==='Escape')cancelChickAim();else cycleHack(e.code==='ArrowLeft'?-1:1);}return;}
+ if(hackerUlt?.phase==='selecting'&&['ArrowLeft','ArrowRight','Enter','Escape'].includes(e.code)){e.preventDefault();if(!e.repeat){if(e.code==='Enter')confirmHack();else if(e.code==='Escape')cancelHackSelection();else cycleHack(e.code==='ArrowLeft'?-1:1);}return;}
  if(gameCodes.has(e.code)||e.code==='Escape')e.preventDefault();
  keys.add(e.code);if(e.repeat)return;
  if(e.code==='Space')jump();else if(e.code==='KeyA')attack();else if(['KeyQ','KeyW','KeyE','KeyR'].includes(e.code))cast(e.code.slice(-1).toLowerCase());else if(e.code==='KeyF')interact();else if(['Digit1','Digit2','Digit3'].includes(e.code))useQuickSlot(Number(e.code.slice(-1))-1);else if(e.code==='KeyI')inventory();else if(e.code==='KeyM')worldMap();else if(e.code==='KeyK')skillBook();else if(e.code==='Escape')menu();
