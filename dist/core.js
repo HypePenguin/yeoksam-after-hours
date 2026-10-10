@@ -97,12 +97,12 @@ export const MAPS = {
  canal:{id:'canal',name:'지하 냉각수로',subtitle:'고레벨 던전 · Lv. 17–20',en:'UNDERGROUND COOLING CANAL',description:'중계소 아래로 이어지는 푸른 수로. 냉각 로봇 무리를 상대하고 오른쪽 자동화 주조소로 사냥을 이어가세요.',width:3400,danger:6,minLevel:17,maxLevel:20,color:'#82d8d3',background:'high-dungeons',backgroundTile:1,monster:'냉각 로봇',monsterCount:8,robotTint:'hue-rotate(55deg) saturate(1.7)',portals:[]},
  foundry:{id:'foundry',name:'자동화 주조소',subtitle:'고레벨 던전 · Lv. 21–24',en:'AUTOMATED FOUNDRY',description:'밤새 붉게 타오르는 용광로와 제련 로봇. 더 강한 접촉 공격에 대비해 회복과 막기를 활용하세요. 강남역 마을에서 정비하거나 중앙 제어실로 사냥을 이어갈 수 있어요.',width:3600,danger:7,minLevel:21,maxLevel:24,color:'#f3a28a',background:'high-dungeons',backgroundTile:2,monster:'제련 로봇',monsterCount:9,robotTint:'hue-rotate(195deg) saturate(2)',portals:[]},
  gangnam:{id:'gangnam',name:'강남역',subtitle:'마을 · 안전 구역',en:'GANGNAM STATION',description:'자동화 주조소를 지나 만나는 안전한 마을. 마구리에게 물약과 귀환 주문서를 구입하고, 오른쪽 빨간 포탈로 한사발포차 보스에 도전하세요.',width:2200,danger:0,minLevel:1,maxLevel:1,color:'#9ce1d4',background:'gangnam',portals:[]},
- pocha:{id:'pocha',name:'한사발포차 역삼점',subtitle:'중간보스 · 권장 Lv. 20–25',en:'HANSABAL POCHA · DUEL',description:'강남역 마을의 빨간 포탈로 들어오는 포차. 신원미상의 예비군에게 말을 걸면 Lv. 25 중간보스 결투가 시작됩니다. 전투 중 물약 재사용 10초. 보상: EXP 3,500 · 이동속도 +20% 군복.',width:1600,danger:0,boss:true,minLevel:20,maxLevel:25,color:'#eabb77',background:'hansabal-pocha',portals:[]},
+ pocha:{id:'pocha',name:'한사발포차 역삼점',subtitle:'중간보스 · 권장 Lv. 20–25',en:'HANSABAL POCHA · DUEL',description:'강남역 마을의 빨간 포탈로 들어오는 포차. 신원미상의 예비군에게 말을 걸면 Lv. 25 중간보스 결투가 시작됩니다. 전투 중 물약 재사용 10초. 보상: EXP 3,500 · 이동속도 +20% 군복.',width:1600,danger:0,boss:true,respawn:{map:'gangnam',x:650,y:648},minLevel:20,maxLevel:25,color:'#eabb77',background:'hansabal-pocha',portals:[]},
  nexus:{id:'nexus',name:'중앙 제어실',subtitle:'고레벨 던전 · Lv. 25–30',en:'CENTRAL CONTROL NEXUS',description:'도시의 로봇을 제어하는 중앙 시설. 오른쪽 가속 실험구역부터 Lv. 31–40의 새로운 사냥길이 이어집니다.',width:4000,danger:8,minLevel:25,maxLevel:30,color:'#c7b3f6',background:'high-dungeons',backgroundTile:3,monster:'코어 수호 로봇',monsterCount:10,robotTint:'hue-rotate(110deg) saturate(2)',portals:[]},
  accelerator:{id:'accelerator',name:'가속 실험구역',subtitle:'고레벨 던전 · Lv. 31–33',en:'ACCELERATOR LAB',description:'중앙 제어실 뒤의 폐쇄 실험구역. 푸른 가속 코일 사이를 고속 정찰 로봇이 지켜요.',width:3800,danger:9,minLevel:31,maxLevel:33,color:'#7cdcf2',background:'endgame-dungeons',backgroundTile:0,monster:'가속 정찰 로봇',monsterCount:10,robotTint:'hue-rotate(35deg) saturate(1.6)',portals:[]},
  arsenal:{id:'arsenal',name:'병기 조립라인',subtitle:'고레벨 던전 · Lv. 34–36',en:'WEAPONS ASSEMBLY',description:'전투 로봇이 생산되는 심층 공장. 조립 로봇을 돌파하고 적색 동력로로 이동하세요.',width:4000,danger:10,minLevel:34,maxLevel:36,color:'#bea6f7',background:'endgame-dungeons',backgroundTile:1,monster:'병기 조립 로봇',monsterCount:11,robotTint:'hue-rotate(120deg) saturate(1.7)',portals:[]},
  reactor:{id:'reactor',name:'적색 동력로',subtitle:'고레벨 던전 · Lv. 37–40',en:'CRIMSON REACTOR',description:'Lv. 40까지 사냥할 수 있는 최심부. 오른쪽 빨간 포탈은 Lv. 35 A형이 있는 수료조건으로 연결됩니다.',width:4200,danger:11,minLevel:37,maxLevel:40,color:'#ff8e9d',background:'endgame-dungeons',backgroundTile:2,monster:'동력로 수호 로봇',monsterCount:12,robotTint:'hue-rotate(185deg) saturate(2.2)',portals:[]},
- hangar:{id:'hangar',name:'수료조건',subtitle:'보스 · Lv. 35 A형',en:'GRADUATION REQUIREMENT',description:'대형 전투 로봇 A형. F로 가동합니다. HP 40%에 5초 안전지대 시험, 20%에 광폭화합니다. 파란 영역으로 이동하거나 무적기로 즉사를 피하세요. 오른쪽 포탈은 A형 칭호를 장착한 상태에서만 역삼역주변거리로 이동할 수 있어요. 전투 중에는 이용할 수 없습니다.',width:1800,danger:0,boss:true,bossName:'A형',bossLevel:35,minLevel:35,maxLevel:40,color:'#ff7088',background:'endgame-dungeons',backgroundTile:3,portals:[]},
+ hangar:{id:'hangar',name:'수료조건',subtitle:'보스 · Lv. 35 A형',en:'GRADUATION REQUIREMENT',description:'대형 전투 로봇 A형. F로 가동합니다. HP 40%에 5초 안전지대 시험, 20%에 광폭화합니다. 파란 영역으로 이동하거나 무적기로 즉사를 피하세요. 오른쪽 포탈은 A형 칭호를 장착한 상태에서만 역삼역주변거리로 이동할 수 있어요. 전투 중에는 이용할 수 없습니다.',width:1800,danger:0,boss:true,respawn:{map:'gangnam',x:650,y:648},bossName:'A형',bossLevel:35,minLevel:35,maxLevel:40,color:'#ff7088',background:'endgame-dungeons',backgroundTile:3,portals:[]},
  yeoksamStreet:{id:'yeoksamStreet',name:'역삼역주변거리',subtitle:'마을 · 안전 구역',en:'YEOKSAM NEIGHBORHOOD',description:'수료조건 너머의 조용한 역삼 거리. 마구리에게 물약을 구입하고 쉬어 갈 수 있어요. 왼쪽 포탈은 수료조건으로 돌아갑니다.',width:2200,danger:0,minLevel:1,maxLevel:1,color:'#9ce1a5',background:'city',portals:[]}
 
 };
@@ -278,7 +278,14 @@ export function normalizeCharacter(raw){
 }
 export const xpReward=(p,amount)=>Math.round(Math.max(0,amount)*(p.classId==='chick'&&p.job==='hacker'?1.3:1));
 export function gainXp(p,amount){p.xp+=xpReward(p,amount);let gained=0;while(p.xp>=xpNeeded(p.level)&&p.level<99){p.xp-=xpNeeded(p.level);p.level++;gained++;p.hp=maxHp(p);p.mp=maxMp(p);}return gained;}
-export function respawn(p){p.map='town';p.x=530;p.y=648;p.hp=maxHp(p);p.mp=maxMp(p);p.powerTime=0;p.respectTime=0;p.concertTime=0;p.hp=maxHp(p);p.mpPotionCooldown=0;return p;}
+export function respawn(p){
+ // Boss checkpoints are on the approach side, never beyond a title-gated exit.
+ const destination=MAPS[p.map]?.respawn||{map:'town',x:530,y:648};
+ p.map=destination.map;p.x=destination.x;p.y=destination.y;
+ p.powerTime=0;p.respectTime=0;p.concertTime=0;p.hp=maxHp(p);p.mp=maxMp(p);p.mpPotionCooldown=0;
+ if(!p.visited.includes(p.map))p.visited.push(p.map);
+ return p;
+}
 export function buyPotion(p){return buyItem(p,'potions');}
 export function usePotion(p,id='potions'){const amount=validItem(id)?ITEMS[id].hpRestore:0;if(!amount||!(p[id]>0))return {ok:false,message:'회복 아이템이 없어요. 마구리의 상점을 찾아보세요.'};if(p.hp>=maxHp(p))return {ok:false,message:'체력이 이미 가득 찼어요.'};const restored=Math.min(amount,maxHp(p)-p.hp);p[id]--;p.hp+=restored;return {ok:true,message:`체력이 ${Math.round(restored)} 회복되었어요.`};}
 export function canUseSkill(p,key,cooldown=p.cooldowns?.[key]??0){
