@@ -9,7 +9,7 @@ import * as typeACore from '../dist/type-a.js';
 // Runs the actual game loop against lightweight DOM/timer adapters. No live browser state.
 function harness({manualImages=false}={}){
  const elements=new Map(),events=new Map(),windowEvents=new Map(),storage=new Map(),timeouts=[];
- const persistence={fail:false},requestedImages=[];
+ const persistence={fail:false},requestedImages=[],clock={now:Date.now()};
  const draws=[],labels=[],strokes=[],fills=[],arcs=[],transforms=[];let matrix=[1,0,0,1,0,0],path=[];
  const point=(x,y)=>({x:matrix[0]*x+matrix[2]*y+matrix[4],y:matrix[1]*x+matrix[3]*y+matrix[5]});
  const gradient=()=>({addColorStop(){}});
@@ -30,10 +30,10 @@ function harness({manualImages=false}={}){
  },{get:(obj,key)=>key in obj?obj[key]:()=>{}});
  function el(selector){if(elements.has(selector))return elements.get(selector);const obj={parentElement:{},style:{},dataset:{},classList:{add(){},remove(){},toggle(){}},textContent:'',innerHTML:'',hidden:false,isConnected:true,disabled:false,onclick:null,listeners:new Map(),setPointerCapture(){},focus(){},setAttribute(k,v){this[k]=v;},getAttribute(k){return this[k]??null;},getBoundingClientRect(){return {width:1448,height:818};},addEventListener(n,f){this.listeners.set(n,f);},querySelector:child=>el(`${selector} ${child}`),querySelectorAll:()=>[],getContext:()=>drawing};elements.set(selector,obj);return obj;}
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),hidden:false,activeElement:el('#game')};
- const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;requestedImages.push(this);this.complete=!manualImages;this.naturalWidth=v.includes('otter-')?1215:1500;this.naturalHeight=v.includes('otter-')?1295:1000;if(!manualImages)this.onload?.();}},Promise,Math,Date,Number,String,Set});
+ const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;requestedImages.push(this);this.complete=!manualImages;this.naturalWidth=v.includes('otter-')?1215:1500;this.naturalHeight=v.includes('otter-')?1295:1000;if(!manualImages)this.onload?.();}},Promise,Math,Date:class extends Date{static now(){return clock.now;}},Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
- vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,createModal,characterPortrait,sceneAssets,mapAssets,loadSceneAssets,loadImage,images,imageLoads,buildHUD,refreshHUD,refreshItemSlots,drawDrop,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,drawGuardBack,refreshHealthHUD,recordSwordBlock,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,guardBlocks,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
- return {api:context.gameTest,persistence,requestedImages,finishImages(except){for(const img of requestedImages)if(!img.complete&&img.asset!==except){img.complete=true;img.onload?.();}},draws,labels,strokes,fills,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
+ vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,createModal,characterPortrait,sceneAssets,mapAssets,loadSceneAssets,loadImage,images,imageLoads,buildHUD,refreshHUD,refreshItemSlots,drawDrop,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,drawGuardBack,refreshHealthHUD,recordSwordBlock,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,maguriHack,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,guardBlocks,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
+ return {api:context.gameTest,clock,persistence,requestedImages,finishImages(except){for(const img of requestedImages)if(!img.complete&&img.asset!==except){img.complete=true;img.onload?.();}},draws,labels,strokes,fills,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
 }
 function advance(h,seconds){for(let t=0;t<seconds;t+=1/60)h.api.update(1/60);}
 
@@ -2287,4 +2287,60 @@ test('skill book explains locked levels and updates novice art after advancement
  for(const level of [3,6,10,15])assert.ok(html.includes(`🔒 Lv.${level}`));assert.ok(html.includes('전직 필요'));assert.ok(html.includes('MP 2'));assert.ok(html.includes('rabbit-skill-w.webp'));
  h.api.closeModal();Object.assign(p,{level:15,job:'mage'});key(h,'KeyK');html=h.el('#modal-root').innerHTML;
  assert.ok(html.includes('rabbit-skill-w-mage.webp'));assert.ok(html.includes('순간 이동'));assert.ok(!html.includes('🔒 Lv.'));
+});
+
+
+test('hacker can select Maguri in every shop town and buy only its actual catalog for zero money',()=>{
+ for(const map of ['town','gangnam','yeoksamStreet']){
+  const {h,p}=chickFixture(map);Object.assign(p,{x:1060,y:654,money:0});const mp=p.mp,xp=p.xp;
+  h.api.cast('r');assert.equal(h.api.get().hackerUlt.targetId,'npc:shop');
+  render(h);assert.ok(h.labels.some(l=>l.text==='대상 · 마구리'&&Number.isFinite(l.x)&&Number.isFinite(l.y)));
+  assert.equal(h.api.confirmHack(),true);assert.equal(p.mp,mp-38);assert.equal(h.api.get().cooldowns.r,40);
+  assert.equal(h.api.get().maguriHack.expiresAt,h.clock.now+10000);assert.equal(h.api.get().maguriHack.map,map);
+  render(h);assert.ok(h.labels.some(l=>l.text==='해킹됨! · 10초'));
+  h.api.interact();assert.equal(h.api.get().modal,'shop');assert.equal(h.api.get().hackerUlt,null);
+  assert.equal(h.el('#dialog-title').textContent,'마구리 · 해킹된 상점');assert.equal(h.el('#shop-hack-banner').hidden,false);
+  const markup=h.el('#modal-root').innerHTML;const body=h.el('.npc-dialog-body');body.scrollTop=125;
+  for(const id of core.shopItemsFor(p)){
+   const count=p[id],button=h.el(`#buy-${id}`);h.document.activeElement=button;
+   assert.equal(button.textContent,'0원 · 구매');assert.equal(button.disabled,false);button.onclick();
+   assert.equal(p[id],count+1);assert.equal(p.money,0);assert.equal(body.scrollTop,125);assert.equal(h.document.activeElement,button);assert.equal(h.el('#modal-root').innerHTML,markup);
+  }
+  assert.equal(p.xp,xp);assert.ok(!h.api.get().monsters.some(m=>m.hack));
+  const saved=JSON.parse(h.storage.get(core.SAVE_KEY)).characters[0];assert.equal(saved.maguriHack,undefined);assert.equal(saved.hackedShop,undefined);
+  assert.equal(core.buyItem(p,'uniform',{hackedShop:true}).ok,false);assert.equal(core.buyItem(p,'typeATitle',{hackedShop:true}).ok,false);
+  assert.equal(core.buyItem(p,map==='yeoksamStreet'?'gangnamScrolls':'yeoksamStreetScrolls',{hackedShop:true}).ok,false);
+ }
+});
+test('Maguri hack expires at exactly ten real seconds while the shop pauses simulation',()=>{
+ const {h,p}=chickFixture('town');p.x=1060;p.money=2000;h.api.cast('r');h.api.confirmHack();h.api.interact();
+ const cooldown=h.api.get().cooldowns.r;h.clock.now+=9999;h.api.update(.01);
+ assert.equal(h.el('#buy-gangnamScrolls').textContent,'0원 · 구매');assert.equal(h.el('#shop-hack-clock').textContent,'1초');
+ h.clock.now++;h.api.update(.01);assert.equal(h.api.get().maguriHack,null);assert.equal(h.api.get().cooldowns.r,cooldown);
+ assert.equal(h.el('#shop-hack-banner').hidden,true);assert.equal(h.el('#dialog-title').textContent,'마구리의 보따리 상점');
+ assert.equal(h.el('#buy-gangnamScrolls').textContent,'1,500원 · 구매');h.el('#buy-gangnamScrolls').onclick();assert.equal(p.money,500);
+});
+test('a purchase rechecks the hack deadline even before the next animation frame',()=>{
+ const {h,p}=chickFixture('town');p.x=1060;p.money=0;h.api.cast('r');h.api.confirmHack();h.api.shop();
+ const count=p.largePotions;h.clock.now+=10000;h.el('#buy-largePotions').onclick();
+ assert.equal(p.largePotions,count);assert.equal(p.money,0);assert.equal(h.el('#buy-largePotions').disabled,true);assert.equal(h.el('#buy-largePotions').textContent,'500원 · 구매');assert.equal(h.el('#shop-hack-banner').hidden,true);
+});
+test('Hyuntori rejects the hack with the exact warning, retaining mana cost and R cooldown',()=>{
+ const {h,p}=chickFixture('town');p.x=650;const mp=p.mp;h.api.cast('r');
+ assert.equal(h.api.get().hackerUlt.targetId,'npc:gm');render(h);assert.ok(h.labels.some(l=>l.text==='대상 · 현토리'&&Number.isFinite(l.y)));
+ h.api.cycleHack(1);assert.equal(h.api.get().hackerUlt.targetId,'npc:shop');h.api.cycleHack(-1);
+ assert.equal(h.api.confirmHack(),false);assert.equal(h.el('#toast').textContent,'감히 운영자를 해킹할 수는 없습니다.');
+ assert.equal(h.api.get().hackerUlt,null);assert.equal(h.api.get().maguriHack,null);assert.equal(h.api.get().cooldowns.r,40);assert.equal(p.mp,mp-38);
+ assert.equal(h.api.playerDamage(100),100);h.api.cast('r');assert.equal(h.api.get().hackerUlt,null);
+});
+test('Maguri typing finishes quickly so interaction remains available, and leaving the world clears the hack',()=>{
+ const {h,p}=chickFixture('town');p.x=1060;h.api.cast('r');h.api.confirmHack();advance(h,.9);
+ assert.equal(h.api.get().hackerUlt,null);assert.ok(h.api.get().maguriHack);h.api.shop();h.api.closeModal();h.api.shop();assert.equal(h.el('#buy-mpPotions').textContent,'0원 · 구매');
+ h.api.closeModal();h.api.selectCharacters();assert.equal(h.api.get().maguriHack,null);h.api.start(p);h.api.shop();assert.equal(h.el('#buy-mpPotions').textContent,'500원 · 구매');
+});
+test('NPC hacking remains limited to a promoted chick with R unlocked and sufficient MP',()=>{
+ for(const [job,level,mp] of [[null,15,100],['hacker',14,100],['hacker',15,37]]){
+  const {h,p}=chickFixture('town',job);Object.assign(p,{level,mp,x:1060});h.api.cast('r');assert.equal(h.api.get().hackerUlt,null);assert.equal(h.api.get().maguriHack,null);
+ }
+ const h=harness(),p=core.createCharacter('고양이 테스트','cat');Object.assign(p,{level:15,job:'protester',map:'town',x:1060});p.mp=core.maxMp(p);h.api.start(p);h.api.cast('r');assert.equal(h.api.get().hackerUlt,null);assert.equal(h.api.get().maguriHack,null);
 });

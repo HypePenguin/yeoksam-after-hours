@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=123';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=123';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=123';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=124';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=124';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=124';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -51,6 +51,10 @@ let scene='title',player=null,selectedId=records[0]?.id??null,modal=null,returnF
 let rabbitOrbs=[],rabbitShield=null;
 let otterWave=null,otterShield=null,otterBubbles=null,otterConcert=null;
 let chickStealth=0,chickCharge=null,hackerUlt=null,chickCodes=[];
+// NPC hacks are temporary world state; never persist a free-shop flag in character saves.
+let maguriHack=null,shopHackClock=null;
+const maguriHackSeconds=()=>maguriHack?.map===player?.map?Math.max(0,(maguriHack.expiresAt-Date.now())/1000):0;
+const currentShopContext=()=>({hackedShop:maguriHackSeconds()>0});
 let inventorySelection='potions',boss=null,potionCooldown=0,catCharge=null,catCastLock=0,catProjectiles=[],catFires=[],catBallot=null;
 const bossActive=()=>!!boss?.active;
 const canTarget=m=>!m.dead&&(!m.isBoss||(isTypeA(m)?typeATargetable(m):targetableBoss(m)));
@@ -81,7 +85,7 @@ function save(silent=true){
  if(player){player.savedAt=new Date().toISOString();const i=records.findIndex(p=>p.id===player.id);if(i>=0)records[i]={...player};else records.push({...player});}
  try{localStorage.setItem(SAVE_KEY,JSON.stringify({version:1,characters:records}));storageBroken=false;lastSavedLabel='방금 저장됨';if(!silent)toast('현재 위치와 진행 상황을 저장했어요.');return true;}catch{storageBroken=true;if(!silent)toast('브라우저 저장 공간에 접근할 수 없어요. 진행 상황이 유지되지 않을 수 있습니다.');return false;}
 }
-function setScene(next){if(next!=='playing'){if(player){player.respectTime=0;player.hp=Math.min(player.hp,maxHp(player));}boss=null;potionCooldown=0;}cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;$('.game-shell').classList.remove('boss-fight');resetJump();resetGait();cancelSword();resetCombat();hurtTime=0;scene=next;keys.clear();ui.innerHTML='';$('#touch-controls').classList.toggle('playing',next==='playing');$('.game-shell').classList.toggle('is-playing',next==='playing');resize();}
+function setScene(next){if(next!=='playing'){maguriHack=null;if(player){player.respectTime=0;player.hp=Math.min(player.hp,maxHp(player));}boss=null;potionCooldown=0;}cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;$('.game-shell').classList.remove('boss-fight');resetJump();resetGait();cancelSword();resetCombat();hurtTime=0;scene=next;keys.clear();ui.innerHTML='';$('#touch-controls').classList.toggle('playing',next==='playing');$('.game-shell').classList.toggle('is-playing',next==='playing');resize();}
 function title(){transitionId++;resetOtter();player=null;closeModal();setScene('title');screens.innerHTML=`<div class="title-screen"><div class="title-content"><div class="eyebrow"><span></span> 불이 꺼진 도시에서, 모험이 켜진다.</div><p class="english-title">YEOKSAM<br>AFTER HOURS</p><h1>역삼의 밤<span>夜</span></h1><p class="intro">익숙한 거리, 조금 다른 밤.<br>작은 용기를 챙겨 도시 밖으로 떠나보세요.</p><button class="primary start-button" id="start-button">시작하기 <span>ENTER ↵</span></button><div class="save-caption">진행 상황은 이 브라우저에 자동 저장됩니다.</div></div><div class="scene-caption"><span class="station-pill">2</span><div>역삼 Yeoksam<small>37.5006° N &nbsp; 127.0364° E</small></div></div></div>`;$('#start-button').onclick=selectCharacters;}
 function selectCharacters(){
  if(player){resetOtter();save();}player=null;closeModal();setScene('characters');
@@ -134,7 +138,7 @@ async function enterWorld(id){
  const [ready]=await Promise.all([loadSceneAssets(player),new Promise(r=>setTimeout(r,120))]);if(token!==transitionId)return;if(!ready)toast('일부 이미지가 로드되지 않았어요. 새로고침해 주세요.');
  resetWorld();setScene('playing');screens.innerHTML='';buildHUD();canvas.focus();save();toast(player.kills===0?'역삼역에 오신 걸 환영해요! 운영자 현토리에게 F로 말을 걸어보세요.':`${player.name}, 다시 오신 걸 환영해요.`);
 }
-function resetWorld(){void loadSceneAssets(player);cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;if(!MAPS[player.map].boss)player.mpPotionCooldown=0;boss=player.map==='hangar'?createTypeA():player.map==='pocha'?createSoldier():null;potionCooldown=0;resetJump();resetGait();cancelSword();resetCombat();hurtTime=0;monsters=Array.from({length:monsterCount(player.map)},(_,i)=>makeMonster(player.map,i));drops=[];effects=[];texts=[];attackTimer=0;invincible=2;cooldowns=player.cooldowns;camera=clamp(player.x-screenWidth*.45,0,Math.max(0,MAPS[player.map].width-screenWidth));saveClock=0;}
+function resetWorld(){maguriHack=null;void loadSceneAssets(player);cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;if(!MAPS[player.map].boss)player.mpPotionCooldown=0;boss=player.map==='hangar'?createTypeA():player.map==='pocha'?createSoldier():null;potionCooldown=0;resetJump();resetGait();cancelSword();resetCombat();hurtTime=0;monsters=Array.from({length:monsterCount(player.map)},(_,i)=>makeMonster(player.map,i));drops=[];effects=[];texts=[];attackTimer=0;invincible=2;cooldowns=player.cooldowns;camera=clamp(player.x-screenWidth*.45,0,Math.max(0,MAPS[player.map].width-screenWidth));saveClock=0;}
 async function travel(portal){
  if(scene!=='playing')return;if(bossActive()){toast('결투 중에는 출구를 사용할 수 없어요. 메뉴에서 도전을 포기하거나 이동장치를 사용하세요.');return;}if(player.map==='hangar'&&portal.to==='yeoksamStreet'&&!hasTypeATitle(player)){toast('A형 칭호를 장착해야 이동할 수 있어요. I 키로 가방을 열어 A형 칭호를 장착하세요.');return;}const target={...portal};save();closeModal();setScene('loading');const token=++transitionId;
  screens.innerHTML=`<div class="screen-overlay"><small class="eyebrow">NEXT STOP</small><h2 class="screen-title">${MAPS[target.to].name}</h2><div class="loading-track"><i></i></div><p class="screen-subtitle">${MAPS[target.to].danger?'로봇과 부딪히면 피해를 받아요. 점프로 피할 수 있어요.':'마을에서는 천천히 체력이 회복됩니다.'}</p></div>`;
@@ -255,16 +259,27 @@ function interact(){if(scene!=='playing'||modal)return;interactionTarget=findInt
 const shopItemSummary=id=>`${ITEMS[id]?.hpRestore?`HP +${ITEMS[id].hpRestore}`:id==='mpPotions'?'MP +100':'즉시 귀환'} · 보유 ${player[id]}개`;
 function refreshShop(){
  // Keep the existing dialog nodes so buying preserves scroll, focus and expanded help.
+ const context=currentShopContext(),hacked=context.hackedShop,seconds=Math.ceil(maguriHackSeconds());
+ shopHackClock=seconds;
+ $('.modal').classList.toggle('hacked-shop',hacked);
+ $('#dialog-title').textContent=hacked?'마구리 · 해킹된 상점':'마구리의 보따리 상점';
+ $('#shop-hack-banner').hidden=!hacked;$('#shop-hack-clock').textContent=`${seconds}초`;
  $('.shop-money').textContent=`${player.money.toLocaleString()}원`;
  for(const id of shopItemsFor(player)){
+  const price=itemPrice(player,id,context),button=$(`#buy-${id}`);
   $(`#shop-stock-${id}`).textContent=shopItemSummary(id);
-  $(`#buy-${id}`).disabled=player.money<itemPrice(player,id);
+  button.disabled=player.money<price;button.textContent=`${price.toLocaleString()}원 · 구매`;
  }
 }
+function updateMaguriHack(){
+ if(maguriHack&&Date.now()>=maguriHack.expiresAt)maguriHack=null;
+ // This runs even while an NPC dialog pauses combat. Purchases also recheck the deadline.
+ if(modal==='shop'&&shopHackClock!==Math.ceil(maguriHackSeconds()))refreshShop();
+}
 function shop(){
- showModal('shop','마구리의 보따리 상점',`<p class="shop-balance">소지금 <strong class="shop-money">${player.money.toLocaleString()}원</strong> · 한 번에 1개씩 구매</p>${shopItemsFor(player).map(id=>{const item=ITEMS[id],price=itemPrice(player,id);return `<div class="shop-item"><span class="bottle-icon">${itemIconMarkup(id)}</span><div><strong>${item.name}</strong><small id="shop-stock-${id}">${shopItemSummary(id)}</small></div><button class="secondary" id="buy-${id}" ${player.money<price?'disabled':''}>${price.toLocaleString()}원 · 구매</button></div>`;}).join('')}<details class="npc-details"><summary>이동장치 · 단축키 안내</summary><p><kbd>I</kbd> 인벤토리에서 사용하거나 1 · 2 · 3번에 등록하세요. 이동장치의 목적지에 이미 있다면 소모되지 않아요. 다른 지역에서도 목적지로 돌아올 수 있어요.</p></details>`);
- $('.modal').classList.add('shop-dialog');
- for(const id of shopItemsFor(player))$(`#buy-${id}`).onclick=()=>{const result=buyItem(player,id);if(result.ok){save();beep(800);refreshShop();}toast(result.message);refreshHUD();};
+ showModal('shop','마구리의 보따리 상점',`<div class="shop-hack-banner" id="shop-hack-banner" role="status" hidden><strong>해킹됨! <span id="shop-hack-clock"></span></strong><span>가격 시스템 우회 · 판매 아이템 모두 0원</span><code>ACCESS GRANTED / PRICE = 0</code></div><p class="shop-balance">소지금 <strong class="shop-money">${player.money.toLocaleString()}원</strong> · 한 번에 1개씩 구매</p>${shopItemsFor(player).map(id=>{const item=ITEMS[id],price=itemPrice(player,id,currentShopContext());return `<div class="shop-item"><span class="bottle-icon">${itemIconMarkup(id)}</span><div><strong>${item.name}</strong><small id="shop-stock-${id}">${shopItemSummary(id)}</small></div><button class="secondary" id="buy-${id}" ${player.money<price?'disabled':''}>${price.toLocaleString()}원 · 구매</button></div>`;}).join('')}<details class="npc-details"><summary>이동장치 · 단축키 안내</summary><p><kbd>I</kbd> 인벤토리에서 사용하거나 1 · 2 · 3번에 등록하세요. 이동장치의 목적지에 이미 있다면 소모되지 않아요. 다른 지역에서도 목적지로 돌아올 수 있어요.</p></details>`);
+ $('.modal').classList.add('shop-dialog');refreshShop();
+ for(const id of shopItemsFor(player))$(`#buy-${id}`).onclick=()=>{const result=buyItem(player,id,currentShopContext());if(result.ok){save();beep(800);}refreshShop();toast(result.message);refreshHUD();};
 }
 function findInteraction(){if(!player||bossActive())return null;const candidates=[...(boss?[{id:'soldier',name:bossInfo().name,x:boss.x,y:boss.y}]:[]),...mapNPCs(),...MAPS[player.map].portals];return candidates.filter(o=>Math.hypot(player.x-o.x,(player.y-o.y)*1.8)<145).sort((a,b)=>Math.hypot(player.x-a.x,player.y-a.y)-Math.hypot(player.x-b.x,player.y-b.y))[0]??null;}
 let mapSelection=null;
@@ -396,7 +411,7 @@ function refreshCombatHUD(){
  else if(guardTime>0){$('#combat-title').textContent='막기';$('#combat-clock').textContent=`${guardTime.toFixed(1)}초`;$('#combat-detail').textContent=`E 재사용 · 발도 피해 +${guardBlocks*10}%`;$('#combat-bar').style.width=`${guardTime/effectiveSkill(player,'e').guard*100}%`;}
  else if(recovery){$('#combat-title').textContent=isPowered(player)?'근육 각성 · 한 번 더!':'한 번 더!';$('#combat-clock').textContent=`${recovery.remaining.toFixed(1)}초`;$('#combat-detail').textContent='HP 회복 · 피해 50% 감소 · 이동 60% · 공격 불가';$('#combat-bar').style.width=`${recovery.remaining/recovery.duration*100}%`;}
  else if(catCharge){$('#combat-title').textContent='화염병 · 사거리 충전';$('#combat-clock').textContent=`${catCharge.elapsed.toFixed(1)} / 1초`;$('#combat-detail').textContent='차징·투척 중 이동 불가 · 1초에 자동 발동';$('#combat-bar').style.width=`${catCharge.elapsed*100}%`;}
- if(hackerUlt||chickCharge||chickStealth>0){const u=hackerUlt;$('#combat-title').textContent=u?'해킹':chickCharge?'시스템 정지 · 차징':'시크릿 모드';$('#combat-clock').textContent=u?`${Math.ceil(u.remaining)}초`:chickCharge?`${chickCharge.elapsed.toFixed(1)} / ${chickCharge.skill.charge}초`:`${chickStealth.toFixed(1)}초`;$('#combat-detail').textContent=u?(u.phase==='selecting'?'가까운 적 우선 · 피해 80% 감소':'해킹당함! · 5초 경직과 지속 피해 · 피해 80% 감소'):chickCharge?'이동 불가 · E 놓으면 발동 · 은신 유지':'이동속도 +50% · 다음 공격 +20%';$('#combat-bar').style.width=`${(u?u.remaining/(u.phase==='selecting'?u.skill.selection:u.skill.duration):chickCharge?chickCharge.elapsed/chickCharge.skill.charge:chickStealth/5)*100}%`;}
+ if(hackerUlt||chickCharge||chickStealth>0){const u=hackerUlt;$('#combat-title').textContent=u?'해킹':chickCharge?'시스템 정지 · 차징':'시크릿 모드';$('#combat-clock').textContent=u?`${Math.ceil(u.remaining)}초`:chickCharge?`${chickCharge.elapsed.toFixed(1)} / ${chickCharge.skill.charge}초`:`${chickStealth.toFixed(1)}초`;$('#combat-detail').textContent=u?(u.phase==='selecting'?'가까운 적 우선 · 피해 80% 감소':u.npcId?'마구리 해킹 성공 · 10초간 상점 가격 0원':'해킹당함! · 5초 경직과 지속 피해 · 피해 80% 감소'):chickCharge?'이동 불가 · E 놓으면 발동 · 은신 유지':'이동속도 +50% · 다음 공격 +20%';$('#combat-bar').style.width=`${(u?u.remaining/(u.phase==='selecting'?u.skill.selection:u.npcId ? .8 : u.skill.duration):chickCharge?chickCharge.elapsed/chickCharge.skill.charge:chickStealth/5)*100}%`;}
  if(player.classId==='otter'&&(otterConcert||otterShield||otterBubbles||otterWave)){
   const c=otterConcert,w=otterWave,b=otterBubbles;
   $('#combat-title').textContent=c?'콘서트 ♡':w?.riding?'파도 타기':w&&!w.riding&&w.elapsed<=w.skill.rideWindow?'W 다시 누르면 파도 타기':'물방울 가드';
@@ -1100,7 +1115,11 @@ function releaseChickCharge(input='keyboard'){
  }
  beep(780,.2);shake=Math.max(shake,4);refreshHUD();save();return true;
 }
-function hackCandidates(){return monsters.filter(canTarget).sort((a,b)=>Math.hypot(a.x-player.x,a.y-player.y)-Math.hypot(b.x-player.x,b.y-player.y)||String(a.id).localeCompare(String(b.id)));}
+function hackCandidates(){
+ const npcs=mapNPCs().filter(n=>['shop','gm'].includes(n.id)).map(n=>({...n,npcId:n.id,id:`npc:${n.id}`}));
+ return [...monsters.filter(canTarget),...npcs].sort((a,b)=>Math.hypot(a.x-player.x,a.y-player.y)-Math.hypot(b.x-player.x,b.y-player.y)||String(a.id).localeCompare(String(b.id)));
+}
+const findHackTarget=id=>hackCandidates().find(target=>target.id===id);
 function cycleHack(dir){
  if(hackerUlt?.phase!=='selecting')return;const list=hackCandidates().sort((a,b)=>a.x-b.x||a.y-b.y);
  if(!list.length){cancelChickAim();toast('해킹할 적이 사라졌어요.');return;}
@@ -1108,9 +1127,14 @@ function cycleHack(dir){
 }
 function confirmHack(){
  if(scene!=='playing'||modal||hackerUlt?.phase!=='selecting')return false;
- const u=hackerUlt,m=monsters.find(m=>m.id===u.targetId&&canTarget(m));
+ const u=hackerUlt,m=findHackTarget(u.targetId);
  if(!m){const list=hackCandidates();if(list.length){u.targetId=list[0].id;toast('대상이 바뀌었어요. 다시 확정하세요.');}else cancelChickAim();return false;}
+ if(m.npcId==='gm'){cancelChickAim();toast('감히 운영자를 해킹할 수는 없습니다.');refreshHUD();save();return false;}
  u.phase='channeling';u.remaining=u.skill.duration;const boost=consumeStealth();
+ if(m.npcId==='shop'){
+  maguriHack={map:player.map,expiresAt:Date.now()+10000};u.npcId='shop';u.remaining=.8;
+  chickBurst(m,50);textAt('해킹됨!',m.x,m.y-110,'#9cffe1');toast('마구리 해킹 성공! 10초 동안 모든 판매 아이템이 0원입니다.');beep(550,.25);keys.clear();refreshHUD();return true;
+ }
  m.hack={remaining:u.skill.duration,tick:u.skill.tick,damage:Math.round(attackPower(player)*u.skill.damage*boost)};m.walking=false;
  textAt('해킹당함!',m.x,m.y-(m.isBoss?240:140),'#9cffe1');beep(550,.25);keys.clear();refreshHUD();return true;
 }
@@ -1138,7 +1162,7 @@ function updateChickCombat(dt){
    const list=hackCandidates();if(!list.length){cancelChickAim();return;}
    if(!list.some(m=>m.id===u.targetId))u.targetId=list[0].id;
    if(u.remaining<=0){cancelChickAim();toast('대상 선택 시간이 끝났어요.');}
-  }else if(u.remaining<=0||!monsters.some(m=>m.id===u.targetId&&!m.dead&&m.hack))cancelChickAim();
+  }else if(u.remaining<=0||(!u.npcId&&!monsters.some(m=>m.id===u.targetId&&!m.dead&&m.hack)))cancelChickAim();
  }
 }
 // Per-pose source bounds exclude adjacent rows; generated art is not a uniform grid.
@@ -1205,10 +1229,10 @@ function drawChickEffects(){
   for(let i=0;i<8;i++){const offset=Math.sin(worldTime*27+i*13)*55,y=m.y-height+i*height/8;ctx.fillStyle=i%2?'#a4ffe7aa':'#b7a1ff99';ctx.fillRect(x+offset-22,y,25+(i%3)*12,3);}
   label(m.hack?'해킹당함!':'시스템 정지',x,m.y-height-47,'#adffe7',14);
  }
- if(hackerUlt){const m=monsters.find(m=>m.id===hackerUlt.targetId&&!m.dead);if(m){
-  const x=m.x-camera,height=m.isBoss?(isTypeA(m)?TYPE_A.height:180):72+m.level*3,y=m.y-height-85+Math.sin(worldTime*6)*5;
+ if(hackerUlt){const m=findHackTarget(hackerUlt.targetId);if(m){
+  const x=m.x-camera,height=m.npcId?(m.npcId==='shop'?MAGURI_WIDTH*MAGURI_CROP[3]/MAGURI_CROP[2]:122):m.isBoss?(isTypeA(m)?TYPE_A.height:180):72+m.level*3,y=m.y-height-85+Math.sin(worldTime*6)*5;
   ctx.fillStyle='#c4ffe8';ctx.shadowColor='#6cfbdb';ctx.shadowBlur=14;ctx.beginPath();ctx.moveTo(x-18,y);ctx.lineTo(x+18,y);ctx.lineTo(x,y+22);ctx.closePath();ctx.fill();ctx.shadowBlur=0;
-  label(hackerUlt.phase==='selecting'?`대상 · Lv.${m.level} · HP ${Math.ceil(m.hp)}`:'해킹 연결 중',x,y-24,'#c2ffe6',14);
+  label(hackerUlt.phase==='selecting'?(m.npcId?`대상 · ${m.name}`:`대상 · Lv.${m.level} · HP ${Math.ceil(m.hp)}`):'해킹 연결 중',x,y-24,'#c2ffe6',14);
  }}ctx.restore();
 }
 
@@ -1329,7 +1353,7 @@ function die(){
  void loadSceneAssets(player);save();$('#revive').onclick=()=>{resetWorld();setScene('playing');screens.innerHTML='';buildHUD();canvas.focus();toast('체력과 MP가 모두 회복되었어요. 다시 출발해 볼까요?');};
 }
 function update(dt){
- walking=false;worldTime+=dt;if(scene!=='playing'||modal||document.hidden)return;
+ walking=false;worldTime+=dt;updateMaguriHack();if(scene!=='playing'||modal||document.hidden)return;
  // Apply recovery slow and cast locks only to their active fraction of this frame.
  const moveDt=Math.max(0,dt-(1-(recovery?.moveSpeed??1))*Math.min(dt,recovery?.remaining||0)-Math.min(dt,catCharge?dt:catCastLock));
  catCastLock=Math.max(0,catCastLock-dt);
@@ -1420,7 +1444,9 @@ function drawNPC(npc){
  const x=npc.x-camera,y=npc.y,isShop=npc.id==='shop',height=npc.height??(isShop?MAGURI_WIDTH*MAGURI_CROP[3]/MAGURI_CROP[2]:npc.id==='gm'?122:104),width=npc.width??(npc.crop?height*npc.crop[2]/npc.crop[3]:isShop?MAGURI_WIDTH:npc.id==='gm'?86:74);
  ctx.fillStyle='#041f2d55';ctx.beginPath();ctx.ellipse(x,y+2,npc.crop?width*.32:isShop?MAGURI_WIDTH*.44:25,isShop?4:8,0,0,Math.PI*2);ctx.fill();
  sprite(npc.asset||'player',x,y,width,height,{tint:npc.tint||'',crop:npc.crop});
- label(npc.name,x,y-height-18,'#ffdea6',15);label(npc.role,x,y-height-45,'#a2d9c8',12);
+ const hacked=isShop&&maguriHackSeconds()>0;
+ if(hacked){ctx.save();for(let i=0;i<6;i++){ctx.fillStyle=i%2?'#a4ffe7aa':'#b7a1ff99';ctx.fillRect(x+Math.sin(worldTime*27+i*13)*32-14,y-height+i*height/6,28+(i%3)*8,3);}ctx.restore();}
+ label(npc.name,x,y-height-18,'#ffdea6',15);label(hacked?`해킹됨! · ${Math.ceil(maguriHackSeconds())}초`:npc.role,x,y-height-45,hacked?'#9cffe1':'#a2d9c8',12);
  ctx.fillStyle='#ffe7ad';ctx.font='bold 22px "Space Grotesk"';ctx.textAlign='center';ctx.fillText(npc.icon,x,y-height-67+Math.sin(worldTime*3)*3);
 }
 function drawMonster(m){

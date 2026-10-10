@@ -40,7 +40,7 @@ export const incomingDamage=(p,damage,multiplier=1)=>Math.max(0,Math.round(damag
 export function equipUniform(p){if(!p.uniform)return {ok:false,message:'먼저 신원미상의 예비군을 처치해 군복을 얻으세요.'};p.uniformEquipped=!p.uniformEquipped;return {ok:true,message:p.uniformEquipped?'군복 장착 · 이동속도 +20%':'군복을 벗었어요.'};}
 export const validItem=id=>Object.hasOwn(ITEMS,id);
 export const shopItemsFor=p=>['potions','largePotions','mpPotions',...(p.map==='yeoksamStreet'?['yeoksamStreetScrolls']:['returnScrolls','gangnamScrolls'])];
-export const itemPrice=(p,id)=>validItem(id)?id==='gangnamScrolls'&&p.map==='town'?1500:ITEMS[id].price:undefined;
+export const itemPrice=(p,id,{hackedShop=false}={})=>validItem(id)?hackedShop&&shopItemsFor(p).includes(id)?0:id==='gangnamScrolls'&&p.map==='town'?1500:ITEMS[id].price:undefined;
 export function assignQuickSlot(p,index,id){
  if(!Number.isInteger(index)||index<0||index>2)return {ok:false,message:'1~3번 슬롯을 선택해 주세요.'};
  if(id!==null&&(!validItem(id)||!ITEMS[id].usable))return {ok:false,message:'사용할 수 있는 아이템만 등록할 수 있어요.'};
@@ -48,9 +48,9 @@ export function assignQuickSlot(p,index,id){
  p.quickSlots[index]=id;
  return {ok:true,message:id===null?`${index+1}번 슬롯을 비웠어요.`:`${ITEMS[id].name}을 ${index+1}번에 등록했어요.`};
 }
-export function buyItem(p,id){
- const item=validItem(id)?ITEMS[id]:null,price=itemPrice(p,id);
- if(!price||!shopItemsFor(p).includes(id))return {ok:false,message:'판매하지 않는 아이템이에요.'};
+export function buyItem(p,id,shopContext){
+ const item=validItem(id)?ITEMS[id]:null,price=itemPrice(p,id,shopContext);
+ if(!Number.isFinite(price)||price<0||!shopItemsFor(p).includes(id))return {ok:false,message:'판매하지 않는 아이템이에요.'};
  if(p.money<price)return {ok:false,message:`소지금이 부족해요. ${item.name}은 ${price.toLocaleString()}원입니다.`};
  p.money-=price;p[id]=(p[id]||0)+1;return {ok:true,message:`${item.name} 1개를 구입했어요.`};
 }
