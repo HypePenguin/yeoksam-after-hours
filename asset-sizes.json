@@ -1,6 +1,6 @@
 {
-  "source_bytes": 228517538,
-  "bytes": 25793002,
+  "source_bytes": 230440244,
+  "bytes": 26343682,
   "assets": [
     {
       "name": "builder-recovery-walk",
@@ -1889,6 +1889,20 @@
       "size": [
         1672,
         941
+      ],
+      "compact": false
+    },
+    {
+      "name": "cat-fire-v136",
+      "source_bytes": 1922706,
+      "bytes": 550680,
+      "source_size": [
+        1774,
+        887
+      ],
+      "size": [
+        1774,
+        887
       ],
       "compact": false
     }

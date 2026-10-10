@@ -27,22 +27,109 @@ export function drawMolotov(ctx,b,camera,time){
  ctx.fillStyle='#a87d324d';ctx.fillRect(-7,3,14,8);ctx.fillStyle='#ddd1a4';ctx.fillRect(-7,-1,14,7);ctx.strokeStyle='#e8ffdeaa';ctx.beginPath();ctx.moveTo(-5,-6);ctx.lineTo(-5,11);ctx.stroke();ctx.fillStyle='#d8c49a';ctx.fillRect(-4,-22,8,4);
  ctx.strokeStyle='#eee0b6';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(1,-23);ctx.quadraticCurveTo(8,-27,7,-31);ctx.stroke();flame(ctx,7,-29,4,17, time*22,.95);ctx.restore();
 }
-export function drawMolotovExplosion(ctx,e,t){
- const age=1-t,fade=clamp(t*2,0,1),r=e.size;
- ctx.save();ctx.shadowBlur=0;
- for(let i=0;i<10;i++){const a=i*TAU/10,spread=(.12+age*.58)*r;smoke(ctx,Math.cos(a)*spread,Math.sin(a)*spread*.42-24-age*55,22+age*35,.33*fade);}
- const flash=ctx.createRadialGradient(0,-12,1,0,-12,r*.65);flash.addColorStop(0,`rgba(255,251,199,${Math.max(0,1-age*4)})`);flash.addColorStop(.3,`rgba(255,173,38,${fade*.48})`);flash.addColorStop(1,'#ff5c0000');ctx.fillStyle=flash;ctx.beginPath();ctx.ellipse(0,-12,r*.65,r*.4,0,0,TAU);ctx.fill();
- for(let i=0;i<18;i++){const a=i*2.399,spread=Math.sqrt(noise(i+7))*r*(.12+age*.58),x=Math.cos(a)*spread,y=Math.sin(a)*spread*.45;flame(ctx,x,y,8+noise(i)*10,(40+noise(i+3)*60)*Math.sin(Math.PI*Math.min(.95,age+.12)),i+age*8,fade);}
- for(let i=0;i<24;i++){const a=i*2.399,v=35+noise(i+31)*r*.9,x=Math.cos(a)*v*age,y=Math.sin(a)*v*age*.55-70*age+105*age*age;ctx.strokeStyle=i%4?'#ffe4a0':'#9ec38a';ctx.lineWidth=i%4?1.5:2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-Math.cos(a)*8,y-Math.sin(a)*5);ctx.stroke();}ctx.restore();
+// Soft hot gas and irregular flame sheets replace repeated, sharply outlined flame icons.
+// All particle seeds and motion are deterministic so pausing never reshuffles the effect.
+function hotGas(ctx,x,y,w,h,heat,alpha){
+ if(alpha<=0||w<=0||h<=0)return;
+ ctx.save();ctx.translate(x,y);ctx.scale(w,h);ctx.globalAlpha*=alpha;
+ const g=ctx.createRadialGradient(-.16,.16,.04,0,0,1);
+ g.addColorStop(0,heat>.6?'#fff4c9':'#ffd46e');g.addColorStop(.2,'#ffbc39');g.addColorStop(.46,'#ff6d16dd');g.addColorStop(.72,'#d9380866');g.addColorStop(1,'#7d170000');
+ ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,1,0,TAU);ctx.fill();ctx.restore();
 }
-export function drawFireField(ctx,f,camera,time){
- const x=f.x-camera,y=f.y,r=f.radius,age=f.duration-f.remaining,fade=clamp(f.remaining/.55,0,1);
- ctx.save();ctx.globalAlpha=fade;ctx.fillStyle='#34221950';ctx.beginPath();ctx.ellipse(x,y,r*.91,r*.59,0,0,TAU);ctx.fill();
- const glow=ctx.createRadialGradient(x,y,4,x,y,r);glow.addColorStop(0,'#ff8a164d');glow.addColorStop(.65,'#fc521424');glow.addColorStop(1,'#ec340000');ctx.fillStyle=glow;ctx.beginPath();ctx.ellipse(x,y,r,r*.66,0,0,TAU);ctx.fill();
- for(let i=0;i<9;i++){const a=i*2.399,rr=Math.sqrt(noise(i+8))*r*.75;smoke(ctx,x+Math.cos(a)*rr+Math.sin(time+i)*12,y+Math.sin(a)*rr*.6-30-((time*.4+noise(i))%1)*70,18+noise(i+20)*14,.15);}
- const points=Array.from({length:32},(_,i)=>{const a=i*2.399,rr=Math.sqrt(noise(i+80))*r*.9;return {i,x:x+Math.cos(a)*rr,y:y+Math.sin(a)*rr*.62};}).sort((a,b)=>a.y-b.y);
- for(const p of points){const pulse=.7+.3*Math.sin(time*9+p.i*1.7);flame(ctx,p.x,p.y,5+noise(p.i+12)*6,(23+noise(p.i+22)*34)*pulse*Math.min(1,age*8+.25),time*7+p.i);}
- for(let i=0;i<12;i++){const life=(time*.7+noise(i+52))%1,a=i*2.399;ctx.globalAlpha=fade*(1-life)*.65;ctx.fillStyle='#ffd98c';ctx.fillRect(x+Math.cos(a)*r*.75+life*12,y+Math.sin(a)*r*.42-life*90,1.5,3);}ctx.restore();
+function fireTongue(ctx,x,y,w,h,time,seed,alpha){
+ if(h<=0||alpha<=0)return;
+ const bend=(Math.sin(time*4.3+seed)*.55+Math.sin(time*8.1+seed*2.3)*.22)*w;
+ const curl=Math.sin(time*6.7+seed*.71)*w*.45;
+ ctx.save();ctx.translate(x,y);ctx.globalAlpha*=alpha;
+ const g=ctx.createLinearGradient(0,3,bend,-h);
+ g.addColorStop(0,'#fff6c2');g.addColorStop(.15,'#ffdc69f0');g.addColorStop(.43,'#ff981dd9');g.addColorStop(.72,'#f74a0a8c');g.addColorStop(1,'#ca300000');
+ ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(-w,0);
+ ctx.bezierCurveTo(-w*1.08,-h*.16,-w*.52+curl,-h*.27,-w*.48+curl,-h*.45);
+ ctx.bezierCurveTo(-w*.55+curl,-h*.62,bend-w*.3,-h*.72,bend,-h);
+ ctx.bezierCurveTo(bend+w*.08,-h*.72,w*.26-curl,-h*.6,w*.48-curl,-h*.4);
+ ctx.bezierCurveTo(w*.8-curl,-h*.24,w*.95,-h*.1,w,0);ctx.closePath();ctx.fill();
+ // A thin, broken white-yellow core sits at the fuel, never at the cool flame tip.
+ hotGas(ctx,-w*.12,-h*.13,w*.8,h*.24,.9,.75);
+ hotGas(ctx,bend*.4+curl*.2,-h*.45,w*.48,h*.2,.3,.36);
+ ctx.restore();
+}
+// Adjacent VFX frames dissolve into each other while sharing one planted ground anchor.
+function fireAtlas(ctx,img,row,phase,x,y,width,alpha=1){
+ if(!img?.complete||!img.naturalWidth)return false;
+ const cw=img.naturalWidth/4,ch=img.naturalHeight/2,height=width*ch/cw;
+ const frame=Math.floor(phase),mix=phase-frame;
+ ctx.save();ctx.imageSmoothingEnabled=true;
+ for(const [index,weight] of [[frame,1-mix],[(frame+1)%4,mix]]){
+  if(weight<=0)continue;ctx.save();ctx.globalAlpha*=alpha*weight;
+  ctx.drawImage(img,(index%4)*cw,row*ch,cw,ch,x-width/2,y-height*(row===0?.90:.76),width,height);ctx.restore();
+ }
+ ctx.restore();return true;
+}
+export function drawMolotovExplosion(ctx,e,t,texture){
+ const age=clamp(1-t,0,1),r=e.size,seed=(e.x||0)*.013+(e.y||0)*.021;
+ ctx.save();ctx.shadowBlur=0;
+ // The first impulse is flat along the road; the hot gas then billows upwards.
+ const spread=r*(.14+.8*(1-Math.exp(-age*7))),heat=Math.exp(-age*3.8);
+ const ground=ctx.createRadialGradient(0,0,1,0,0,spread);
+ ground.addColorStop(0,`rgba(255,205,106,${heat*.64})`);ground.addColorStop(.55,`rgba(255,104,18,${heat*.28})`);ground.addColorStop(1,'#ff680000');
+ ctx.save();ctx.scale(1,.5);ctx.fillStyle=ground;ctx.beginPath();ctx.arc(0,0,spread,0,TAU);ctx.fill();ctx.restore();
+ // Smoke starts behind the flame and expands as combustion cools.
+ for(let i=0;i<13;i++){
+  const n=noise(i+seed),a=i*2.399,reach=(.15+age*.62)*r*Math.sqrt(n);
+  const x=Math.cos(a)*reach+age*18,y=Math.sin(a)*reach*.4-15-age*(45+n*62);
+  smoke(ctx,x,y,14+age*(24+n*32),Math.sin(Math.PI*age)*(.12+n*.09));
+ }
+ const textured=fireAtlas(ctx,texture,0,Math.min(3,age*3.6),0,0,r*2.4,clamp(t*2,0,1));
+ if(!textured)for(let i=0;i<21;i++){
+  const n=noise(i+seed+51),a=i*2.399,reach=(.08+age*.68)*r*Math.sqrt(n),ignition=clamp(age*14-noise(i+8)*.7,0,1);
+  const x=Math.cos(a)*reach,y=Math.sin(a)*reach*.42-8-age*(20+n*45);
+  const size=(14+n*21)*(.55+Math.sin(Math.PI*age)*.9);
+  hotGas(ctx,x,y,size,size*(1.2+n*.8),heat,ignition*heat*(.68+n*.28));
+  if(i%2===0)fireTongue(ctx,x,y+size*.5,size*.36,size*(1.8+n),age*2.2,i+seed,ignition*heat*.6);
+ }
+ // Very brief white flash, followed by ballistic sparks and tiny green glass shards.
+ const flash=Math.pow(Math.max(0,1-age/.19),2);
+ if(flash>0){ctx.save();ctx.globalCompositeOperation='screen';hotGas(ctx,0,-16,r*.38,r*.26,1,flash);ctx.restore();}
+ for(let i=0;i<30;i++){
+  const a=i*2.399,n=noise(i+33),speed=r*(.35+n*.65),life=clamp((1-age)*(1-age)*2,0,1);
+  const x=Math.cos(a)*speed*age,y=Math.sin(a)*speed*age*.48-100*age+135*age*age;
+  ctx.save();ctx.globalAlpha*=life;ctx.strokeStyle=i%5?'#ffd580':'#91b9a177';ctx.lineWidth=i%5?1.1:1.6;
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-Math.cos(a)*(3+n*9)*(1-age),y+(3+n*7)*(1-age));ctx.stroke();ctx.restore();
+ }
+ ctx.restore();
+}
+export function drawFireField(ctx,f,camera,time,texture){
+ const x=f.x-camera,y=f.y,r=f.radius,age=Math.max(0,f.duration-f.remaining);
+ const fade=clamp(f.remaining/.65,0,1),ignite=clamp(age/.16,0,1),seed=f.x*.017+f.y*.023;
+ ctx.save();ctx.shadowBlur=0;ctx.globalAlpha*=fade;
+ // Irregular dark fuel patches and ember beds, without a visible circular boundary.
+ for(let i=0;i<8;i++){
+  const a=i*2.399,rr=Math.sqrt(noise(i+76))*r*.65,px=x+Math.cos(a)*rr,py=y+Math.sin(a)*rr*.57;
+  ctx.save();ctx.translate(px,py);ctx.scale(1,.42);
+  const g=ctx.createRadialGradient(0,0,2,0,0,r*.4);g.addColorStop(0,'#2015137a');g.addColorStop(.58,'#31191430');g.addColorStop(1,'#24100c00');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,r*.4,0,TAU);ctx.fill();ctx.restore();
+ }
+ const glow=ctx.createRadialGradient(x,y,2,x,y,r);glow.addColorStop(0,'#ff9c2638');glow.addColorStop(.65,'#f35e121a');glow.addColorStop(1,'#c9340000');ctx.save();ctx.translate(x,y);ctx.scale(1,.64);ctx.fillStyle=glow;ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.fill();ctx.restore();
+ // Each smoke plume has its own rising life and drift, rather than pulsing in place.
+ for(let i=0;i<14;i++){
+  const n=noise(i+seed+11),life=(age*(.42+n*.15)+n)%1,a=i*2.399,rr=Math.sqrt(noise(i+8))*r*.8;
+  smoke(ctx,x+Math.cos(a)*rr+life*26,y+Math.sin(a)*rr*.57-life*(75+n*50)-14,11+life*26,Math.sin(Math.PI*life)*.13*ignite);
+ }
+ const points=Array.from({length:40},(_,i)=>{const a=i*2.399,rr=Math.sqrt(noise(i+80))*r*.89;return {i,x:x+Math.cos(a)*rr,y:y+Math.sin(a)*rr*.6};}).sort((a,b)=>a.y-b.y);
+ const textured=fireAtlas(ctx,texture,1,(age*5)%4,x,y,r*2.4,ignite);
+ if(!textured)for(const p of points){
+  const n=noise(p.i+seed),cycle=(age*(1.25+n*.9)+n)%1;
+  const lift=Math.sin(Math.PI*cycle),w=4+n*6,h=(20+n*43)*(.45+lift*.75)*ignite*(.55+fade*.45);
+  hotGas(ctx,p.x,p.y-3,w*2.6,8+n*6,.7,ignite*.36);
+  fireTongue(ctx,p.x+Math.sin(time*3+p.i)*2,p.y,w,h,time,p.i+seed,(.42+lift*.38)*ignite);
+  // Small detached tongues peel away and disappear as they rise.
+  hotGas(ctx,p.x+Math.sin(p.i+cycle*4)*5+cycle*9,p.y-h*.48-cycle*20,w*(1-cycle)*.9,8*(1-cycle)+2,.2,lift*.22*ignite);
+ }
+ for(let i=0;i<18;i++){
+  const n=noise(i+52),life=(age*(.6+n*.5)+n)%1,a=i*2.399;
+  ctx.save();ctx.globalAlpha*=Math.sin(Math.PI*life)*.68*ignite;ctx.strokeStyle=i%3?'#ffc677':'#ff8d32';ctx.lineWidth=1;
+  const px=x+Math.cos(a)*r*.78+life*14,py=y+Math.sin(a)*r*.46-life*(55+n*55);ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px-1.5,py+2+life*3);ctx.stroke();ctx.restore();
+ }
+ ctx.restore();
 }
 export function ballotPaper(b,time,i){
  const height=(noise(i+91)+time*.24)%1,angle=time*4.8+i*2.399,heightScale=150+Math.min(80,b.skill.range*.16),radius=(.17+.65*height)*b.skill.range;
