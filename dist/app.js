@@ -1,7 +1,7 @@
-import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawBallotVortex} from './cat-effects.js?v=133';
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=133';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=133';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=133';
+import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawBallotVortex} from './cat-effects.js?v=134';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=134';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=134';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=134';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -879,7 +879,7 @@ const OTTER_FEET={
  idol:[312,310,312,311,620,578,619,620,915,917,918,914,1240,1239,1238,1241]
 };
 // Uniform reduction preserves every pose and the original artwork.
-const OTTER_DRAW_SCALE=.9;
+const OTTER_DRAW_SCALE=.81;
 function drawOtterPlayer(){
  const asset=otterAsset();if(!images[asset])void loadImage(asset);const img=images[asset];if(!img?.complete||!img.naturalWidth)return;
  const frame=otterFrame(),cw=img.naturalWidth/4,x=player.x-camera,scale=178/(img.naturalHeight/4),[top,bottom]=OTTER_ROWS[Math.floor(frame/4)],foot=OTTER_FEET[player.job==='idol'?'idol':'normal'][frame],column=frame%4,sourceX=Math.max(column*cw,({9:340,10:650,11:916})[frame]||0),sourceWidth=(column+1)*cw-sourceX;
