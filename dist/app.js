@@ -1,6 +1,6 @@
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=112';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=112';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=112';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections} from './core.js?v=113';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=113';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=113';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -1646,19 +1646,39 @@ function drawLightning(e,t){
  const phase=(1-t)*4;
  for(let bolt=0;bolt<3;bolt++){ctx.beginPath();for(let i=0;i<6;i++){const x=-e.size*.4+i*e.size*.2,y=Math.sin(i*2.2+bolt*2+e.seed+phase)*e.size*.19+(bolt-1)*e.size*.17;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.lineWidth=bolt===1?4:2;ctx.stroke();ctx.strokeStyle='#fffbd5';ctx.lineWidth=1;ctx.stroke();ctx.strokeStyle=e.color;}
 }
-function drawBladeSlash(e,t){
- ctx.scale(e.dir||1,1);ctx.rotate(-.2);ctx.lineCap='round';
- ctx.beginPath();ctx.ellipse(30,0,e.size*.65,e.size*.4,0,-1.4,1.4);
- ctx.shadowColor='#eef4ff';ctx.shadowBlur=7;ctx.strokeStyle='#d8e2ee';ctx.lineWidth=5;ctx.stroke();
- ctx.shadowBlur=0;ctx.strokeStyle='#ffffff';ctx.lineWidth=2;ctx.stroke();
+function drawSwordSweep(e,t,electric=false){
+ ctx.scale(e.dir||1,1);ctx.rotate(-.11);
+ // A shallow blade plane and pointed ribbon share the quickdraw's horizontal depth.
+ // Cache small lightning teeth so the edge stays coherent instead of flickering.
+ e.sweepPoints??=Array.from({length:65},(_,i)=>{
+  const u=i/64,a=-2.4+u*4.05,tooth=electric?((i%8===2?1:i%8===3?-.5:0)*e.size*.016*Math.sin(Math.PI*u)):0;
+  const rx=e.size*.92,ry=e.size*.26,dx=-Math.sin(a)*rx,dy=Math.cos(a)*ry,n=Math.hypot(dx,dy);
+  return {x:e.size*.14+Math.cos(a)*rx+tooth*Math.cos(a),y:Math.sin(a)*ry+tooth*Math.sin(a),nx:-dy/n,ny:dx/n};
+ });
+ const tip=clamp((e.max-e.life)/(electric?.14:.08),.025,1),end=tip*64,index=Math.floor(end),fraction=end-index;
+ const points=e.sweepPoints.slice(0,index+1);
+ if(fraction>0){const a=e.sweepPoints[index],b=e.sweepPoints[index+1];points.push(Object.fromEntries(Object.keys(a).map(k=>[k,a[k]+(b[k]-a[k])*fraction])));}
+ const ribbon=(scale,color,glow,offset=0)=>{
+  const edge=(p,i,side)=>{const u=i/(points.length-1),width=(electric?11:5)*Math.pow(Math.sin(Math.PI*u),.7)*scale/2;return {x:p.x+p.nx*width*side,y:p.y+p.ny*width*side+offset};};
+  ctx.beginPath();const first=edge(points[0],0,1);ctx.moveTo(first.x,first.y);
+  for(let i=1;i<points.length;i++){const v=edge(points[i],i,1);ctx.lineTo(v.x,v.y);}
+  for(let i=points.length-1;i>=0;i--){const v=edge(points[i],i,-1);ctx.lineTo(v.x,v.y);}
+  ctx.closePath();ctx.fillStyle=color;ctx.shadowColor=electric?'#ffd52a':'#edf4ff';ctx.shadowBlur=glow;ctx.fill();
+ };
+ ctx.globalAlpha*=Math.min(1,t*4);
+ // A thin offset afterimage suggests speed without rays or a straight dash trail.
+ ctx.save();ctx.globalAlpha*=.28;ribbon(.32,electric?'#ffe991':'#e2ecfa',0,-4);ctx.restore();
+ if(electric)ribbon(1.35,'#111117',0);
+ ribbon(1,electric?'#ffe45c':'#dce7f5',electric?12:4);
+ ribbon(electric?.38:.4,electric?'#fffef2':'#ffffff',0);
 }
+function drawBladeSlash(e,t){drawSwordSweep(e,t);}
 function drawElectricSlash(e,t){
- ctx.scale(e.dir||1,1);ctx.rotate(-.2);ctx.lineCap='round';
  if(e.focused){
-  // Keep the electricity inside the sword arc: one thick, jagged bolt without radial forks.
-  e.arcBolts??=[{points:Array.from({length:41},(_,i)=>{const a=-1.4+i*2.8/40,jitter=Math.sin(e.seed+i*2.399)*e.size*.045;return {x:30+Math.cos(a)*(e.size*.65+jitter),y:Math.sin(a)*(e.size*.4+jitter)};}),weight:1}];
-  ctx.globalAlpha*=Math.min(1,t*3);drawElectricPaths(e.arcBolts,1,15,true);return;
+  // Keep the bright lightning in a tapered blade, without outward forks.
+  drawSwordSweep(e,t,true);return;
  }
+ ctx.scale(e.dir||1,1);ctx.rotate(-.2);ctx.lineCap='round';
  // A fine white blade edge carries branching electricity instead of a thick yellow fan.
  ctx.beginPath();ctx.ellipse(30,0,e.size*.65,e.size*.4,0,-1.4,1.4);
  ctx.strokeStyle='#ffe45c';ctx.shadowColor='#ffd52a';ctx.shadowBlur=18;ctx.lineWidth=3;ctx.stroke();

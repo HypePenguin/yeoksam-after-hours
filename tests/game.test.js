@@ -10,7 +10,7 @@ import * as typeACore from '../dist/type-a.js';
 function harness({manualImages=false}={}){
  const elements=new Map(),events=new Map(),windowEvents=new Map(),storage=new Map(),timeouts=[];
  const persistence={fail:false},requestedImages=[];
- const draws=[],labels=[],strokes=[],arcs=[],transforms=[];let matrix=[1,0,0,1,0,0],path=[];
+ const draws=[],labels=[],strokes=[],fills=[],arcs=[],transforms=[];let matrix=[1,0,0,1,0,0],path=[];
  const point=(x,y)=>({x:matrix[0]*x+matrix[2]*y+matrix[4],y:matrix[1]*x+matrix[3]*y+matrix[5]});
  const gradient=()=>({addColorStop(){}});
  const drawing=new Proxy({
@@ -24,6 +24,7 @@ function harness({manualImages=false}={}){
   ellipse(x,y,rx,ry){path.push({kind:'ellipse',...point(x,y),rx,ry});},
   arc(x,y,r){const a={...point(x,y),radius:r*Math.hypot(matrix[0],matrix[1])};arcs.push(a);path.push({kind:'arc',...a});},
   stroke(){strokes.push({color:this.strokeStyle,glow:this.shadowColor,width:this.lineWidth,path:path.map(p=>({...p}))});},
+  fill(){fills.push({color:this.fillStyle,alpha:this.globalAlpha,path:path.map(p=>({...p}))});},
   fillText(text,x,y){labels.push({text,...point(x,y),color:this.fillStyle,scale:Math.hypot(matrix[0],matrix[1])});},measureText(text){return {width:text.length*8};},
   createRadialGradient:gradient,createLinearGradient:gradient
  },{get:(obj,key)=>key in obj?obj[key]:()=>{}});
@@ -32,7 +33,7 @@ function harness({manualImages=false}={}){
  const context=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;requestedImages.push(this);this.complete=!manualImages;this.naturalWidth=v.includes('otter-')?1215:1500;this.naturalHeight=v.includes('otter-')?1295:1000;if(!manualImages)this.onload?.();}},Promise,Math,Date,Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
  vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,createModal,characterPortrait,sceneAssets,mapAssets,loadSceneAssets,loadImage,images,imageLoads,buildHUD,refreshHUD,refreshItemSlots,drawDrop,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,drawGuardBack,refreshHealthHUD,recordSwordBlock,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,guardBlocks,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
- return {api:context.gameTest,persistence,requestedImages,finishImages(except){for(const img of requestedImages)if(!img.complete&&img.asset!==except){img.complete=true;img.onload?.();}},draws,labels,strokes,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
+ return {api:context.gameTest,persistence,requestedImages,finishImages(except){for(const img of requestedImages)if(!img.complete&&img.asset!==except){img.complete=true;img.onload?.();}},draws,labels,strokes,fills,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
 }
 function advance(h,seconds){for(let t=0;t<seconds;t+=1/60)h.api.update(1/60);}
 
@@ -2147,15 +2148,22 @@ test('service art is compact WebP while animation geometry remains unchanged',()
  }
 });
 
-test('sword A has only a plain blade arc and Q uses one thicker electric arc without hit or radial bolts',()=>{
+test('sword A stays plain and Q uses a fast tapered horizontal lightning blade without radial bolts',()=>{
  for(const dir of [-1,1])for(const input of ['a','q']){
   const {h,p}=combatHarness('swordsman');h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');h.api.update(.01);h.api.keys.clear();
   const target=h.api.get().monsters[0];Object.assign(target,{dead:false,x:p.x+dir*100,y:p.y,hp:10000,maxHp:10000,speed:0});
   if(input==='a')h.api.attack();else h.api.cast('q');
   const effects=h.api.get().effects,arc=effects.find(e=>e.type==='slash');assert.ok(arc);assert.equal(effects.some(e=>e.type==='lightning'),false);assert.equal(arc.dir,dir);
   assert.equal(arc.bladeOnly,input==='a');assert.equal(arc.focused,input==='q');assert.equal(target.hp,10000-(input==='a'?core.basicAttackPower(p):Math.round(core.attackPower(p)*core.effectiveSkill(p,'q').damage)));
-  h.strokes.length=0;h.api.drawEffects();const width=Math.max(...h.strokes.map(s=>s.width));
-  if(input==='q'){assert.equal(arc.arcBolts.length,1);assert.ok(arc.arcBolts[0].points.length>30);assert.ok(width>=15);const shape=JSON.stringify(arc.arcBolts);h.api.drawEffects();assert.equal(JSON.stringify(arc.arcBolts),shape);}else assert.ok(width<=5);
+  h.api.update(.16);h.fills.length=0;h.api.drawEffects();
+  assert.equal(arc.sweepPoints.length,65);assert.equal(arc.arcBolts,undefined);
+  const blade=h.fills.find(f=>f.color===(input==='q'?'#ffe45c':'#dce7f5'));assert.ok(blade);
+  const xs=blade.path.map(p=>p.x),ys=blade.path.map(p=>p.y);
+  assert.ok(Math.max(...ys)-Math.min(...ys)<arc.size*.7,'blade follows a shallow horizontal plane');
+  assert.ok(dir*((Math.max(...xs)+Math.min(...xs))/2-(arc.x-h.api.get().camera))>0,'blade extends in the facing direction');
+  const edge=blade.path;assert.deepEqual(edge[0],{...edge.at(-1),kind:edge[0].kind},'tail tapers to a sharp point');
+  if(input==='q')assert.ok(h.fills.some(f=>f.color==='#111117'));else assert.ok(!h.fills.some(f=>['#ffe45c','#111117'].includes(f.color)),'A adds no lightning');
+  const shape=JSON.stringify(h.fills);h.fills.length=0;h.api.drawEffects();assert.equal(JSON.stringify(h.fills),shape,'paused frames keep a stable blade');
  }
 });
 test('guard stacks boost only the next release by 10 percent per block, cap at 50 percent and reset',()=>{
