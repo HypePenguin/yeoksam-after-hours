@@ -19,7 +19,7 @@ function harness({manualImages=false}={}){
   save(){transforms.push([...matrix]);},restore(){matrix=transforms.pop();},translate(x,y){const p=point(x,y);matrix[4]=p.x;matrix[5]=p.y;},
   scale(x,y){matrix[0]*=x;matrix[1]*=x;matrix[2]*=y;matrix[3]*=y;},
   rotate(r){const [a,b,c,d]=matrix,co=Math.cos(r),si=Math.sin(r);matrix[0]=a*co+c*si;matrix[1]=b*co+d*si;matrix[2]=c*co-a*si;matrix[3]=d*co-b*si;},
-  drawImage(img,...args){const [x,y,width,height]=args.slice(-4);const corners=[point(x,y),point(x+width,y),point(x,y+height),point(x+width,y+height)],xs=corners.map(p=>p.x),ys=corners.map(p=>p.y);draws.push({matrix:[...matrix],alpha:this.globalAlpha,filter:this.filter,asset:img.asset,source:args.slice(0,-4),x:Math.min(...xs),y:Math.min(...ys),width:Math.max(...xs)-Math.min(...xs),height:Math.max(...ys)-Math.min(...ys)});},
+  drawImage(img,...args){const [x,y,width,height]=args.slice(-4);const corners=[point(x,y),point(x+width,y),point(x,y+height),point(x+width,y+height)],xs=corners.map(p=>p.x),ys=corners.map(p=>p.y);draws.push({strokeCount:strokes.length,matrix:[...matrix],alpha:this.globalAlpha,filter:this.filter,asset:img.asset,source:args.slice(0,-4),x:Math.min(...xs),y:Math.min(...ys),width:Math.max(...xs)-Math.min(...xs),height:Math.max(...ys)-Math.min(...ys)});},
   beginPath(){path=[];},
   moveTo(x,y){path.push({kind:'move',...point(x,y)});},
   lineTo(x,y){path.push({kind:'line',...point(x,y)});},
@@ -2496,4 +2496,15 @@ test('Molotov uses the overhead atlas for the floor and the upright atlas for ex
  const ground=h.draws.filter(d=>d.asset==='assets/cat-fire-ground-v137.webp'),upright=h.draws.filter(d=>d.asset==='assets/cat-fire-v136.webp');
  assert.ok(ground.length);assert.ok(upright.length);
  assert.ok(ground.every(d=>d.source[2]===1500/2*.9));assert.ok(upright.every(d=>d.source[2]===1500/4));
+});
+
+// Drawing order is gameplay-visible: WW must not hide the surfer behind the crest.
+test('side-on W wave remains compact and renders behind the surfer in either direction',()=>{
+ for(const job of [null,'idol'])for(const dir of [-1,1]){
+  const {h,p}=otterFixture('alley',job);h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');h.api.update(.01);h.api.keys.clear();
+  h.api.cast('w');h.api.cast('w');render(h);
+  const wave=h.draws.find(d=>d.asset.includes('otter-wave-v140')),surfer=h.draws.find(d=>d.asset.includes(job?'otter-idol-skirt-motion-q-clean':'otter-motion-q-clean'));
+  assert.ok(wave&&surfer);assert.ok(h.draws.indexOf(wave)<h.draws.indexOf(surfer));assert.equal(wave.height,115);assert.equal(wave.width,166);assert.equal(Math.sign(wave.matrix[0]),dir);assert.equal(Math.sign(surfer.matrix[0]),dir);
+  assert.ok(surfer.strokeCount>h.strokes.findIndex(s=>s.color==='#e9ffff'),'breaking lip must be painted before the character');assert.equal(h.api.otterFrame(),11);assert.equal(h.api.get().otterWave.y,p.y);
+ }
 });
