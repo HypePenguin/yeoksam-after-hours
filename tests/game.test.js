@@ -2503,9 +2503,9 @@ test('side-on W wave remains compact and renders behind the surfer in either dir
  for(const job of [null,'idol'])for(const dir of [-1,1]){
   const {h,p}=otterFixture('alley',job);h.api.keys.add(dir<0?'ArrowLeft':'ArrowRight');h.api.update(.01);h.api.keys.clear();
   h.api.cast('w');h.api.cast('w');render(h);
-  const wave=h.draws.find(d=>d.asset.includes('otter-wave-v140')),surfer=h.draws.find(d=>d.asset.includes(job?'otter-idol-skirt-motion-q-clean':'otter-motion-q-clean'));
-  assert.ok(wave&&surfer);assert.ok(h.draws.indexOf(wave)<h.draws.indexOf(surfer));assert.equal(wave.height,115);assert.equal(wave.width,166);assert.equal(Math.sign(wave.matrix[0]),dir);assert.equal(Math.sign(surfer.matrix[0]),dir);
-  assert.ok(surfer.strokeCount>h.strokes.findIndex(s=>s.color==='#e9ffff'),'breaking lip must be painted before the character');assert.equal(h.api.otterFrame(),11);assert.equal(h.api.get().otterWave.y,p.y);
+  const wave=h.draws.filter(d=>d.asset.includes('otter-wave-v144')).at(-1),surfer=h.draws.find(d=>d.asset.includes(job?'otter-idol-skirt-motion-q-clean':'otter-motion-q-clean'));
+  assert.ok(wave&&surfer);assert.ok(h.draws.indexOf(wave)<h.draws.indexOf(surfer));assert.ok(wave.height<8);assert.equal(wave.width,178);assert.equal(Math.sign(wave.matrix[0]),dir);assert.equal(Math.sign(surfer.matrix[0]),dir);
+  assert.ok(h.draws.filter(d=>d.asset.includes('otter-wave-v144')).every(d=>h.draws.indexOf(d)<h.draws.indexOf(surfer)),'all water layers must be painted before the character');assert.equal(h.api.otterFrame(),11);assert.equal(h.api.get().otterWave.y,p.y);
  }
 });
 
