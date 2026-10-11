@@ -1,8 +1,8 @@
-import {otterMouthPoint,drawWaterJet,drawWaterSplash,drawWaterWave,drawWaterOrb,drawWaterShield} from './otter-effects.js?v=140';
-import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawFireFootprint,drawBallotVortex} from './cat-effects.js?v=140';
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections,catAreaRadii,catAreaContains} from './core.js?v=140';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=140';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=140';
+import {otterMouthPoint,drawWaterJet,drawWaterSplash,drawWaterWave,drawWaterOrb,drawWaterShield} from './otter-effects.js?v=141';
+import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawFireFootprint,drawBallotVortex} from './cat-effects.js?v=141';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections,catAreaRadii,catAreaContains} from './core.js?v=141';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=141';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=141';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -245,6 +245,7 @@ function skillBook(){
  const list=[basicSkillInfo(),...skillsFor(player)];
  showModal('skills','스킬',`<div class="skills-overview"><strong>${escapeHtml(jobName(player))}</strong><span>Lv. ${player.level}${isPowered(player)?' · 근육 각성 중':''}</span></div><div class="skills-body">${list.map(s=>{
   const learned=s.key==='a'||skillUnlocked(player,s),art=skillArtFor(s.key,true);
+  if(!learned)return `<article class="skill-book-card locked" data-book-skill="${s.key}"><div class="skill-book-image">${art?`<img src="${art}" alt="" aria-hidden="true" draggable="false">`:''}<span class="skill-book-lock" aria-hidden="true">🔒</span><kbd>${s.key.toUpperCase()}</kbd></div><div class="skill-book-copy"><h3 class="skill-book-restriction">제한 레벨 ${s.level}</h3>${s.requiresJob?'<small>전직 필요</small>':''}</div></article>`;
   return `<article class="skill-book-card" data-book-skill="${s.key}"><div class="skill-book-image">${art?`<img src="${art}" alt="${escapeHtml(s.name)} 스킬 이미지" draggable="false">`:`<span aria-hidden="true">${s.icon||'🔒'}</span>`}<kbd>${s.key.toUpperCase()}</kbd></div><div class="skill-book-copy"><div class="skill-book-heading"><h3>${escapeHtml(s.name)}</h3><span class="skill-book-state ${learned?'learned':'unlearned'}">${learned?'습득 완료':`🔒 Lv.${s.level}${s.requiresJob?' · 전직 필요':''}`}</span></div><small>MP ${s.mp}${s.cooldown!==undefined?` · 재사용 ${s.cooldown}초`:''} · ${s.key==='a'?'처음부터 사용':`Lv.${s.level}${s.requiresJob?' · 전직 후 습득':' 습득'}`}</small><p>${escapeHtml(s.description)}</p>${player.job==='bodybuilder'&&s.enhanced?`<p class="skill-book-enhanced">근육 각성: ${escapeHtml(s.enhanced)}</p>`:''}</div></article>`;
  }).join('')}</div><p class="skills-footer"><span>스킬창을 열면 게임이 잠시 멈춥니다.</span><span>닫기 <kbd>K</kbd> / <kbd>Esc</kbd></span></p>`);
  $('.modal').classList.add('skills-modal');

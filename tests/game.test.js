@@ -2305,9 +2305,11 @@ test('skill book shows all five images, descriptions and live values for every a
 
 test('skill book explains locked levels and updates novice art after advancement',()=>{
  const h=harness(),p=core.createCharacter('토끼','rabbit');h.api.start(p);key(h,'KeyK');let html=h.el('#modal-root').innerHTML;
- for(const level of [3,6,10,15])assert.ok(html.includes(`🔒 Lv.${level}`));assert.ok(html.includes('전직 필요'));assert.ok(html.includes('MP 2'));assert.ok(html.includes('rabbit-skill-w.webp'));
+ for(const level of [3,6,10,15])assert.ok(html.includes(`제한 레벨 ${level}`));assert.ok(html.includes('전직 필요'));assert.ok(html.includes('MP 2'));assert.ok(html.includes('rabbit-skill-w.webp'));
+ for(const s of core.skillsFor(p)){assert.ok(!html.includes(s.description));assert.ok(!html.includes(`<h3>${s.name}</h3>`));assert.ok(!html.includes(`MP ${s.mp} · 재사용 ${s.cooldown}초`));}
+ assert.equal((html.match(/class="skill-book-card locked"/g)||[]).length,4);
  h.api.closeModal();Object.assign(p,{level:15,job:'mage'});key(h,'KeyK');html=h.el('#modal-root').innerHTML;
- assert.ok(html.includes('rabbit-skill-w-mage.webp'));assert.ok(html.includes('순간 이동'));assert.ok(!html.includes('🔒 Lv.'));
+ assert.ok(html.includes('rabbit-skill-w-mage.webp'));assert.ok(html.includes('순간 이동'));assert.ok(!html.includes('제한 레벨'));assert.ok(!html.includes('skill-book-card locked'));
 });
 
 
