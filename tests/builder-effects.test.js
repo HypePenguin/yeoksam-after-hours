@@ -5,6 +5,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 const site=fileURLToPath(new URL('..',import.meta.url));
+import * as typeBCore from '../dist/type-b.js';
+import * as typeBEffects from '../dist/type-b-effects.js';
 let core,bossCore,typeACore;
 
 function harness(job='bodybuilder',power=0,dir=1){
@@ -34,7 +36,7 @@ function harness(job='bodybuilder',power=0,dir=1){
   elements.set(selector,node);return node;
  }
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(key,fn)=>events.set(key,fn),hidden:false,activeElement:el('#game')};
- const sandbox=vm.createContext({...core,...bossCore,...typeACore,console,document,window:{addEventListener(){}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v)},setTimeout(){return 1;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;this.complete=true;this.naturalWidth=1500;this.naturalHeight=1000;this.onload?.();}},Promise,Math,Date,Number,String,Set});
+ const sandbox=vm.createContext({...core,...bossCore,...typeACore,...typeBCore,...typeBEffects,console,document,window:{addEventListener(){}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v)},setTimeout(){return 1;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;this.complete=true;this.naturalWidth=1500;this.naturalHeight=1000;this.onload?.();}},Promise,Math,Date,Number,String,Set});
  const source=fs.readFileSync(path.join(site,'dist/app.js'),'utf8').replace(/^import .*?;\n/gm,'');
  vm.runInContext(source+`\nglobalThis.api={start(p){player=p;records=[p];scene='playing';resetWorld();},attack,cast,hitMonster,playerDamage,update,jump,drawEffects,drawPlayer,drawCombatIndicators,startSwordCharge,releaseSword,combatPose,combatDisplayX,keys,get:()=>({player,monsters,effects,texts,combatMotion,cooldowns,attackTimer,invincible,pz,camera,recovery,swordUlt})};`,sandbox);
  const api=sandbox.api,p=core.createCharacter('효과검증');Object.assign(p,{job,level:20,map:'alley',x:1000,y:650,hp:480,mp:250});api.start(p);

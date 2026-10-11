@@ -114,7 +114,7 @@ test('legacy saves become normal penguins without losing progress; corrupted coo
  const bad=normalizeCharacter({...raw,powerTime:9999,cooldowns:{r:999,q:-10,e:'bad'},visited:['bad','town','town']});assert.equal(bad.powerTime,0);assert.equal(bad.cooldowns.r,30);assert.equal(bad.cooldowns.q,0);assert.equal(bad.cooldowns.e,0);assert.deepEqual(bad.visited,['town','depths']);
 });
 test('all regions have return routes, progressive enemies, and safe portal arrivals',()=>{
- assert.equal(Object.keys(MAPS).length,28);const visited=new Set(),queue=['town'];while(queue.length){const id=queue.shift();if(visited.has(id))continue;visited.add(id);for(const p of MAPS[id].portals){const back=MAPS[p.to].portals.find(b=>b.to===id);assert.ok(back,`${id} -> ${p.to} return`);assert.ok(Math.abs(back.x-p.spawnX)>145);assert.ok(p.spawnX>45&&p.spawnX<MAPS[p.to].width-45);queue.push(p.to);}}
+ assert.equal(Object.keys(MAPS).length,29);const visited=new Set(),queue=['town'];while(queue.length){const id=queue.shift();if(visited.has(id))continue;visited.add(id);for(const p of MAPS[id].portals){const back=MAPS[p.to].portals.find(b=>b.to===id);assert.ok(back,`${id} -> ${p.to} return`);assert.ok(Math.abs(back.x-p.spawnX)>145);assert.ok(p.spawnX>45&&p.spawnX<MAPS[p.to].width-45);queue.push(p.to);}}
  assert.equal(visited.size,Object.keys(MAPS).length);
  for(const map of Object.values(MAPS)){if(!map.danger)continue;assert.equal(makeMonster(map.id,0).level,map.minLevel);assert.equal(makeMonster(map.id,monsterCount(map.id)-1).level,map.maxLevel);}
 });
@@ -202,7 +202,7 @@ test('hunting recommendations advance at each difficulty boundary without recomm
 test('overview contains every region once and exactly the bidirectional portal graph',()=>{
  assert.deepEqual(Object.keys(WORLD_MAP_LAYOUT).sort(),Object.keys(MAPS).sort());
  const actual=worldMapConnections(),expected=new Set(Object.values(MAPS).flatMap(m=>m.portals.map(p=>[m.id,p.to].sort().join(':'))));
- assert.equal(actual.length,28);assert.equal(actual.length,expected.size);assert.deepEqual(new Set(actual.map(e=>e.key)),expected);
+ assert.equal(actual.length,29);assert.equal(actual.length,expected.size);assert.deepEqual(new Set(actual.map(e=>e.key)),expected);
  for(const edge of actual){assert.ok(MAPS[edge.from].portals.some(p=>p.to===edge.to));assert.ok(MAPS[edge.to].portals.some(p=>p.to===edge.from));}
  assert.equal(actual.some(e=>e.key==='dojo:gym'),false);
  for(const {x,y} of Object.values(WORLD_MAP_LAYOUT)){assert.ok(x>80&&x<1040);assert.ok(y>40&&y<WORLD_MAP_HEIGHT-40);}

@@ -1,0 +1,170 @@
+{
+  "tool": "built-in image_gen",
+  "cellWidth": 768,
+  "cellHeight": 480,
+  "columns": 4,
+  "rows": 2,
+  "anchor": [
+    384,
+    442.5
+  ],
+  "frames": {
+    "idle": {
+      "index": 0,
+      "sourceBox": [
+        20,
+        11,
+        700,
+        511
+      ],
+      "sourceAnchor": [
+        409,
+        510
+      ],
+      "atlasRect": [
+        0,
+        0,
+        768,
+        480
+      ]
+    },
+    "walk": {
+      "index": 1,
+      "sourceBox": [
+        779,
+        14,
+        1495,
+        507
+      ],
+      "sourceAnchor": [
+        1180,
+        507
+      ],
+      "atlasRect": [
+        768,
+        0,
+        768,
+        480
+      ]
+    },
+    "slash": {
+      "index": 2,
+      "sourceBox": [
+        51,
+        526,
+        846,
+        1009
+      ],
+      "sourceAnchor": [
+        381,
+        1009
+      ],
+      "atlasRect": [
+        1536,
+        0,
+        768,
+        480
+      ]
+    },
+    "gun": {
+      "index": 3,
+      "sourceBox": [
+        801,
+        530,
+        1536,
+        1011
+      ],
+      "sourceAnchor": [
+        1166,
+        1011
+      ],
+      "atlasRect": [
+        2304,
+        0,
+        768,
+        480
+      ]
+    },
+    "stompCharge": {
+      "index": 4,
+      "sourceBox": [
+        0,
+        13,
+        750,
+        514
+      ],
+      "sourceAnchor": [
+        438,
+        514
+      ],
+      "atlasRect": [
+        0,
+        480,
+        768,
+        480
+      ]
+    },
+    "stomp": {
+      "index": 5,
+      "sourceBox": [
+        745,
+        70,
+        1523,
+        566
+      ],
+      "sourceAnchor": [
+        1200,
+        566
+      ],
+      "atlasRect": [
+        768,
+        480,
+        768,
+        480
+      ]
+    },
+    "dash": {
+      "index": 6,
+      "sourceBox": [
+        14,
+        547,
+        837,
+        1003
+      ],
+      "sourceAnchor": [
+        467,
+        1003
+      ],
+      "atlasRect": [
+        1536,
+        480,
+        768,
+        480
+      ]
+    },
+    "slump": {
+      "index": 7,
+      "sourceBox": [
+        870,
+        611,
+        1514,
+        1012
+      ],
+      "sourceAnchor": [
+        1228,
+        1012
+      ],
+      "atlasRect": [
+        2304,
+        480,
+        768,
+        480
+      ]
+    }
+  },
+  "room": {
+    "width": 1920,
+    "height": 1080,
+    "floorStartY": 490
+  }
+}

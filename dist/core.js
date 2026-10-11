@@ -26,6 +26,7 @@ export const ITEMS = {
  yeoksamStreetScrolls:{name:'역삼역 주변 거리 이동장치',image:'assets/item-device.webp',icon:'거',description:'역삼역주변거리로 즉시 돌아갑니다. HP와 MP는 그대로 유지돼요. 보스방에서는 사용할 수 없어요.',usable:true,price:100,recall:{map:'yeoksamStreet',x:850,y:648}},
  scrap:{name:'로봇 부품',image:'assets/item-parts.webp',icon:'⚙',description:'로봇에게서 얻은 수집 재료입니다.',usable:false},
  typeATitle:{name:'A형',image:'assets/item-badge.webp',icon:'A',description:'A형 처치 보상 칭호. 장착하면 닉네임 위에 은색으로 표시되고 공격력이 5% 증가합니다. 군복과 함께 장착할 수 있어요.',usable:false,equippable:true,equipmentType:'칭호'},
+ typeBTitle:{name:'B형',image:'assets/item-b-badge.svg',icon:'B',description:'B형 최종 격파 보상. 장착하면 금빛 칭호와 반짝이는 기운이 표시되고 공격력 +20%, 이동속도 +10%가 적용됩니다. A형과 동시에 장착할 수는 없어요.',usable:false,equippable:true,equipmentType:'칭호'},
  uniform:{name:'군복',image:'assets/item-uniform.webp',icon:'▣',description:'신원미상의 예비군의 결투 보상. 장착하면 위장 군복을 입고, 걷기와 공중 이동 속도가 20% 증가합니다.',usable:false,equippable:true},
  cores:{name:'에너지 코어',image:'assets/item-core.webp',icon:'◇',description:'강한 로봇에게서 얻은 수집 재료입니다.',usable:false}
 };
@@ -33,9 +34,11 @@ export const equipmentName=p=>p?.job==='hacker'?'노트북':p?.job==='bodybuilde
 export const jumpHeightMultiplier=p=>p?.classId==='cat'&&p?.job==='protester'?1.2:1;
 // Derive passives from the saved job so old characters benefit without accumulating bonuses.
 export const hasTypeATitle=p=>!!(p?.typeATitle>0&&p.typeATitleEquipped);
-export const itemEquipped=(p,id)=>id==='typeATitle'?hasTypeATitle(p):id==='uniform'&&p.uniform>0&&p.uniformEquipped;
-export function equipTypeATitle(p){if(!(p.typeATitle>0))return {ok:false,message:'먼저 A형을 처치해 칭호를 얻으세요.'};p.typeATitleEquipped=!p.typeATitleEquipped;return {ok:true,message:p.typeATitleEquipped?'A형 칭호 장착 · 공격력 +5%':'A형 칭호를 해제했어요.'};}
-export const movementMultiplier=p=>(['swordsman','protester'].includes(p?.job)?1.1:1)*(p?.uniform>0&&p.uniformEquipped?1.2:1)*(p?.respectTime>0?1.2:1)*(p?.concertTime>0?1.2:1);
+export const hasTypeBTitle=p=>!!(p?.typeBTitle>0&&p.typeBTitleEquipped);
+export function equipTypeBTitle(p){if(!(p.typeBTitle>0))return {ok:false,message:'먼저 B형을 처치해 칭호를 얻으세요.'};p.typeBTitleEquipped=!p.typeBTitleEquipped;if(p.typeBTitleEquipped)p.typeATitleEquipped=false;return {ok:true,message:p.typeBTitleEquipped?'B형 칭호 장착 · 공격력 +20% / 이동속도 +10%':'B형 칭호를 해제했어요.'};}
+export const itemEquipped=(p,id)=>id==='typeBTitle'?hasTypeBTitle(p):id==='typeATitle'?hasTypeATitle(p):id==='uniform'&&p.uniform>0&&p.uniformEquipped;
+export function equipTypeATitle(p){if(!(p.typeATitle>0))return {ok:false,message:'먼저 A형을 처치해 칭호를 얻으세요.'};p.typeATitleEquipped=!p.typeATitleEquipped;if(p.typeATitleEquipped)p.typeBTitleEquipped=false;return {ok:true,message:p.typeATitleEquipped?'A형 칭호 장착 · 공격력 +5%':'A형 칭호를 해제했어요.'};}
+export const movementMultiplier=p=>(hasTypeBTitle(p)?1.1:1)*(['swordsman','protester'].includes(p?.job)?1.1:1)*(p?.uniform>0&&p.uniformEquipped?1.2:1)*(p?.respectTime>0?1.2:1)*(p?.concertTime>0?1.2:1);
 export const incomingDamage=(p,damage,multiplier=1)=>Math.max(0,Math.round(damage*(p?.job==='bodybuilder'?0.9:1)*(p?.respectTime>0?.8:1)*multiplier));
 export function equipUniform(p){if(!p.uniform)return {ok:false,message:'먼저 신원미상의 예비군을 처치해 군복을 얻으세요.'};p.uniformEquipped=!p.uniformEquipped;return {ok:true,message:p.uniformEquipped?'군복 장착 · 이동속도 +20%':'군복을 벗었어요.'};}
 export const validItem=id=>Object.hasOwn(ITEMS,id);
@@ -108,12 +111,13 @@ export const MAPS = {
  security:{id:'security',name:'테헤란 보안 구역',subtitle:'사냥터 · Lv. 46–50',en:'TEHERAN SECURITY ZONE',description:'보안 장벽 안에서 근접 경비대와 원거리 투척대가 협공합니다. 오른쪽으로 심층 연산 시설이 이어집니다.',width:4000,danger:13,minLevel:46,maxLevel:50,color:'#c2a8ff',background:'post-a-dungeons-v146',backgroundTile:1,mixedCombat:true,monsterCount:12,respawn:{map:'yeoksamStreet',x:850,y:648},portals:[]},
  compute:{id:'compute',name:'심층 연산 시설',subtitle:'사냥터 · Lv. 51–55',en:'DEEP COMPUTATION FACILITY',description:'녹색 연산 코어 사이를 지키는 두 종류의 로봇. 접근하는 타격형과 착탄 지점을 노리는 투척형을 상대하세요.',width:4200,danger:14,minLevel:51,maxLevel:55,color:'#87edc7',background:'post-a-dungeons-v146',backgroundTile:2,mixedCombat:true,monsterCount:14,respawn:{map:'yeoksamStreet',x:850,y:648},portals:[]},
  proving:{id:'proving',name:'프로 시험 훈련장',subtitle:'사냥터 · Lv. 56–60',en:'PRO TRIAL TRAINING GROUNDS',description:'Lv.60까지 성장할 수 있는 마지막 사냥터. 오른쪽 빨간 포탈은 프로전형 대기실로 이어집니다.',width:4400,danger:15,minLevel:56,maxLevel:60,color:'#ffb58e',background:'post-a-dungeons-v146',backgroundTile:3,mixedCombat:true,monsterCount:14,respawn:{map:'yeoksamStreet',x:850,y:648},portals:[]},
- proExam:{id:'proExam',name:'프로전형',subtitle:'시험장 대기실 · 준비 중',en:'PRO EXAM · WAITING ROOM',description:'시험장 입구에 F로 말을 걸어 입장 안내를 확인하세요. 실제 보스 시험장은 아직 준비 중입니다.',width:1800,danger:0,minLevel:60,maxLevel:60,bossEntrance:true,color:'#ff879e',background:'post-a-dungeons-v146',backgroundTile:3,portals:[]}
+ proBoss:{id:'proBoss',name:'프로전형 시험장',subtitle:'보스 · Lv.70 B형',en:'TYPE B · MACHINE ROOM',description:'어두운 기계실의 6족 전투 로봇. 안쪽으로 걸어가면 낙하 등장합니다. 피자 패턴의 파란 안전지대와 섬멸 프로토콜, 10초 각성 저지에 대비하세요.',width:2400,danger:0,boss:true,bossName:'B형',bossLevel:70,minLevel:70,maxLevel:70,floorMinY:360,floorMaxY:750,respawn:{map:'proExam',x:650,y:648},color:'#ffb34e',background:'b-type-machine-room-v148',backgroundMode:'panorama',portals:[]},
+ proExam:{id:'proExam',name:'프로전형',subtitle:'시험장 대기실 · Lv.70 B형',en:'PRO EXAM · WAITING ROOM',description:'시험장 입구에 F로 말을 걸면 Lv.70 B형이 기다리는 어두운 기계실로 입장할 수 있어요.',width:1800,danger:0,minLevel:60,maxLevel:60,bossEntrance:true,color:'#ff879e',background:'post-a-dungeons-v146',backgroundTile:3,portals:[]}
 
 };
 // Every connection is bidirectional and arrivals stay outside the return portal's interaction radius.
 function connect(a,ax,b,bx){
- const add=(from,x,to,tx)=>MAPS[from].portals.push({x,y:646,to,spawnX:tx+(tx<MAPS[to].width/2?190:-190),spawnY:648,label:MAPS[to].name,level:MAPS[to].bossEntrance?'시험장 대기실 · 준비 중':MAPS[to].boss?`보스 · 권장 Lv. ${MAPS[to].minLevel}–${MAPS[to].maxLevel}`:MAPS[to].danger?`권장 Lv. ${MAPS[to].minLevel}–${MAPS[to].maxLevel}`:'안전 구역'});
+ const add=(from,x,to,tx)=>MAPS[from].portals.push({x,y:646,to,spawnX:tx+(tx<MAPS[to].width/2?190:-190),spawnY:648,label:MAPS[to].name,level:MAPS[to].bossEntrance?'B형 시험장 대기실':MAPS[to].boss?`보스 · 권장 Lv. ${MAPS[to].minLevel}–${MAPS[to].maxLevel}`:MAPS[to].danger?`권장 Lv. ${MAPS[to].minLevel}–${MAPS[to].maxLevel}`:'안전 구역'});
  add(a,ax,b,bx);add(b,bx,a,ax);
 }
 connect('town',2430,'alley',100);
@@ -144,10 +148,12 @@ connect('dataStreet',3630,'security',100);
 connect('security',3830,'compute',100);
 connect('compute',4030,'proving',100);
 connect('proving',4230,'proExam',100);
+connect('proExam',900,'proBoss',120);
+MAPS.proExam.portals.find(p=>p.to==='proBoss').requiresNPC=true;
 
 // Route lists describe actual adjacent portals; the map never implies a shortcut.
 export const MAP_ROUTES = [
- {id:'pro-route',tab:'advanced',title:'프로전형 사냥길',hint:'A형 이후 · Lv.41–60 · 시험장 준비 중',maps:['yeoksamStreet','dataStreet','security','compute','proving','proExam']},
+ {id:'pro-route',tab:'advanced',title:'프로전형 사냥길',hint:'A형 이후 · Lv.41–60 · Lv.70 B형',maps:['yeoksamStreet','dataStreet','security','compute','proving','proExam','proBoss']},
  {id:'maple-route',tab:'town',title:'해커 · 아이돌 전직',hint:'Lv.10 · 메이플아지트의 휴프로',maps:['town','maple']},
  {id:'backstreet',tab:'hunt',title:'골목 사냥길',hint:'Lv. 1–9 · 공사장을 지나 승강장으로',maps:['town','alley','depths','subway']},
  {id:'parkway',tab:'hunt',title:'공원 사냥길',hint:'Lv. 3–9 · 승강장으로 가는 짧은 길',maps:['town','park','subway']},
@@ -160,9 +166,9 @@ export const MAP_ROUTES = [
  {id:'dojo-route',tab:'town',title:'검사 전직',hint:'Lv. 10 · 몬스터가 있는 사거리를 통과',maps:['town','crossroads','station6','dojo']},
  {id:'olympic-route',tab:'town',title:'고양이 · 시위대 전직',hint:'Lv. 10 · 1번 출구에서 올림픽공원으로',maps:['town','olympic']}
 ];
-export const mapTabFor=id=>['rooftop','relay','canal','foundry','nexus','pocha','accelerator','arsenal','reactor','hangar','dataStreet','security','compute','proving','proExam'].includes(id)?'advanced':['town','crossroads','station6','gym','dojo','gangnam','olympic','yeoksamStreet','maple'].includes(id)?'town':'hunt';
+export const mapTabFor=id=>['rooftop','relay','canal','foundry','nexus','pocha','accelerator','arsenal','reactor','hangar','dataStreet','security','compute','proving','proExam','proBoss'].includes(id)?'advanced':['town','crossroads','station6','gym','dojo','gangnam','olympic','yeoksamStreet','maple'].includes(id)?'town':'hunt';
 // A schematic world layout; paths are derived from real portals, never from visual proximity.
-export const WORLD_MAP_HEIGHT = 740;
+export const WORLD_MAP_HEIGHT = 860;
 export const WORLD_MAP_LAYOUT = {
  gym:{x:140,y:72,label:'피치플레이'},town:{x:350,y:72,label:'역삼역 1번 출구'},crossroads:{x:560,y:72,label:'역삼역사거리'},station6:{x:770,y:72,label:'역삼역 6번 출구'},dojo:{x:980,y:72,label:'강남성균검도관'},
  depths:{x:140,y:235,label:'불 꺼진 공사장'},alley:{x:350,y:235,label:'테헤란 뒷골목'},park:{x:560,y:235,label:'달빛 근린공원'},
@@ -170,7 +176,7 @@ export const WORLD_MAP_LAYOUT = {
  nexus:{x:560,y:441,label:'중앙 제어실'},foundry:{x:770,y:441,label:'자동화 주조소'},gangnam:{x:980,y:441,label:'강남역'},
  accelerator:{x:350,y:441,label:'가속 실험구역'},arsenal:{x:140,y:441,label:'병기 조립라인'},reactor:{x:140,y:528,label:'적색 동력로'},hangar:{x:350,y:528,label:'수료조건'},yeoksamStreet:{x:560,y:528,label:'역삼역주변거리'},
  pocha:{x:980,y:528,label:'한사발포차'},
- dataStreet:{x:770,y:528,label:'역삼 데이터 골목'},security:{x:770,y:650,label:'테헤란 보안 구역'},compute:{x:560,y:650,label:'심층 연산 시설'},proving:{x:350,y:650,label:'프로 시험 훈련장'},proExam:{x:140,y:650,label:'프로전형'},
+ dataStreet:{x:770,y:528,label:'역삼 데이터 골목'},security:{x:770,y:650,label:'테헤란 보안 구역'},compute:{x:560,y:650,label:'심층 연산 시설'},proving:{x:350,y:650,label:'프로 시험 훈련장'},proExam:{x:140,y:650,label:'프로전형'},proBoss:{x:140,y:772,label:'B형 시험장'},
  maple:{x:90,y:140,label:'메이플아지트'},
  olympic:{x:250,y:140,label:'올림픽공원'}
 };
@@ -207,7 +213,7 @@ const classFor=p=>CLASSES.find(c=>c.id===p.classId)||CLASSES[0];
 // Round the rabbit's 70% base HP before applying temporary max-HP buffs.
 export const maxHp=p=>Math.round(Math.round((classFor(p).hp+(p.level-1)*20)*(p.classId==='rabbit'?7:10)/10)*(p.respectTime>0?1.2:1));
 export const maxMp=p=>classFor(p).mp+(p.level-1)*10;
-export const attackPower=p=>(classFor(p).attack+(p.level-1)*5)*(p.respectTime>0?1.2:1)*(hasTypeATitle(p)?1.05:1)*(p.concertTime>0?1.2:1);
+export const attackPower=p=>(classFor(p).attack+(p.level-1)*5)*(p.respectTime>0?1.2:1)*(hasTypeBTitle(p)?1.2:hasTypeATitle(p)?1.05:1)*(p.concertTime>0?1.2:1);
 export const isPowered=p=>p?.job==='bodybuilder'&&p.powerTime>0;
 export const basicAttackPower=p=>Math.round(attackPower(p)*(isPowered(p)?1.8:1));
 export function effectiveSkill(p,key){
@@ -267,7 +273,7 @@ export function createCharacter(name,classId='wanderer'){
  const clean=String(name).trim();
  if(!/^[\p{L}\p{N}_ ]{1,12}$/u.test(clean))throw new Error('이름은 한글·영문·숫자 1~12자로 입력해 주세요.');
  const stats=CLASSES.find(c=>c.id===classId);if(!stats)throw new Error('선택할 수 없는 캐릭터입니다.');
- return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:maxHp({classId,level:1}),mp:stats.mp,money:500,potions:3,largePotions:0,mpPotions:classId==='rabbit'?1:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,yeoksamStreetScrolls:0,quickSlots:['potions',classId==='rabbit'?'mpPotions':null,null],uniform:0,uniformEquipped:false,typeATitle:0,typeATitleEquipped:false,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],respectTime:0,concertTime:0,powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
+ return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:maxHp({classId,level:1}),mp:stats.mp,money:500,potions:3,largePotions:0,mpPotions:classId==='rabbit'?1:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,yeoksamStreetScrolls:0,quickSlots:['potions',classId==='rabbit'?'mpPotions':null,null],uniform:0,uniformEquipped:false,typeATitle:0,typeATitleEquipped:false,typeBTitle:0,typeBTitleEquipped:false,typeBWins:0,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],respectTime:0,concertTime:0,powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
 }
 export function normalizeCharacter(raw){
  if(!raw||typeof raw.id!=='string'||typeof raw.name!=='string')return null;
@@ -275,13 +281,14 @@ export function normalizeCharacter(raw){
  // Starter supplies are only granted on creation, never while loading older saves.
  p.mpPotions=0;p.quickSlots=['potions',null,null];
  p.id=raw.id.slice(0,100);
- for(const key of ['level','xp','money','potions','largePotions','mpPotions','returnScrolls','gangnamScrolls','yeoksamStreetScrolls','scrap','cores','kills','bossWins','typeAWins'])if(Number.isFinite(raw[key]))p[key]=Math.floor(clamp(raw[key],key==='level'?1:0,key==='level'?99:9999999));
+ for(const key of ['level','xp','money','potions','largePotions','mpPotions','returnScrolls','gangnamScrolls','yeoksamStreetScrolls','scrap','cores','kills','bossWins','typeAWins','typeBWins'])if(Number.isFinite(raw[key]))p[key]=Math.floor(clamp(raw[key],key==='level'?1:0,key==='level'?99:9999999));
  if(Array.isArray(raw.quickSlots))p.quickSlots=Array.from({length:3},(_,i)=>validItem(raw.quickSlots[i])&&ITEMS[raw.quickSlots[i]].usable?raw.quickSlots[i]:null);
  p.uniform=Number.isFinite(raw.uniform)&&raw.uniform>0?1:0;p.uniformEquipped=p.uniform>0&&raw.uniformEquipped===true;
  // Existing victories also unlock the new reward; equipping remains the player's choice.
  p.typeATitle=p.typeAWins>0||(Number.isFinite(raw.typeATitle)&&raw.typeATitle>0)?1:0;p.typeATitleEquipped=p.typeATitle>0&&raw.typeATitleEquipped===true;
+ p.typeBTitle=p.typeBWins>0||(Number.isFinite(raw.typeBTitle)&&raw.typeBTitle>0)?1:0;p.typeBTitleEquipped=p.typeBTitle>0&&raw.typeBTitleEquipped===true;if(p.typeBTitleEquipped)p.typeATitleEquipped=false;
  p.job=p.level>=10&&Object.hasOwn(JOBS,raw.job)&&(p.classId===(JOBS[raw.job].classId||'wanderer'))?raw.job:null;
- p.map=MAPS[raw.map]?raw.map:'town';p.x=Number.isFinite(raw.x)?clamp(raw.x,45,MAPS[p.map].width-45):530;p.y=Number.isFinite(raw.y)?clamp(raw.y,580,720):648;
+ p.map=MAPS[raw.map]?raw.map:'town';p.x=Number.isFinite(raw.x)?clamp(raw.x,45,MAPS[p.map].width-45):530;p.y=Number.isFinite(raw.y)?clamp(raw.y,MAPS[p.map].floorMinY??580,MAPS[p.map].floorMaxY??720):648;
  p.mpPotionCooldown=MAPS[p.map]?.boss&&Number.isFinite(raw.mpPotionCooldown)?clamp(raw.mpPotionCooldown,0,10):0;
  p.hp=Number.isFinite(raw.hp)?clamp(raw.hp,0,maxHp(p)):maxHp(p);p.mp=Number.isFinite(raw.mp)?clamp(raw.mp,0,maxMp(p)):maxMp(p);
  p.savedAt=typeof raw.savedAt==='string'?raw.savedAt:null;

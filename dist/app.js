@@ -1,9 +1,11 @@
-import {ORB_ATTACK,stepOrbCaster,orbBlastContains,orbFlightPoint,drawOrbWarning,drawEnemyOrb} from './enemy-combat.js?v=147';
-import {otterMouthPoint,drawWaterJet,drawWaterSplash,drawWaterWave,drawWaterOrb,drawWaterShield} from './otter-effects.js?v=147';
-import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawFireFootprint,drawBallotVortex} from './cat-effects.js?v=147';
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,WORLD_MAP_HEIGHT,worldMapConnections,catAreaRadii,catAreaContains} from './core.js?v=147';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=147';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=147';
+import {TYPE_B,isTypeB,createTypeB,triggerTypeB,typeBTargetable,stepTypeB,damageTypeB,typeBHit,defeatTypeB,typeBCue,typeBMoveSlow,startTypeBQte,inputTypeBQte} from './type-b.js?v=148';
+import {drawTypeBFloor,drawTypeBBody,drawTypeBAir} from './type-b-effects.js?v=148';
+import {ORB_ATTACK,stepOrbCaster,orbBlastContains,orbFlightPoint,drawOrbWarning,drawEnemyOrb} from './enemy-combat.js?v=148';
+import {otterMouthPoint,drawWaterJet,drawWaterSplash,drawWaterWave,drawWaterOrb,drawWaterShield} from './otter-effects.js?v=148';
+import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawFireFootprint,drawBallotVortex} from './cat-effects.js?v=148';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,equipTypeBTitle,itemEquipped,hasTypeATitle,hasTypeBTitle,incomingDamage,WORLD_MAP_LAYOUT,WORLD_MAP_HEIGHT,worldMapConnections,catAreaRadii,catAreaContains} from './core.js?v=148';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=148';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=148';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -28,7 +30,7 @@ function loadImage(name){
   img.onload=()=>{if(typeof img.decode==='function')img.decode().then(()=>resolve(true),()=>resolve(false));else resolve(true);};
   img.onerror=()=>resolve(false);
  });
- imageLoads.set(name,promise);img.src=`assets/${name}.webp`;return promise;
+ imageLoads.set(name,promise);img.src=Object.values(ITEMS).find(item=>item.image?.slice(7).replace(/\.[^.]+$/,'')===name)?.image||`assets/${name}.webp`;return promise;
 }
 function characterAssets(p){
  let assets=p.classId==='otter'?[otterAsset(p),'otter-wave-v144']:p.classId==='rabbit'?[rabbitAsset(p)]:p.classId==='chick'?['chick-motion','chick-actions',...(p.job==='hacker'?['chick-typing']:[])]:p.classId==='cat'?[...['cat','cat-motion','cat-skills'].map(name=>catAsset(name,p)),...(p.job==='protester'?['cat-fire-v136','cat-fire-ground-v137']:[])]:
@@ -40,6 +42,7 @@ function characterAssets(p){
 function mapAssets(mapId){
  const map=MAPS[mapId],assets=[map.background||(Number.isInteger(map.backgroundTile)?'districts':'city'),...mapNPCs(mapId).filter(npc=>npc.id!=='exam-entry').map(npc=>npc.asset||'player')];
  if(monsterCount(mapId)>0)assets.push(...(map.mixedCombat?['post-a-melee-v146','post-a-ranged-v146']:['robot']));
+ if(mapId==='proBoss')assets.push('b-type-boss-v148','b-type-walk-v148');
  if(mapId==='pocha')assets.push('soldier-boss','soldier-counter','soldier-walk');
  if(mapId==='hangar')assets.push('type-a');
  return assets;
@@ -61,8 +64,10 @@ const maguriHackSeconds=()=>maguriHack?.map===player?.map?Math.max(0,(maguriHack
 const currentShopContext=()=>({hackedShop:maguriHackSeconds()>0});
 let inventorySelection='potions',boss=null,potionCooldown=0,catCharge=null,catCastLock=0,catProjectiles=[],catFires=[],catBallot=null;
 const bossActive=()=>!!boss?.active;
-const canTarget=m=>!m.dead&&(!m.isBoss||(isTypeA(m)?typeATargetable(m):targetableBoss(m)));
-const bossInfo=()=>isTypeA(boss)?TYPE_A:SOLDIER;
+const canTarget=m=>!m.dead&&(!m.isBoss||(isTypeB(m)?typeBTargetable(m):isTypeA(m)?typeATargetable(m):targetableBoss(m)));
+const bossInfo=()=>isTypeB(boss)?TYPE_B:isTypeA(boss)?TYPE_A:SOLDIER;
+const floorMin=()=>MAPS[player?.map]?.floorMinY??580;
+const floorMax=()=>MAPS[player?.map]?.floorMaxY??720;
 let cameraZoom=1,viewShakeX=0,viewShakeY=0;
 const CAMERA_GROUND=650;
 const viewOffsetY=()=>CAMERA_GROUND*(1-cameraZoom);
@@ -80,7 +85,7 @@ const TRAINERS={
  olympic:{id:'park-organizer',job:'protester',x:940,y:648,name:'레드폭스',role:'시위대 전직 · Lv. 10',asset:'npc-redfox',height:184,crop:[63,10,909,1513],icon:'E'}
 };
 const GANGNAM_NPCS=[{...NPCS.find(n=>n.id==='shop'),x:1050,y:654}];
-const EXAM_ENTRANCE={id:'exam-entry',name:'시험장 입구',role:'프로전형 · 입장 준비 중',x:900,y:648,height:202,width:150,icon:'F'};
+const EXAM_ENTRANCE={id:'exam-entry',name:'시험장 입구',role:'Lv.70 B형 · 시험장 입장',x:900,y:648,height:202,width:150,icon:'F'};
 const mapNPCs=(mapId=player?.map)=>mapId==='proExam'?[EXAM_ENTRANCE]:mapId==='town'?NPCS:['gangnam','yeoksamStreet'].includes(mapId)?GANGNAM_NPCS:TRAINERS[mapId]?[{...TRAINERS[mapId],...(mapId==='maple'&&player?.classId==='otter'?{job:'idol'}:{})}]:[];
 const icon=(name)=>({map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5ZM9 3v16M15 5v16"/></svg>',bag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 8V6a5 5 0 0 1 10 0v2M5 8h14l1 13H4L5 8Z"/><path d="M9 13h6"/></svg>',save:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 3h13l4 4v14H3V3h1Z"/><path d="M7 3v6h9V3M7 21v-8h10v8"/></svg>',menu:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 6h14M5 12h14M5 18h14"/></svg>',sound:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m11 4-6 5H2v6h3l6 5V4ZM16 8a6 6 0 0 1 0 8M19 5a10 10 0 0 1 0 14"/></svg>'}[name]);
 const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -143,9 +148,9 @@ async function enterWorld(id){
  const [ready]=await Promise.all([loadSceneAssets(player),new Promise(r=>setTimeout(r,120))]);if(token!==transitionId)return;if(!ready)toast('일부 이미지가 로드되지 않았어요. 새로고침해 주세요.');
  resetWorld();setScene('playing');screens.innerHTML='';buildHUD();canvas.focus();save();toast(player.kills===0?'역삼역에 오신 걸 환영해요! 운영자 현토리에게 F로 말을 걸어보세요.':`${player.name}, 다시 오신 걸 환영해요.`);
 }
-function resetWorld(){maguriHack=null;void loadSceneAssets(player);cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;if(!MAPS[player.map].boss)player.mpPotionCooldown=0;boss=player.map==='hangar'?createTypeA():player.map==='pocha'?createSoldier():null;potionCooldown=0;resetJump();resetGait();cancelSword();resetCombat();hurtTime=0;monsters=Array.from({length:monsterCount(player.map)},(_,i)=>makeMonster(player.map,i));drops=[];effects=[];texts=[];attackTimer=0;invincible=2;cooldowns=player.cooldowns;camera=clamp(player.x-screenWidth*.45,0,Math.max(0,MAPS[player.map].width-screenWidth));saveClock=0;}
+function resetWorld(){interactionTarget=null;maguriHack=null;void loadSceneAssets(player);cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;if(!MAPS[player.map].boss)player.mpPotionCooldown=0;boss=player.map==='proBoss'?createTypeB():player.map==='hangar'?createTypeA():player.map==='pocha'?createSoldier():null;potionCooldown=0;resetJump();resetGait();cancelSword();resetCombat();hurtTime=0;monsters=Array.from({length:monsterCount(player.map)},(_,i)=>makeMonster(player.map,i));drops=[];effects=[];texts=[];attackTimer=0;invincible=2;cooldowns=player.cooldowns;camera=clamp(player.x-screenWidth*.45,0,Math.max(0,MAPS[player.map].width-screenWidth));saveClock=0;}
 async function travel(portal){
- if(scene!=='playing')return;if(bossActive()){toast('결투 중에는 출구를 사용할 수 없어요. 메뉴에서 도전을 포기하거나 이동장치를 사용하세요.');return;}if(player.map==='hangar'&&portal.to==='yeoksamStreet'&&!hasTypeATitle(player)){toast('A형 칭호를 장착해야 이동할 수 있어요. I 키로 가방을 열어 A형 칭호를 장착하세요.');return;}const target={...portal};save();closeModal();setScene('loading');const token=++transitionId;
+ if(scene!=='playing')return;if(bossActive()){toast('결투 중에는 출구를 사용할 수 없어요. 메뉴에서 도전을 포기할 수 있어요.');return;}if(player.map==='hangar'&&portal.to==='yeoksamStreet'&&!hasTypeATitle(player)){toast('A형 칭호를 장착해야 이동할 수 있어요. I 키로 가방을 열어 A형 칭호를 장착하세요.');return;}const target={...portal};save();closeModal();setScene('loading');const token=++transitionId;
  screens.innerHTML=`<div class="screen-overlay"><small class="eyebrow">NEXT STOP</small><h2 class="screen-title">${MAPS[target.to].name}</h2><div class="loading-track"><i></i></div><p class="screen-subtitle">${MAPS[target.to].danger?'로봇과 부딪히면 피해를 받아요. 점프로 피할 수 있어요.':'마을에서는 천천히 체력이 회복됩니다.'}</p></div>`;
  await Promise.all([loadSceneAssets({...player,map:target.to}),new Promise(r=>setTimeout(r,80))]);if(token!==transitionId)return;player.map=target.to;player.x=target.spawnX;player.y=target.spawnY??648;if(!player.visited.includes(target.to))player.visited.push(target.to);resetWorld();setScene('playing');screens.innerHTML='';buildHUD();save();canvas.focus();toast(`${MAPS[player.map].name}에 도착했어요.`);
 }
@@ -163,8 +168,8 @@ function skillSymbolMarkup(key,fallback){
  const art=skillArtFor(key);
  return art?`<img class="skill-art" src="${art}" alt="" aria-hidden="true" draggable="false"><span class="skill-cue" hidden></span>`:fallback;
 }
-function buildHUD(){ui.innerHTML=`<div class="game-screen"><div class="hack-visor" id="hack-visor" aria-hidden="true" hidden><div class="hack-visor-frame"><i class="visor-corner tl"></i><i class="visor-corner tr"></i><i class="visor-corner bl"></i><i class="visor-corner br"></i></div><div class="visor-rail left"></div><div class="visor-rail right"></div><div class="visor-panel visor-scan"><small>NEURAL LINK</small><strong>SCAN ONLINE</strong><span id="visor-signals"></span><div class="visor-spectrum"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="visor-code">SYS // 0xA7<br>UPLINK ACTIVE</span></div><div class="visor-panel visor-target"><small>TARGET LOCK</small><strong id="visor-target-name"></strong><span id="visor-range"></span><span id="visor-vitals"></span><div class="visor-lock-meter"><i id="visor-hp"></i></div><span class="visor-code">SIGNAL VERIFIED<br>READY TO EXECUTE</span></div></div><div class="hud-top"><div class="player-panel"><img class="avatar" src="${characterPortrait(player)}" alt=""><div class="player-info"><div class="player-name"><span id="hud-level" class="level"></span><strong id="hud-name"></strong></div><small id="hud-job" class="job-label"></small><div class="resource-meter"><div class="bar-label"><span>HP</span><span id="hp-text"></span></div><div class="bar hp"><i id="hp-bar"></i><i id="hp-shield" hidden></i></div></div><div class="resource-meter"><div class="bar-label"><span>MP</span><span id="mp-text"></span></div><div class="bar mp"><i id="mp-bar"></i></div></div><div class="resource-meter"><div class="bar-label"><span>EXP</span><span id="xp-text" class="xp-label"></span></div><div class="bar exp"><i id="xp-bar"></i></div></div></div></div><div class="map-panel"><small>${MAPS[player.map].en}</small><div class="map-title">${MAPS[player.map].name}</div><div class="map-subtitle">${MAPS[player.map].subtitle}</div></div><div class="hud-tools"><button id="map-button" aria-label="지도 보기 (M)" title="지도 · M">${icon('map')}</button><button id="skills-button" aria-label="스킬 보기 (K)" title="스킬 · K">K</button><button id="inventory-button" aria-label="인벤토리 열기 (I)" title="인벤토리 · I">${icon('bag')}</button><button id="save-button" aria-label="현재 위치 저장" title="현재 위치 저장">${icon('save')}</button><button id="menu-button" aria-label="게임 메뉴 (Esc)" title="메뉴 · Esc">${icon('menu')}</button></div></div><div class="power-banner" id="power-banner" hidden><strong>근육 각성</strong><span id="power-clock"></span><small>모든 스킬 강화</small><div class="power-track"><i id="power-bar"></i></div></div><div class="power-banner combat-banner" id="combat-banner" hidden><strong id="combat-title"></strong><span id="combat-clock"></span><small id="combat-detail"></small><div class="power-track"><i id="combat-bar"></i></div></div><div class="boss-hud" id="boss-hud" hidden><div><strong id="boss-name">Lv.${bossInfo().level} ${bossInfo().name}</strong><span id="boss-hp-text"></span></div><div class="boss-hp-track"><i id="boss-hp-fill"></i></div><p id="boss-cue"></p><small id="boss-potion-clock"></small></div><div class="hack-controls" id="hack-controls" role="group" aria-label="해킹 대상 선택" hidden><span class="hack-controls-label">대상 선택</span><button id="hack-prev" aria-label="이전 적 선택">←</button><button id="hack-confirm" title="Enter로 해킹 확정">확정 <kbd>↵</kbd></button><button id="hack-next" aria-label="다음 적 선택">→</button><button id="hack-cancel" title="Esc로 취소">취소 <kbd>Esc</kbd></button></div><div class="type-a-warning" id="type-a-warning" role="status" hidden></div><div class="context-hint" id="context-hint" hidden></div><div class="hud-bottom"><div class="hotbar"><button class="skill${player.classId==='wanderer'?' penguin-skill':player.classId==='rabbit'?' rabbit-skill':player.classId==='cat'?' cat-skill':player.classId==='otter'?' otter-skill':player.classId==='chick'?(player.job==='hacker'?' hacker-skill':' chick-skill'):''}" data-skill="a" title="기본 공격 · A${player.classId==='rabbit'?' · MP 2':''}"><span class="skill-symbol">${skillSymbolMarkup('a',player.classId==='rabbit'?'◉':'╱')}</span><b>A</b>${player.classId==='rabbit'?'<span class="lock-level">2</span>':''}</button>${skillsFor(player).map(s=>`<button class="skill${player.classId==='wanderer'?' penguin-skill':player.classId==='rabbit'?' rabbit-skill':player.classId==='cat'?' cat-skill':player.classId==='otter'?' otter-skill':player.classId==='chick'?(player.job==='hacker'?' hacker-skill':' chick-skill'):''}" data-skill="${s.key}" aria-label="${s.name}, ${s.key.toUpperCase()} 키, 레벨 ${s.level}, MP ${s.mp}" title="${s.name} · Lv.${s.level} · MP ${s.mp} · ${s.description}"><span class="skill-symbol">${skillSymbolMarkup(s.key,s.icon)}</span><b>${s.key.toUpperCase()}</b><span class="lock-level"></span></button>`).join('')}<div class="item-hotbar">${[0,1,2].map(i=>`<button class="skill item-slot" data-item-slot="${i}"></button>`).join('')}</div></div><div class="game-bottom-right"><span class="money" id="hud-money"></span><span class="saved" id="hud-saved"></span></div></div></div>`;
- $('#map-button').onclick=worldMap;$('#skills-button').onclick=skillBook;$('#inventory-button').onclick=inventory;$('#save-button').onclick=()=>save(false);$('#menu-button').onclick=menu;document.querySelectorAll('[data-skill]').forEach(bindSkillButton);document.querySelectorAll('[data-item-slot]').forEach(b=>b.onclick=()=>{useQuickSlot(Number(b.dataset.itemSlot));canvas.focus();});refreshHUD();
+function buildHUD(){ui.innerHTML=`<div class="game-screen"><div class="hack-visor" id="hack-visor" aria-hidden="true" hidden><div class="hack-visor-frame"><i class="visor-corner tl"></i><i class="visor-corner tr"></i><i class="visor-corner bl"></i><i class="visor-corner br"></i></div><div class="visor-rail left"></div><div class="visor-rail right"></div><div class="visor-panel visor-scan"><small>NEURAL LINK</small><strong>SCAN ONLINE</strong><span id="visor-signals"></span><div class="visor-spectrum"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="visor-code">SYS // 0xA7<br>UPLINK ACTIVE</span></div><div class="visor-panel visor-target"><small>TARGET LOCK</small><strong id="visor-target-name"></strong><span id="visor-range"></span><span id="visor-vitals"></span><div class="visor-lock-meter"><i id="visor-hp"></i></div><span class="visor-code">SIGNAL VERIFIED<br>READY TO EXECUTE</span></div></div><div class="hud-top"><div class="player-panel"><img class="avatar" src="${characterPortrait(player)}" alt=""><div class="player-info"><div class="player-name"><span id="hud-level" class="level"></span><strong id="hud-name"></strong></div><small id="hud-job" class="job-label"></small><div class="resource-meter"><div class="bar-label"><span>HP</span><span id="hp-text"></span></div><div class="bar hp"><i id="hp-bar"></i><i id="hp-shield" hidden></i></div></div><div class="resource-meter"><div class="bar-label"><span>MP</span><span id="mp-text"></span></div><div class="bar mp"><i id="mp-bar"></i></div></div><div class="resource-meter"><div class="bar-label"><span>EXP</span><span id="xp-text" class="xp-label"></span></div><div class="bar exp"><i id="xp-bar"></i></div></div></div></div><div class="map-panel"><small>${MAPS[player.map].en}</small><div class="map-title">${MAPS[player.map].name}</div><div class="map-subtitle">${MAPS[player.map].subtitle}</div></div><div class="hud-tools"><button id="map-button" aria-label="지도 보기 (M)" title="지도 · M">${icon('map')}</button><button id="skills-button" aria-label="스킬 보기 (K)" title="스킬 · K">K</button><button id="inventory-button" aria-label="인벤토리 열기 (I)" title="인벤토리 · I">${icon('bag')}</button><button id="save-button" aria-label="현재 위치 저장" title="현재 위치 저장">${icon('save')}</button><button id="menu-button" aria-label="게임 메뉴 (Esc)" title="메뉴 · Esc">${icon('menu')}</button></div></div><div class="power-banner" id="power-banner" hidden><strong>근육 각성</strong><span id="power-clock"></span><small>모든 스킬 강화</small><div class="power-track"><i id="power-bar"></i></div></div><div class="power-banner combat-banner" id="combat-banner" hidden><strong id="combat-title"></strong><span id="combat-clock"></span><small id="combat-detail"></small><div class="power-track"><i id="combat-bar"></i></div></div><div class="boss-hud" id="boss-hud" hidden><div><strong id="boss-name">Lv.${bossInfo().level} ${bossInfo().name}</strong><span id="boss-hp-text"></span></div><div class="boss-hp-track"><i id="boss-hp-fill"></i></div><p id="boss-cue"></p><small id="boss-potion-clock"></small></div><div class="hack-controls" id="hack-controls" role="group" aria-label="해킹 대상 선택" hidden><span class="hack-controls-label">대상 선택</span><button id="hack-prev" aria-label="이전 적 선택">←</button><button id="hack-confirm" title="Enter로 해킹 확정">확정 <kbd>↵</kbd></button><button id="hack-next" aria-label="다음 적 선택">→</button><button id="hack-cancel" title="Esc로 취소">취소 <kbd>Esc</kbd></button></div><div id="b-protocol" class="b-protocol" role="status" hidden></div><div id="b-qte" class="b-qte" role="group" aria-label="B형 각성 저지" hidden><div id="b-qte-arrows"></div><small>화살표 10개 · 틀리면 처음부터 · Esc 닫기</small><div class="b-qte-buttons">${['ArrowLeft','ArrowUp','ArrowDown','ArrowRight'].map(code=>`<button data-b-arrow="${code}">${{ArrowLeft:'←',ArrowRight:'→',ArrowUp:'↑',ArrowDown:'↓'}[code]}</button>`).join('')}</div></div><div class="type-a-warning" id="type-a-warning" role="status" hidden></div><div class="context-hint" id="context-hint" hidden></div><div class="hud-bottom"><div class="hotbar"><button class="skill${player.classId==='wanderer'?' penguin-skill':player.classId==='rabbit'?' rabbit-skill':player.classId==='cat'?' cat-skill':player.classId==='otter'?' otter-skill':player.classId==='chick'?(player.job==='hacker'?' hacker-skill':' chick-skill'):''}" data-skill="a" title="기본 공격 · A${player.classId==='rabbit'?' · MP 2':''}"><span class="skill-symbol">${skillSymbolMarkup('a',player.classId==='rabbit'?'◉':'╱')}</span><b>A</b>${player.classId==='rabbit'?'<span class="lock-level">2</span>':''}</button>${skillsFor(player).map(s=>`<button class="skill${player.classId==='wanderer'?' penguin-skill':player.classId==='rabbit'?' rabbit-skill':player.classId==='cat'?' cat-skill':player.classId==='otter'?' otter-skill':player.classId==='chick'?(player.job==='hacker'?' hacker-skill':' chick-skill'):''}" data-skill="${s.key}" aria-label="${s.name}, ${s.key.toUpperCase()} 키, 레벨 ${s.level}, MP ${s.mp}" title="${s.name} · Lv.${s.level} · MP ${s.mp} · ${s.description}"><span class="skill-symbol">${skillSymbolMarkup(s.key,s.icon)}</span><b>${s.key.toUpperCase()}</b><span class="lock-level"></span></button>`).join('')}<div class="item-hotbar">${[0,1,2].map(i=>`<button class="skill item-slot" data-item-slot="${i}"></button>`).join('')}</div></div><div class="game-bottom-right"><span class="money" id="hud-money"></span><span class="saved" id="hud-saved"></span></div></div></div>`;
+ document.querySelectorAll('[data-b-arrow]').forEach(b=>b.onclick=()=>handleBArrow(b.dataset.bArrow));$('#map-button').onclick=worldMap;$('#skills-button').onclick=skillBook;$('#inventory-button').onclick=inventory;$('#save-button').onclick=()=>save(false);$('#menu-button').onclick=menu;document.querySelectorAll('[data-skill]').forEach(bindSkillButton);document.querySelectorAll('[data-item-slot]').forEach(b=>b.onclick=()=>{useQuickSlot(Number(b.dataset.itemSlot));canvas.focus();});refreshHUD();
 }
 function refreshHealthHUD(){
  const hp=Math.ceil(player.hp),shield=Math.ceil((rabbitShield?.hp||0)+(otterShield?.hp||0)),maximum=maxHp(player),scale=Math.max(maximum,player.hp+shield);
@@ -189,12 +194,13 @@ function refreshHUD(){if(scene!=='playing'||!$('#hud-level'))return;$('#hud-name
  });const powered=isPowered(player);$('.game-shell').classList.toggle('powered',powered);$('.game-shell').classList.toggle('sword-cinematic',!!swordUlt||cameraZoom<.99);$('#power-banner').hidden=!powered||!!recovery;$('#power-clock').textContent=`${Math.ceil(player.powerTime)}초`;$('#power-bar').style.width=`${player.powerTime/POWER_DURATION*100}%`;const avatar=$('.avatar'),avatarSrc=characterPortrait(player,powered);avatar.style.objectPosition=player.classId==='cat'?'center':powered?'9% center':'center';if(avatar.getAttribute('src')!==avatarSrc)avatar.setAttribute('src',avatarSrc);document.querySelectorAll('[data-skill]').forEach(b=>b.classList.toggle('empowered',powered&&['a','q','w','e'].includes(b.dataset.skill)));refreshCombatHUD();const hint=$('#context-hint');hint.classList.toggle('small-npc-hint',interactionTarget?.id==='shop');if(interactionTarget){hint.hidden=false;hint.innerHTML=`<kbd>F</kbd> ${interactionTarget.id?escapeHtml(interactionTarget.name)+'에게 말 걸기':escapeHtml(interactionTarget.label)+' 이동'}`;}else{hint.hidden=true;}}
 function help(){showModal('help','모험 안내',`<div class="help-grid"><span><kbd>← ↑ ↓ →</kbd></span><span>거리의 네 방향으로 이동</span><span><kbd>SPACE</kbd></span><span>점프 · 이동하면서 대각선 점프</span><span><kbd>A</kbd></span><span>기본 공격 · 누르고 있으면 연속 공격</span><span><kbd>Q W E R</kbd></span><span>Q Lv. 3 · W Lv. 6 · E 전직 Lv. 10 · R Lv. 15</span><span><kbd>K</kbd></span><span>스킬 이미지 · 설명 · 해금 조건 보기</span><span><kbd>M</kbd></span><span>지도 · 현재 지역과 포탈 연결 보기</span><span><kbd>F</kbd></span><span>가까운 NPC와 대화 / 포탈 이용</span><span><kbd>1 2 3</kbd></span><span>등록한 아이템 사용 · I에서 등록 변경</span><span><kbd>I</kbd> <kbd>ESC</kbd></span><span>인벤토리 / 메뉴 · 열면 일시정지</span></div><p class="help-note">펭귄은 Lv. 10부터 피치플레이헬스&amp;필라테스 역삼점에서 바디빌더, 강남성균검도관에서 검사로 전직해요. 고양이는 역삼역 1번 출구에서 올림픽공원으로 이동해 빨간 두건을 두르고 화염병을 든 여우 레드폭스에게 시위대로 전직할 수 있어요. 피치플레이는 1번 출구에서 바로 갈 수 있어요. 검도관은 1번 출구 → 역삼역사거리 → 6번 출구를 거쳐 이동해요. 수달은 메이플아지트에서 휴프로에게 아이돌로 전직합니다. 수달 W는 발사 후 0.6초 안에 다시 누르면 파도를 탑니다(무적 아님). 아이돌 E는 보호막과 물방울 3개, R은 5초 콘서트입니다. R은 Lv. 15에 배웁니다. 바디빌더는 12초간 근육 각성, 검사는 최대 5명을 조준해 연속 베기를 발동해요. 시위대는 E를 최대 1초간 눌러 화염병 사거리를 늘리고, R로 투표함을 5초간 설치해요.</p><p>쓰러진 로봇의 돈과 아이템은 가까이 가면 줍습니다. MP는 자연 회복되고, 마을에서는 HP도 회복돼요. 사망하면 아무것도 잃지 않고 마을에서 부활합니다.</p><p>진행 상황은 현재 브라우저에 저장됩니다. 브라우저 데이터를 지우거나 다른 기기를 쓰면 이어지지 않습니다.</p>`);}
 function refreshBossHUD(){
- const hud=$('#boss-hud');if(!hud)return;hud.hidden=!bossActive();$('.game-shell').classList.toggle('boss-fight',bossActive());
+ refreshBHUD();
+ const hud=$('#boss-hud');if(!hud)return;hud.classList.toggle('type-b',isTypeB(boss));hud.classList.toggle('type-b-critical',isTypeB(boss)&&['protocol','awakening','awakened'].includes(boss.phase));hud.hidden=!bossActive();$('.game-shell').classList.toggle('boss-fight',bossActive());
  const warning=$('#type-a-warning');warning.hidden=!bossActive()||!isTypeA(boss)||!['safety','enrage'].includes(boss.phase);if(!warning.hidden)warning.textContent=boss.phase==='safety'?`안전지대를 찾으세요! ${Math.max(0,TYPE_A.safety.duration-boss.elapsed).toFixed(1)}초 · 파란 영역 / 무적기로 회피`:'A형 광폭화 · 회전 칼날과 자기장 주의';
  if(!bossActive())return;
- $('#boss-name').textContent=`Lv.${bossInfo().level} ${bossInfo().name}${boss.enraged?' · 광폭화':''}`;
+ $('#boss-name').textContent=`Lv.${bossInfo().level} ${bossInfo().name}${isTypeB(boss)?` · ${boss.stage}페이즈${boss.failedAwakening?' · 각성':''}`:boss.enraged?' · 광폭화':''}`;
  $('#boss-hp-text').textContent=`${Math.ceil(boss.hp).toLocaleString()} / ${boss.maxHp.toLocaleString()}`;
- $('#boss-hp-fill').style.width=`${boss.hp/boss.maxHp*100}%`;$('#boss-cue').textContent=isTypeA(boss)?typeACue(boss):soldierCue(boss);hud.classList.toggle('counter-active',boss.phase==='counter');
+ $('#boss-hp-fill').style.width=`${boss.hp/boss.maxHp*100}%`;$('#boss-cue').textContent=isTypeB(boss)?typeBCue(boss):isTypeA(boss)?typeACue(boss):soldierCue(boss);hud.classList.toggle('counter-active',boss.phase==='counter');
  $('#boss-potion-clock').textContent=`HP 회복 ${potionCooldown>0?potionCooldown.toFixed(1)+'초':'준비'} · MP 음료 ${player.mpPotionCooldown>0?player.mpPotionCooldown.toFixed(1)+'초':'준비'} · 각각 10초 대기`;
 }
 function itemCooldown(id){return id==='mpPotions'?(MAPS[player.map].boss?player.mpPotionCooldown||0:0):ITEMS[id]?.hpRestore&&bossActive()?potionCooldown:0;}
@@ -211,12 +217,12 @@ function inventory(selected=inventorySelection,focusSelector=null){
  if(scene!=='playing'||!player)return;
  const ownedItems=Object.entries(ITEMS).filter(([id])=>player[id]>0);
  inventorySelection=ownedItems.some(([id])=>id===selected)?selected:ownedItems[0]?.[0]??null;const item=ITEMS[inventorySelection];
- showModal('inventory','인벤토리',`<div class="bag-summary"><span>${jobName(player)} · 장비 <strong>${equipmentName(player)}</strong>${player.uniformEquipped?' · 군복 착용 (+20%)':''}${hasTypeATitle(player)?' · A형 칭호 (공격력 +5%)':''}</span><span>${player.money.toLocaleString()}원</span></div>${JOBS[player.job]?`<p>직업 특성 · ${JOBS[player.job].passive}</p>`:''}<div class="bag-items">${ownedItems.map(([id,item])=>`<button class="bag-item ${id===inventorySelection?'selected':''}" data-bag-item="${id}" aria-pressed="${id===inventorySelection}"><span class="item-icon">${itemIconMarkup(id)}</span><strong>${item.name}</strong><small>${player[id]}개 · ${item.equippable?(itemEquipped(player,id)?'장착 중':item.equipmentType||'방어구'):item.usable?'소모품':'수집 재료'}</small></button>`).join('')||'<p class="bag-instruction">보유한 아이템이 없습니다.</p>'}</div>${item?`<div class="item-detail"><span class="item-detail-art">${itemIconMarkup(inventorySelection)}</span><div><strong>${item.name}</strong><p>${item.description}</p>${itemCooldown(inventorySelection)>0?`<p>재사용 ${Math.ceil(itemCooldown(inventorySelection))}초 · 가방을 닫으면 시간이 흘러요.</p>`:''}</div><button class="secondary" id="bag-use" ${(!item.usable&&!item.equippable)||player[inventorySelection]===0?'disabled':''}>${item.equippable?(itemEquipped(player,inventorySelection)?'해제하기':'장착하기'):'사용하기'}</button></div>`:''}<h3 class="bag-slots-title">아이템 단축키</h3><p class="bag-instruction">아이템을 고른 뒤 아래 슬롯이나 숫자키를 누르면 등록돼요.</p><div class="bag-slots">${player.quickSlots.map((id,i)=>`<div><button class="slot-assign" data-assign-slot="${i}" aria-label="${item?`${i+1}번에 ${item.name} 등록`:`${i+1}번 슬롯 · 등록할 아이템 없음`}" ${!item?.usable?'disabled':''}><kbd>${i+1}</kbd>${id?`<span class="slot-item-art">${itemIconMarkup(id)}</span>`:''}<span>${ITEMS[id]?.name??'빈 슬롯'}</span></button><button class="slot-clear" data-clear-slot="${i}" aria-label="${i+1}번 슬롯 비우기" ${id?'':'disabled'}>비우기</button></div>`).join('')}</div><p class="bag-footnote">등록은 저장됩니다. 가방을 닫고 1 · 2 · 3으로 사용하세요. 닫기 I / Esc</p>`,focusSelector||`[data-bag-item="${inventorySelection}"]`);
+ showModal('inventory','인벤토리',`<div class="bag-summary"><span>${jobName(player)} · 장비 <strong>${equipmentName(player)}</strong>${player.uniformEquipped?' · 군복 착용 (+20%)':''}${hasTypeBTitle(player)?' · B형 칭호 (공격력 +20% / 이동속도 +10%)':''}${hasTypeATitle(player)?' · A형 칭호 (공격력 +5%)':''}</span><span>${player.money.toLocaleString()}원</span></div>${JOBS[player.job]?`<p>직업 특성 · ${JOBS[player.job].passive}</p>`:''}<div class="bag-items">${ownedItems.map(([id,item])=>`<button class="bag-item ${id===inventorySelection?'selected':''}" data-bag-item="${id}" aria-pressed="${id===inventorySelection}"><span class="item-icon">${itemIconMarkup(id)}</span><strong>${item.name}</strong><small>${player[id]}개 · ${item.equippable?(itemEquipped(player,id)?'장착 중':item.equipmentType||'방어구'):item.usable?'소모품':'수집 재료'}</small></button>`).join('')||'<p class="bag-instruction">보유한 아이템이 없습니다.</p>'}</div>${item?`<div class="item-detail"><span class="item-detail-art">${itemIconMarkup(inventorySelection)}</span><div><strong>${item.name}</strong><p>${item.description}</p>${itemCooldown(inventorySelection)>0?`<p>재사용 ${Math.ceil(itemCooldown(inventorySelection))}초 · 가방을 닫으면 시간이 흘러요.</p>`:''}</div><button class="secondary" id="bag-use" ${(!item.usable&&!item.equippable)||player[inventorySelection]===0?'disabled':''}>${item.equippable?(itemEquipped(player,inventorySelection)?'해제하기':'장착하기'):'사용하기'}</button></div>`:''}<h3 class="bag-slots-title">아이템 단축키</h3><p class="bag-instruction">아이템을 고른 뒤 아래 슬롯이나 숫자키를 누르면 등록돼요.</p><div class="bag-slots">${player.quickSlots.map((id,i)=>`<div><button class="slot-assign" data-assign-slot="${i}" aria-label="${item?`${i+1}번에 ${item.name} 등록`:`${i+1}번 슬롯 · 등록할 아이템 없음`}" ${!item?.usable?'disabled':''}><kbd>${i+1}</kbd>${id?`<span class="slot-item-art">${itemIconMarkup(id)}</span>`:''}<span>${ITEMS[id]?.name??'빈 슬롯'}</span></button><button class="slot-clear" data-clear-slot="${i}" aria-label="${i+1}번 슬롯 비우기" ${id?'':'disabled'}>비우기</button></div>`).join('')}</div><p class="bag-footnote">등록은 저장됩니다. 가방을 닫고 1 · 2 · 3으로 사용하세요. 닫기 I / Esc</p>`,focusSelector||`[data-bag-item="${inventorySelection}"]`);
  $('.modal').classList.add('inventory-modal');
  document.querySelectorAll('[data-bag-item]').forEach(b=>b.onclick=()=>{inventory(b.dataset.bagItem);});
  document.querySelectorAll('[data-assign-slot]').forEach(b=>b.onclick=()=>registerInventorySlot(Number(b.dataset.assignSlot)));
  document.querySelectorAll('[data-clear-slot]').forEach(b=>b.onclick=()=>registerInventorySlot(Number(b.dataset.clearSlot),null));
- if(item)$('#bag-use').onclick=()=>{if(item.equippable){const result=inventorySelection==='typeATitle'?equipTypeATitle(player):equipUniform(player);toast(result.message);if(result.ok){save();inventory(inventorySelection,'#bag-use');refreshHUD();}}else useInventoryItem(inventorySelection,true);};
+ if(item)$('#bag-use').onclick=()=>{if(item.equippable){const result=inventorySelection==='typeBTitle'?equipTypeBTitle(player):inventorySelection==='typeATitle'?equipTypeATitle(player):equipUniform(player);toast(result.message);if(result.ok){save();inventory(inventorySelection,'#bag-use');refreshHUD();}}else useInventoryItem(inventorySelection,true);};
 }
 function registerInventorySlot(index,id=inventorySelection){
  if(modal!=='inventory')return;
@@ -265,10 +271,11 @@ function jobModal(job){
 }
 
 function examEntranceTalk(){
- showModal('exam-entry','시험장 입구',`<p>프로전형 시험장에 오신 것을 환영합니다.</p><p>이곳에서 실제 보스 시험장에 입장하게 됩니다.<br><strong>현재 시험장은 아직 준비 중입니다.</strong></p><button class="secondary" disabled>보스 시험장 · 준비 중</button><button class="primary" id="exam-return">안내 닫기</button>`);
+ showModal('exam-entry','시험장 입구',`<div class="boss-intro"><span class="boss-eyebrow">프로전형 · Lv.70 B형</span><h3>안쪽 기계실은 출입 통제 구역입니다.</h3><p>안쪽으로 걸어가면 B형이 낙하하며 전투가 시작됩니다. 바닥의 위험 표시와 피자 패턴의 파란 안전지대를 확인하세요.</p><p>기체를 정지시켜도 섬멸 프로토콜로 재가동합니다. 각성 경보가 울리면 10초 안에 가까이 가서 F를 누르고 화살표 10개를 맞추세요.</p><p class="boss-reward">최종 격파 보상 · 금빛 B형 칭호<br>공격력 +20% · 이동속도 +10% · 반짝이는 기운</p>${player.level<70?'<p>Lv.70 보스입니다. 현재 레벨보다 강할 수 있어요.</p>':''}<button class="primary" id="exam-enter">기계실 입장하기</button><button class="secondary" id="exam-return">안내 닫기</button></div>`,'#exam-enter');
+ $('#exam-enter').onclick=()=>travel(MAPS.proExam.portals.find(p=>p.to==='proBoss'));
  $('#exam-return').onclick=closeModal;
 }
-function interact(){if(scene!=='playing'||modal)return;interactionTarget=findInteraction();if(!interactionTarget){toast('NPC나 포탈에 조금 더 가까이 가보세요.');return;}const t=interactionTarget;if(t.id==='exam-entry'){examEntranceTalk();return;}if(t.id==='soldier'){bossTalk();return;}if(t.job){jobModal(t.id==='hyupro'&&player.classId==='otter'?'idol':t.job);return;}if(!t.id){if((MAPS[t.to].danger||MAPS[t.to].boss)&&player.level<MAPS[t.to].minLevel){showModal('portal','더 깊은 거리로',`<p>${MAPS[t.to].name}에는 Lv. ${MAPS[t.to].minLevel}–${MAPS[t.to].maxLevel} ${MAPS[t.to].boss?'중간보스가':'로봇이'} 있어요.<br>현재 Lv. ${player.level}입니다. 도전을 이어가시겠어요?</p><button class="primary" id="portal-confirm">${MAPS[t.to].name} 이동</button>`);$('#portal-confirm').onclick=()=>travel(t);}else travel(t);return;}if(t.id==='shop'&&player.classId==='rabbit'&&!player.job&&player.level>=10){jobModal('mage');return;}if(t.id==='gm'){showModal('gm','운영자 현토리',`<p>역삼역에 온 걸 환영해요, <strong>${escapeHtml(player.name)}</strong>!<br>이곳은 안전한 마을이에요. 처음엔 오른쪽의 회복 아이템 상인 마구리에게 들러 보세요.</p><p>오른쪽 끝의 테헤란 뒷골목 포탈에서 <strong>F</strong>를 누르면 첫 사냥터로 이동할 수 있어요. 로봇은 귀엽지만 부딪히면 아프니 조심하세요!</p><details class="npc-details"><summary>아이템 · 전직 · 성장 안내</summary><p>I키로 인벤토리를 열고 아이템을 1·2·3번에 등록할 수 있어요. 마구리에게 이동장치를 사 두면 멀리서도 마을로 돌아올 수 있죠. M키로 지도를 확인해 보세요. 피치플레이헬스&amp;필라테스 역삼점은 이곳 1번 출구에서 바로 갈 수 있어요. 강남성균검도관에 가려면 몬스터가 있는 역삼역사거리를 지나 6번 출구로 가세요. Q는 Lv. 3, W는 Lv. 6에 배워요. Lv. 10부터 펭귄은 헬스장·검도장, 고양이는 올림픽공원, 토끼는 마구리, 병아리와 수달은 메이플아지트의 휴프로에게 전직해 E를 배웁니다. 전직 후 Lv. 15에 R을 습득합니다! 쓰러져도 돈이나 아이템을 잃지 않으니 편하게 모험해 보세요.</p></details><button class="primary" id="gm-help">자세한 조작법 보기</button>`);$('#gm-help').onclick=help;}else shop();}
+function interact(){if(scene!=='playing'||modal)return;interactionTarget=findInteraction();if(!interactionTarget){toast('NPC나 포탈에 조금 더 가까이 가보세요.');return;}const t=interactionTarget;if(t.id==='b-awaken'){beginBInterruption();return;}if(t.id==='exam-entry'){examEntranceTalk();return;}if(t.id==='soldier'){bossTalk();return;}if(t.job){jobModal(t.id==='hyupro'&&player.classId==='otter'?'idol':t.job);return;}if(!t.id){if((MAPS[t.to].danger||MAPS[t.to].boss)&&player.level<MAPS[t.to].minLevel){showModal('portal','더 깊은 거리로',`<p>${MAPS[t.to].name}에는 Lv. ${MAPS[t.to].minLevel}–${MAPS[t.to].maxLevel} ${MAPS[t.to].boss?'중간보스가':'로봇이'} 있어요.<br>현재 Lv. ${player.level}입니다. 도전을 이어가시겠어요?</p><button class="primary" id="portal-confirm">${MAPS[t.to].name} 이동</button>`);$('#portal-confirm').onclick=()=>travel(t);}else travel(t);return;}if(t.id==='shop'&&player.classId==='rabbit'&&!player.job&&player.level>=10){jobModal('mage');return;}if(t.id==='gm'){showModal('gm','운영자 현토리',`<p>역삼역에 온 걸 환영해요, <strong>${escapeHtml(player.name)}</strong>!<br>이곳은 안전한 마을이에요. 처음엔 오른쪽의 회복 아이템 상인 마구리에게 들러 보세요.</p><p>오른쪽 끝의 테헤란 뒷골목 포탈에서 <strong>F</strong>를 누르면 첫 사냥터로 이동할 수 있어요. 로봇은 귀엽지만 부딪히면 아프니 조심하세요!</p><details class="npc-details"><summary>아이템 · 전직 · 성장 안내</summary><p>I키로 인벤토리를 열고 아이템을 1·2·3번에 등록할 수 있어요. 마구리에게 이동장치를 사 두면 멀리서도 마을로 돌아올 수 있죠. M키로 지도를 확인해 보세요. 피치플레이헬스&amp;필라테스 역삼점은 이곳 1번 출구에서 바로 갈 수 있어요. 강남성균검도관에 가려면 몬스터가 있는 역삼역사거리를 지나 6번 출구로 가세요. Q는 Lv. 3, W는 Lv. 6에 배워요. Lv. 10부터 펭귄은 헬스장·검도장, 고양이는 올림픽공원, 토끼는 마구리, 병아리와 수달은 메이플아지트의 휴프로에게 전직해 E를 배웁니다. 전직 후 Lv. 15에 R을 습득합니다! 쓰러져도 돈이나 아이템을 잃지 않으니 편하게 모험해 보세요.</p></details><button class="primary" id="gm-help">자세한 조작법 보기</button>`);$('#gm-help').onclick=help;}else shop();}
 const shopItemSummary=id=>`${ITEMS[id]?.hpRestore?`HP +${ITEMS[id].hpRestore}`:id==='mpPotions'?'MP +100':'즉시 귀환'} · 보유 ${player[id]}개`;
 function refreshShop(){
  // Keep the existing dialog nodes so buying preserves scroll, focus and expanded help.
@@ -294,13 +301,20 @@ function shop(){
  $('.modal').classList.add('shop-dialog');refreshShop();
  for(const id of shopItemsFor(player))$(`#buy-${id}`).onclick=()=>{const result=buyItem(player,id,currentShopContext());if(result.ok){save();beep(800);}refreshShop();toast(result.message);refreshHUD();};
 }
-function findInteraction(){if(!player||bossActive())return null;const candidates=[...(boss?[{id:'soldier',name:bossInfo().name,x:boss.x,y:boss.y}]:[]),...mapNPCs(),...MAPS[player.map].portals];return candidates.filter(o=>Math.hypot(player.x-o.x,(player.y-o.y)*1.8)<145).sort((a,b)=>Math.hypot(player.x-a.x,player.y-a.y)-Math.hypot(player.x-b.x,player.y-b.y))[0]??null;}
+function findInteraction(){
+ if(!player)return null;
+ if(isTypeB(boss)&&boss.phase==='awakening'&&!boss.qteActive&&Math.hypot(player.x-boss.x,(player.y-boss.y)*1.5)<=TYPE_B.awakening.range)return {id:'b-awaken',name:'B형 각성 저지',x:boss.x,y:boss.y};
+ if(bossActive())return null;
+ const candidates=[...(boss&&!isTypeB(boss)?[{id:'soldier',name:bossInfo().name,x:boss.x,y:boss.y}]:[]),...mapNPCs(),...MAPS[player.map].portals.filter(p=>!p.requiresNPC)];
+ return candidates.filter(o=>Math.hypot(player.x-o.x,(player.y-o.y)*1.8)<145).sort((a,b)=>Math.hypot(player.x-a.x,player.y-a.y)-Math.hypot(player.x-b.x,player.y-b.y))[0]??null;
+}
+
 let mapSelection=null;
 function atlasMarkup(){
  const edges=worldMapConnections();
  return `<div class="atlas-toolbar"><div><span class="atlas-location-dot" aria-hidden="true"></span>현재 위치 <strong>${escapeHtml(MAPS[player.map].name)}</strong></div><button id="atlas-locate">내 위치 찾기</button></div><div class="atlas-scroll" id="atlas-scroll" tabindex="0" aria-label="지역 연결 지도. 상하좌우로 스크롤해 다른 지역을 확인하세요."><div class="atlas-board"><div class="atlas-background" aria-hidden="true"></div><svg class="atlas-roads" viewBox="0 0 1120 ${WORLD_MAP_HEIGHT}" preserveAspectRatio="none" aria-hidden="true">${edges.map(edge=>{const a=WORLD_MAP_LAYOUT[edge.from],b=WORLD_MAP_LAYOUT[edge.to];return `<g><path class="atlas-road-border" d="M ${a.x} ${a.y} L ${b.x} ${b.y}"/><path class="atlas-road" data-map-edge="${edge.key}" d="M ${a.x} ${a.y} L ${b.x} ${b.y}"/></g>`;}).join('')}</svg>${Object.entries(WORLD_MAP_LAYOUT).map(([id,point])=>{
   const map=MAPS[id],current=id===player.map,visited=player.visited.includes(id),kind=map.boss||map.bossEntrance?'boss':map.danger?'hunt':'safe';
-  const level=map.bossEntrance?'시험장 · 준비 중':map.boss?`보스 · Lv. ${map.bossLevel||25}`:map.danger?`Lv. ${map.minLevel}–${map.maxLevel}`:id==='gym'?'바디빌더 전직':id==='dojo'?'검사 전직':id==='olympic'?'시위대 전직':id==='maple'?'해커 전직':'안전 구역';
+  const level=map.bossEntrance?'B형 · 입장 대기실':map.boss?`보스 · Lv. ${map.bossLevel||25}`:map.danger?`Lv. ${map.minLevel}–${map.maxLevel}`:id==='gym'?'바디빌더 전직':id==='dojo'?'검사 전직':id==='olympic'?'시위대 전직':id==='maple'?'해커 전직':'안전 구역';
   return `<button class="atlas-node ${kind} ${current?'current':''} ${visited?'visited':''}" data-map="${id}" aria-pressed="false" ${current?'aria-current="location"':''} aria-label="${escapeHtml(map.name)} · ${level}${current?' · 현재 위치':''}" title="${escapeHtml(map.name)}" style="left:${point.x/1120*100}%;top:${point.y/WORLD_MAP_HEIGHT*100}%">${current?'<span class="atlas-here">현재 위치</span>':''}<span class="atlas-dot" aria-hidden="true">${map.boss||map.bossEntrance?'⚔':''}</span><span class="atlas-label"><strong>${point.label}</strong><small>${level}</small></span></button>`;
  }).join('')}</div></div><div class="atlas-legend"><span><i class="safe"></i>안전 · 전직</span><span><i class="hunt"></i>사냥터</span><span><i class="boss"></i>보스</span><span><i class="road"></i>포탈 연결</span><small>지역을 누르면 가는 길이 표시돼요.</small></div><div id="atlas-selection" class="atlas-selection" aria-live="polite"></div>`;
 }
@@ -341,7 +355,8 @@ function updateCamera(dt){
  const oldCenter=camera+viewWidth()/2;
  // Map-wide targeting is independent of the finite camera baseline; widen for marked enemies.
  const safety=isTypeA(boss)&&bossActive()&&boss.phase==='safety';
- let targetZoom=safety?Math.min(.8,screenWidth/(TYPE_A.width+80)):1;
+ const bArena=isTypeB(boss),pizza=bArena&&boss.phase.startsWith('pizza');
+ let targetZoom=bArena?Math.min(pizza?.7:.85,screenWidth/(pizza?TYPE_B.width+80:1650)):safety?Math.min(.8,screenWidth/(TYPE_A.width+80)):1;
  const hackSelecting=hackerUlt?.phase==='selecting';
  if(hackSelecting)targetZoom=Math.min(.65,screenWidth/(MAPS[player.map].width+120));
  if(swordUlt&&!safety){
@@ -353,9 +368,9 @@ function updateCamera(dt){
  if(Math.abs(cameraZoom-targetZoom)<.001)cameraZoom=targetZoom;
  const width=viewWidth(),maxLeft=Math.max(0,MAPS[player.map].width-width);
  // Let the cinematic frame extend past map edges so distant edge reticles remain visible.
- const desiredLeft=hackSelecting?MAPS[player.map].width/2-width/2:safety?TYPE_A.width/2-width/2:swordUlt?swordUlt.focusX-width/2:clamp(player.x-width*.45,0,maxLeft);
+ const desiredLeft=hackSelecting?MAPS[player.map].width/2-width/2:pizza?TYPE_B.center.x-width/2:safety?TYPE_A.width/2-width/2:swordUlt?swordUlt.focusX-width/2:clamp(player.x-width*.45,0,maxLeft);
  const center=oldCenter+(desiredLeft+width/2-oldCenter)*(1-Math.exp(-dt*10));
- camera=safety||swordUlt||hackSelecting||cameraZoom!==1?center-width/2:clamp(center-width/2,0,maxLeft);
+ camera=pizza||safety||swordUlt||hackSelecting||cameraZoom!==1?center-width/2:clamp(center-width/2,0,maxLeft);
 }
 
 function swordCandidates(seen=new Set()){
@@ -364,6 +379,7 @@ function swordCandidates(seen=new Set()){
   .sort((a,b)=>Math.hypot(a.x-player.x,a.y-player.y)-Math.hypot(b.x-player.x,b.y-player.y));
 }
 function startSwordCharge(input='keyboard'){
+ if(boss?.qteActive)return false;
  if(scene!=='playing'||modal||swordUlt||guardTime>0||combatMotion?.guardRelease||player.job!=='swordsman')return false;
  const check=canUseSkill(player,'r',cooldowns.r);if(!check.ok){toast(check.message);return false;}
  if(!swordCandidates().length){toast('현재 맵에 조준할 적이 없어요.');return false;}
@@ -395,7 +411,7 @@ function updateSword(dt){
    const id=u.targets[u.index++],m=monsters.find(m=>m.id===id&&!m.dead);if(!m)continue;
    if(m.isBoss&&m.phase==='leap'){u.index--;u.nextStrike=.08;break;}
    const fromX=player.x,fromY=player.y;facing=m.x>=player.x?1:-1;
-   player.x=clamp(m.x-facing*38,45,MAPS[player.map].width-45);player.y=clamp(m.y,580,720);playCombatMotion('slash',.2,{ultimate:true});
+   player.x=clamp(m.x-facing*38,45,MAPS[player.map].width-45);player.y=clamp(m.y,floorMin(),floorMax());playCombatMotion('slash',.2,{ultimate:true});
    const solo=u.damageMultiplier>1;
    effects.push({type:'swordBlink',x:fromX,y:fromY-50,toX:player.x,toY:player.y-50,life:.36,max:.36,...FX_PALETTES.electric,solo,seed:Math.random()*1e6},{type:'swordCut',x:m.x,y:m.y-45,dir:facing,life:.28,max:.28,...FX_PALETTES.electric,size:solo?235:195});
    if(solo)textAt('단일 대상 · 피해 2배',m.x,m.y-155,'#ffe45c');
@@ -469,12 +485,13 @@ function drawCombatIndicators(){
  }
 }
 function bossTalk(){
- if(!boss||bossActive())return;
+ if(!boss||bossActive()||isTypeB(boss))return;
  if(isTypeA(boss)){typeATalk();return;}
  showModal('boss-talk',`${SOLDIER.name} · Lv. ${SOLDIER.level}`,`<div class="boss-intro"><span class="boss-eyebrow">한사발포차 역삼점 · 중간보스</span><h3>“준비됐나? 제대로 겨뤄 보자.”</h3><p>더 빠르고 넓어진 검 2연격, 범위 안에서 지속 피해를 주는 백색 장풍, 착지 충격파와 등 뒤 기습 5연격을 사용합니다. 바닥의 공격 예고를 보고 피하세요. 칼을 한 바퀴 돌리면 공격을 멈추세요. 이어지는 3초 동안 공격하면 보스 대신 내가 피해를 받습니다.</p><ul><li>권장 Lv. 20–25 · 체력 ${SOLDIER.hp.toLocaleString()}</li><li>반격 피해는 돌진·궁극기의 무적과 막기를 뚫습니다. 공격을 멈추면 안전합니다.</li><li>전투 중 감자칩은 공통 재사용 대기 <strong>10초</strong></li><li>출구는 잠깁니다. 메뉴에서 도전을 포기하거나 이동장치를 사용할 수 있어요.</li></ul><p class="boss-reward">승리 보상 · EXP ${xpReward(player,SOLDIER.xp,SOLDIER.level).toLocaleString()} + 군복<br><small>군복 장착 시 이동속도 +20% · 중복 획득 없음</small></p>${player.level<20?'<p>현재 레벨은 권장 레벨보다 낮아요. 충분히 준비한 뒤 도전해 보세요.</p>':''}<button class="primary" id="challenge-boss">${boss.dead?'다시 결투하기':'결투 시작하기'}</button></div>`,'#challenge-boss');
  $('#challenge-boss').onclick=startBossFight;
 }
 function startBossFight(){
+ if(isTypeB(boss))return;
  if(scene!=='playing'||!MAPS[player.map].boss||!boss||!(isTypeA(boss)?beginTypeA(boss):beginSoldier(boss)))return;
  closeModal();resetJump();resetGait();cancelSword();resetCombat();hurtTime=0;attackTimer=0;
  player.x=isTypeA(boss)?600:720;player.y=650;facing=1;invincible=.8;potionCooldown=0;
@@ -485,7 +502,7 @@ function abandonBoss(){
  if(!bossActive())return;closeModal();player.x=290;player.y=648;resetWorld();buildHUD();save();toast('도전을 마쳤어요. 준비가 되면 다시 말을 걸어 주세요.');
 }
 function winBoss(){
- if(isTypeA(boss)){winTypeA();return;}
+ if(isTypeB(boss)){winTypeB();return;}if(isTypeA(boss)){winTypeA();return;}
  if(!boss||!defeatSoldier(boss))return;
  const owned=player.uniform>0;resetOtter();cancelSword();potionCooldown=0;player.uniform=1;player.bossWins++;player.kills++;
  const reward=xpReward(player,SOLDIER.xp,SOLDIER.level),gained=gainXp(player,SOLDIER.xp,SOLDIER.level);save();refreshHUD();
@@ -495,6 +512,7 @@ function winBoss(){
  $('#leave-reward').onclick=closeModal;
 }
 function updateBossFight(dt){
+ if(isTypeB(boss)){updateTypeBFight(dt);return;}
  if(chickStunned(boss)){boss.walking=false;return;}
  if(!bossActive())return;
  if(isTypeA(boss)){updateTypeAFight(dt);return;}
@@ -520,6 +538,72 @@ function updateBossFight(dt){
   if(player.hp<=0){die();return;}
  }
 }
+function refreshBHUD(){
+ const banner=$('#b-protocol'),qte=$('#b-qte');if(!banner||!qte)return;
+ const active=isTypeB(boss)&&boss.active,phase=active?boss.phase:'';
+ banner.hidden=!['protocol','awakening','awakened'].includes(phase);
+ banner.classList.toggle('awakening',phase==='awakening');
+ if(!banner.hidden)banner.textContent=phase==='protocol'?'섬멸 프로토콜 발동':phase==='awakened'?'각성 저지 실패 · 공격력 2배':`B형이 각성하려고 합니다. B형에게 접근하여 각성을 막으세요! (${Math.max(0,10-boss.elapsed).toFixed(1)}초)`;
+ qte.hidden=!(active&&boss.qteActive);
+ if(!qte.hidden){const arrow={ArrowLeft:'←',ArrowRight:'→',ArrowUp:'↑',ArrowDown:'↓'};$('#b-qte-arrows').innerHTML=boss.qteSequence.map((code,i)=>`<span class="${i<boss.qteProgress?'done':i===boss.qteProgress?'current':''}">${arrow[code]}</span>`).join('');}
+}
+function beginBInterruption(){
+ if(!startTypeBQte(boss,player))return;interactionTarget=null;keys.clear();resetJump();cancelSword();resetCombat();attackTimer=0;refreshHUD();canvas.focus();
+}
+function handleBArrow(code){
+ const result=inputTypeBQte(boss,code);if(result==='inactive'||result==='ignored')return;
+ if(result==='wrong'){beep(140,.1);toast('입력 오류 · 첫 화살표부터 다시!');}
+ else if(result==='success'){interactionTarget=null;keys.clear();beep(900,.25);toast('각성 저지 성공!');}
+ else beep(500+boss.qteProgress*40,.045);
+ refreshHUD();
+}
+function updateTypeBFight(dt){
+ if(!boss||!isTypeB(boss))return;
+ if(triggerTypeB(boss,player)){monsters=[boss];interactionTarget=null;potionCooldown=0;toast('낙하 위험! 바닥의 표시에서 벗어나세요.');refreshHUD();}
+ if(!boss.active)return;
+ const events=stepTypeB(boss,dt,{...bossPerception(),stunned:chickStunned(boss)});
+ if(boss.quakeRemaining>0)shake=Math.max(shake,2.2);
+ for(const e of events){
+  if(e.type==='victory'){winTypeB();return;}
+  if(e.type==='protocol'){beep(150,.5,'sawtooth',.02);refreshHUD();continue;}
+  if(e.type==='awaken-failed'){keys.clear();shake=12;beep(100,.7,'sawtooth',.03);refreshHUD();continue;}
+  if(e.type==='muzzle'){effects.push({type:'spark',x:e.x,y:e.y,life:.1,max:.1,color:'#ffd6a1',size:38});beep(130,.03,'square',.006);continue;}
+  if(e.type==='oil-spray'){beep(280,.2);continue;}
+  if(['landing','stomp','pizza-land','quake-start'].includes(e.type)){shake=Math.max(shake,e.type==='quake-start'?10:7);effects.push({type:'ring',x:boss.x,y:boss.y,life:.4,max:.4,color:'#ffb981',size:e.type==='landing'?220:180});beep(100,.15,'triangle',.02);}
+  if(e.type==='slash'){effects.push({type:'slash',x:e.x+e.dir*80,y:e.y-100,dir:e.dir,life:.32,max:.32,color:'#ff9c67',size:e.range});beep(190,.1);}
+  if(e.type==='pizza'){shake=Math.max(shake,6);beep(160,.16,'sawtooth',.012);}
+  if(e.type==='debris')effects.push({type:'ring',x:e.x,y:e.y,life:.24,max:.24,color:'#ffb179',size:e.rx});
+  const box=liveBallot();
+  if(box&&typeBHit(e,{...box,z:0})){
+   damageBallot(e.damage,boss);
+   if(e.type==='bullet'){e.shot.spent=true;continue;}
+   if(e.type==='dash')boss.dashHit=true;
+  }
+  if(!typeBHit(e,{x:player.x,y:player.y,z:pz}))continue;
+  if(e.type==='bullet')e.shot.spent=true;
+  if(e.type==='dash')boss.dashHit=true;
+  if(invincible>0)continue;
+  if(guardTime>0){recordSwordBlock(e.shot||boss,.12);continue;}
+  const damage=playerDamage(e.damage,boss,['laser','pizza'].includes(e.type)?'magic':'physical');
+  player.hp=Math.max(0,player.hp-damage);hurtTime=.32;invincible=.12;shake=Math.max(shake,5);
+  textAt(`−${damage}`,player.x,player.y-115,'#ff9b91');beep(120,.06,'square',.01);
+  if(player.hp<=0){die();return;}
+ }
+}
+function winTypeB(){
+ if(!defeatTypeB(boss))return;
+ resetCombat();cancelSword();cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;potionCooldown=0;
+ player.typeBWins=(player.typeBWins||0)+1;player.kills++;player.typeBTitle=1;player.money+=TYPE_B.money;player.cores+=TYPE_B.cores;
+ const reward=xpReward(player,TYPE_B.xp,TYPE_B.level);gainXp(player,TYPE_B.xp,TYPE_B.level);save();refreshHUD();beep(900,.5);
+ showModal('boss-victory','B형 격파',`<div class="boss-intro"><h3>섬멸 프로토콜 종료.</h3><p>두 페이즈를 돌파했습니다! 금빛 B형 칭호를 획득했어요.</p><p class="boss-reward">EXP +${reward.toLocaleString()} · ${TYPE_B.money.toLocaleString()}원 · 에너지 코어 ${TYPE_B.cores}개</p><div class="job-choice"><strong>금빛 칭호 · B형</strong><p>공격력 +20% · 이동속도 +10%<br>장착하면 몸 주변에 금빛 반짝임이 나타납니다.<br>A형 칭호와 동시에 장착할 수 없습니다.</p></div><button class="primary menu-wide" id="b-equip-reward">B형 칭호 장착하고 계속하기</button><button class="text-button menu-wide" id="b-leave-reward">나중에 장착하기 · 닫기</button></div>`,'#b-equip-reward');
+ $('#b-equip-reward').onclick=()=>{if(!hasTypeBTitle(player))equipTypeBTitle(player);save();closeModal();refreshHUD();};$('#b-leave-reward').onclick=closeModal;
+}
+function drawBTitleSparkles(){
+ if(!hasTypeBTitle(player))return;ctx.save();ctx.strokeStyle='#fff3b3';ctx.shadowColor='#ffd667';ctx.shadowBlur=8;ctx.lineWidth=1.5;
+ for(let i=0;i<9;i++){const phase=(worldTime*.6+i*.37)%1,alpha=Math.sin(phase*Math.PI);ctx.globalAlpha=alpha;const a=i*2.4+worldTime*.35,x=player.x-camera+Math.cos(a)*42,y=player.y-pz-20-phase*105,size=2+alpha*3;ctx.beginPath();ctx.moveTo(x-size,y);ctx.lineTo(x+size,y);ctx.moveTo(x,y-size);ctx.lineTo(x,y+size);ctx.stroke();}
+ ctx.restore();
+}
+
 function typeATalk(){
  showModal('boss-talk',`Lv.${TYPE_A.level} A형 · 가동 대기`,`<div class="boss-intro"><span class="boss-eyebrow">수료조건 · 전투 로봇</span><h3>침입자 감지. 전투 프로토콜 준비.</h3><p>전방 칼날, 기관총 연사, 붉은 충전 후 돌진, 0.5초 간격 4연속 표적 폭격을 사용합니다. 모든 타격에 내 최대 HP의 10%만큼 추가 피해가 적용됩니다.</p><ul><li>HP 40%: ${TYPE_A.safety.duration}초간 무적. 파란 안전지대 밖은 즉사합니다. 무적기나 막기로 회피할 수 있습니다.</li><li>HP 20%: 광폭화. 이동과 패턴이 빨라지고 4초 회전 칼날, 넓은 원형 자기장 흡인이 추가됩니다.</li><li>체력 ${TYPE_A.hp.toLocaleString()} · 회복 아이템 재사용 10초</li></ul><p class="boss-reward">EXP ${xpReward(player,TYPE_A.xp,TYPE_A.level).toLocaleString()} · 6,000원 · 에너지 코어 15개 · A형 칭호</p><button class="primary" id="challenge-boss">${boss.dead?'A형 다시 가동':'A형 가동 · 전투 시작'}</button></div>`,'#challenge-boss');
  $('#challenge-boss').onclick=startBossFight;
@@ -553,7 +637,7 @@ function updateTypeAFight(dt){
   if(guardTime>0){recordSwordBlock(e.shot||boss,.12);if(e.type==='execution')textAt('회피 성공!',player.x,player.y-150,'#b8f4ff');continue;}
   if(e.type==='pull'){
    const dx=boss.x-player.x,dy=boss.y-player.y,d=Math.hypot(dx,dy)||1,travel=Math.max(0,d-100);
-   player.x=clamp(player.x+dx/d*travel,45,MAPS[player.map].width-45);player.y=clamp(player.y+dy/d*travel,580,720);
+   player.x=clamp(player.x+dx/d*travel,45,MAPS[player.map].width-45);player.y=clamp(player.y+dy/d*travel,floorMin(),floorMax());
    resetGait();
   }
   const damage=e.type==='execution'?player.hp:playerDamage(e.damage+maxHp(player)*TYPE_A.maxHpDamage,boss,['blade','dash','spin','bullet'].includes(e.type)?'physical':'magic');
@@ -636,7 +720,7 @@ const SOLDIER_WALK_FRAMES=[
 ];
 function drawBoss(){
  if(!boss)return;
- if(isTypeA(boss)){drawTypeABoss();return;}
+ if(isTypeB(boss)){drawTypeBBody(ctx,boss,camera,images,worldTime);return;}if(isTypeA(boss)){drawTypeABoss();return;}
  const b=boss,phase=b.phase,counterPose=phase==='counter-windup'?Math.min(2,Math.floor(b.elapsed/SOLDIER.counter.windup*3)):phase==='counter'?3+Math.floor(b.elapsed/.12)%3:-1,walkPose=b.active&&!b.dead&&b.z===0&&phase==='approach'&&b.walking?Math.floor(b.walkPhase*8)%8:-1,img=images[counterPose>=0?'soldier-counter':walkPose>=0?'soldier-walk':'soldier-boss'],x=b.x-camera;
  const pose=phase==='leap'?5:['palm-charge','leap-charge'].includes(phase)?3:phase==='palm-release'?4:['slash','flurry'].includes(phase)?1+(Math.max(0,b.strikes-1)%2):phase==='landing'?2:0;
  ctx.save();ctx.fillStyle='#03101866';ctx.beginPath();ctx.ellipse(x,b.y+4,38*(1-b.z/420),10,0,0,Math.PI*2);ctx.fill();
@@ -681,7 +765,7 @@ function drawBossAura(b){
  }
 }
 function drawBossTelegraphs(){
- if(!bossActive())return;if(isTypeA(boss)){drawTypeATelegraphs();return;}const b=boss;
+ if(isTypeB(boss)){drawTypeBFloor(ctx,boss,camera,worldTime);return;}if(!bossActive())return;if(isTypeA(boss)){drawTypeATelegraphs();return;}const b=boss;
  const lane=(x,y,dir,length,half,color)=>{
   ctx.save();ctx.translate(x-camera,y);ctx.scale(dir,1);ctx.fillStyle=color+'38';ctx.strokeStyle=color;ctx.lineWidth=2;
   ctx.fillRect(-22,-half,length+22,half*2);ctx.strokeRect(-22,-half,length+22,half*2);
@@ -709,7 +793,7 @@ function drawBossTelegraphs(){
 }
 function resetJump(){pz=0;pvz=0;jumpScale=1;jumpPrep=0;jumpLanding=0;}
 function jump(){
- if(hackerUlt||otterConcert||otterWave?.riding||catCharge||catCastLock>0)return;
+ if(hackerUlt||otterConcert||otterWave?.riding||catCharge||catCastLock>0||boss?.qteActive)return;
  if(scene!=='playing'||modal||swordUlt||pz>0||pvz!==0||jumpPrep>0)return;
  walking=false;jumpPrep=player?.classId==='cat' ? .11 : .065;jumpLanding=0;beep(isPowered(player)?190:310,.12,'triangle',.04);
 }
@@ -1026,6 +1110,7 @@ function drawRabbitEffects(){
 
 function cancelCatCharge(){catCharge=null;}
 function startCatCharge(input='keyboard'){
+ if(boss?.qteActive)return false;
  if(scene!=='playing'||modal||player?.job!=='protester'||catCharge||catCastLock>0||swordUlt||guardTime>0||recovery)return false;
  const check=canUseSkill(player,'e',cooldowns.e);if(!check.ok){toast(check.message);return false;}
  catCharge={input,elapsed:0,skill:check.skill};combatMotion=null;walking=false;beep(420,.09);return true;
@@ -1047,7 +1132,7 @@ function catAreaHit(x,y,radius,damage,pull=0){
   if(scene!=='playing')break;
   if(pull>0&&!m.dead&&m.hp>0&&m.hp<before){
    const dx=x-m.x,dy=y-m.y,distance=Math.hypot(dx,dy),step=Math.min(pull,distance);
-   if(distance>0){m.x=clamp(m.x+dx/distance*step,60,MAPS[player.map].width-60);m.y=clamp(m.y+dy/distance*step,580,720);}
+   if(distance>0){m.x=clamp(m.x+dx/distance*step,60,MAPS[player.map].width-60);m.y=clamp(m.y+dy/distance*step,floorMin(),floorMax());}
   }
  }
 }
@@ -1131,6 +1216,7 @@ function castChick(key){
  refreshHUD();save();
 }
 function startChickCharge(input='keyboard'){
+ if(boss?.qteActive)return false;
  if(scene!=='playing'||modal||player?.job!=='hacker'||chickCharge||hackerUlt||attackTimer>0)return false;
  const check=canUseSkill(player,'e',cooldowns.e);if(!check.ok){toast(check.message);return false;}
  chickCharge={input,elapsed:0,skill:check.skill,dir:facing};walking=false;refreshHUD();return true;
@@ -1264,20 +1350,20 @@ function drawChickEffects(){
  ctx.globalAlpha=1;ctx.shadowBlur=0;
  if(chickCharge){const a=chickArea();ctx.save();ctx.translate(a.x-camera,a.y);drawHackGrid(a.width,a.height,chickCharge.elapsed/chickCharge.skill.charge,true);ctx.restore();label(`SYSTEM LOCK · ${Math.round(chickCharge.elapsed/chickCharge.skill.charge*100)}%`,a.x-camera,a.y-a.height/2-23,'#b4ffe4',13);}
  for(const m of monsters){
-  if(!chickStunned(m))continue;const x=m.x-camera,height=m.isBoss?(isTypeA(m)?TYPE_A.height:180):72+m.level*3;
+  if(!chickStunned(m))continue;const x=m.x-camera,height=m.isBoss?(isTypeB(m)?TYPE_B.height:isTypeA(m)?TYPE_A.height:180):72+m.level*3;
   ctx.strokeStyle='#95ffdc';ctx.lineWidth=2;
   for(let i=0;i<8;i++){const offset=Math.sin(worldTime*27+i*13)*55,y=m.y-height+i*height/8;ctx.fillStyle=i%2?'#a4ffe7aa':'#b7a1ff99';ctx.fillRect(x+offset-22,y,25+(i%3)*12,3);}
   label(m.hack?'해킹당함!':'시스템 정지',x,m.y-height-47,'#adffe7',14);
  }
  if(hackerUlt){const m=findHackTarget(hackerUlt.targetId);if(m){
-  const x=m.x-camera,height=m.npcId?(m.npcId==='shop'?MAGURI_WIDTH*MAGURI_CROP[3]/MAGURI_CROP[2]:122):m.isBoss?(isTypeA(m)?TYPE_A.height:180):72+m.level*3,y=m.y-height-85+Math.sin(worldTime*6)*5;
+  const x=m.x-camera,height=m.npcId?(m.npcId==='shop'?MAGURI_WIDTH*MAGURI_CROP[3]/MAGURI_CROP[2]:122):m.isBoss?(isTypeB(m)?TYPE_B.height:isTypeA(m)?TYPE_A.height:180):72+m.level*3,y=m.y-height-85+Math.sin(worldTime*6)*5;
   ctx.fillStyle='#c4ffe8';ctx.shadowColor='#6cfbdb';ctx.shadowBlur=14;ctx.beginPath();ctx.moveTo(x-18,y);ctx.lineTo(x+18,y);ctx.lineTo(x,y+22);ctx.closePath();ctx.fill();ctx.shadowBlur=0;
   label(hackerUlt.phase==='selecting'?(m.npcId?`대상 · ${m.name}`:`대상 · Lv.${m.level} · HP ${Math.ceil(m.hp)}`):'해킹 연결 중',x,y-24,'#c2ffe6',14);
  }}ctx.restore();
 }
 
 function attack(){
- if(chickCharge||hackerUlt||otterConcert)return;
+ if(chickCharge||hackerUlt||otterConcert||boss?.qteActive)return;
  if(scene!=='playing'||modal||swordUlt||guardTime>0||recovery||attackTimer>0)return;
  if(catCharge||catCastLock>0)return;
  if(player.classId==='chick'){if(player.job==='hacker')chickCodeAttack();else chickPunch(false);return;}
@@ -1309,7 +1395,7 @@ function releaseSwordGuard(){
  refreshHUD();save();
 }
 function cast(key){
- if(hackerUlt||chickCharge||otterConcert)return;
+ if(hackerUlt||chickCharge||otterConcert||boss?.qteActive)return;
  if(scene!=='playing'||modal||swordUlt||recovery||combatMotion?.guardRelease)return;
  // The second E belongs to the active guard, so it must precede cooldown checks.
  if(guardTime>0){if(key==='e')releaseSwordGuard();return;}
@@ -1385,7 +1471,7 @@ function reflectBossAttack(b,rawDamage){
  if(player.hp<=0){die();return;}
  refreshHUD();save();
 }
-function hitMonster(m,damage,knockback=14,impact='default'){if(scene!=='playing'||!canTarget(m))return;if(m.isBoss){if(m!==boss)return;if(isTypeA(m)){const dealt=damageTypeA(m,damage,player);textAt(String(dealt),m.x,m.y-300,'#ffbdad');if(m.hp<=0)winBoss();return;}const reflected=chickStunned(m)?0:counterDamage(m,damage);if(reflected){reflectBossAttack(m,reflected);return;}m.hp=Math.max(0,m.hp-damage);m.hit=.16;textAt(String(damage),m.x,m.y-180,!player.job?'#e0e5e8':player.job==='bodybuilder'?FX_PALETTES.builder.color:undefined);if(m.hp<=0)winBoss();return;}m.hp-=damage;m.hit=.28;m.hitDir=facing;if(!chickStunned(m))m.x=clamp(m.x+facing*knockback,60,MAPS[player.map].width-60);textAt(String(damage),m.x,m.y-90,!player.job?'#e0e5e8':player.job==='bodybuilder'?FX_PALETTES.builder.color:undefined);if(player.classId==='rabbit')effects.push({type:'ring',x:m.x,y:m.y-45,life:.22,max:.22,color:'#d5a6ff',size:48});else if(!['blade','water'].includes(impact))attackImpactAt(m.x,m.y-38,42);shake=Math.max(shake,isPowered(player)?5:2.5);if(player.job&&!['blade','water'].includes(impact))effects.push({type:'spark',x:m.x,y:m.y-38,life:.2,max:.2,color:player.job==='hacker'?'#a7ffe2':player.job==='mage'?'#d8baff':player.job==='bodybuilder'?FX_PALETTES.builder.accent:'#ffd79a',size:25});if(m.hp>0)return;m.dead=true;m.deathFx=.28;m.respawnIn=12;player.kills++;drops.push({x:m.x-17,y:m.y+6,type:'money',amount:14+m.level*8,life:60},{x:m.x+20,y:m.y-3,type:m.level>=4?'cores':'scrap',amount:1,life:60});if(Math.random()<.22)drops.push({x:m.x+4,y:m.y+23,type:'potions',amount:1,life:60});const gained=gainXp(player,m.xp??(12+m.level*7),m.level);if(gained){textAt(`LEVEL UP · ${player.level}`,player.x,player.y-155,'#b8ffe3');const unlocked=skillsFor(player).filter(s=>skillUnlocked(player,s)&&s.level>player.level-gained);toast(`Lv. ${player.level} 달성! HP·MP 완전 회복${unlocked.length?' · '+unlocked.map(s=>s.key.toUpperCase()+' '+s.name).join(', ')+' 습득':''}${!player.job&&player.level>=10&&player.level-gained<10?(['chick','otter'].includes(player.classId)?' · 메이플아지트에서 전직 가능':player.classId==='rabbit'?' · 마구리에게 전직 가능':player.classId==='cat'?' · 올림픽공원에서 전직 가능':' · 헬스장/검도장에서 전직 가능'):''}`);effects.push({type:'ring',x:player.x,y:player.y-40,life:1,max:1,color:'#ffe6a6',size:160});beep(900,.45);}save();}
+function hitMonster(m,damage,knockback=14,impact='default'){if(scene!=='playing'||!canTarget(m))return;if(m.isBoss){if(m!==boss)return;if(isTypeB(m)){const dealt=damageTypeB(m,damage);textAt(String(Math.round(dealt)),m.x,m.y-350,'#ffcf9a');return;}if(isTypeA(m)){const dealt=damageTypeA(m,damage,player);textAt(String(dealt),m.x,m.y-300,'#ffbdad');if(m.hp<=0)winBoss();return;}const reflected=chickStunned(m)?0:counterDamage(m,damage);if(reflected){reflectBossAttack(m,reflected);return;}m.hp=Math.max(0,m.hp-damage);m.hit=.16;textAt(String(damage),m.x,m.y-180,!player.job?'#e0e5e8':player.job==='bodybuilder'?FX_PALETTES.builder.color:undefined);if(m.hp<=0)winBoss();return;}m.hp-=damage;m.hit=.28;m.hitDir=facing;if(!chickStunned(m))m.x=clamp(m.x+facing*knockback,60,MAPS[player.map].width-60);textAt(String(damage),m.x,m.y-90,!player.job?'#e0e5e8':player.job==='bodybuilder'?FX_PALETTES.builder.color:undefined);if(player.classId==='rabbit')effects.push({type:'ring',x:m.x,y:m.y-45,life:.22,max:.22,color:'#d5a6ff',size:48});else if(!['blade','water'].includes(impact))attackImpactAt(m.x,m.y-38,42);shake=Math.max(shake,isPowered(player)?5:2.5);if(player.job&&!['blade','water'].includes(impact))effects.push({type:'spark',x:m.x,y:m.y-38,life:.2,max:.2,color:player.job==='hacker'?'#a7ffe2':player.job==='mage'?'#d8baff':player.job==='bodybuilder'?FX_PALETTES.builder.accent:'#ffd79a',size:25});if(m.hp>0)return;m.dead=true;m.deathFx=.28;m.respawnIn=12;player.kills++;drops.push({x:m.x-17,y:m.y+6,type:'money',amount:14+m.level*8,life:60},{x:m.x+20,y:m.y-3,type:m.level>=4?'cores':'scrap',amount:1,life:60});if(Math.random()<.22)drops.push({x:m.x+4,y:m.y+23,type:'potions',amount:1,life:60});const gained=gainXp(player,m.xp??(12+m.level*7),m.level);if(gained){textAt(`LEVEL UP · ${player.level}`,player.x,player.y-155,'#b8ffe3');const unlocked=skillsFor(player).filter(s=>skillUnlocked(player,s)&&s.level>player.level-gained);toast(`Lv. ${player.level} 달성! HP·MP 완전 회복${unlocked.length?' · '+unlocked.map(s=>s.key.toUpperCase()+' '+s.name).join(', ')+' 습득':''}${!player.job&&player.level>=10&&player.level-gained<10?(['chick','otter'].includes(player.classId)?' · 메이플아지트에서 전직 가능':player.classId==='rabbit'?' · 마구리에게 전직 가능':player.classId==='cat'?' · 올림픽공원에서 전직 가능':' · 헬스장/검도장에서 전직 가능'):''}`);effects.push({type:'ring',x:player.x,y:player.y-40,life:1,max:1,color:'#ffe6a6',size:160});beep(900,.45);}save();}
 function die(){
  if(scene!=='playing')return;closeModal();setScene('dead');beep(130,.5,'triangle');respawn(player);
  const townName=escapeHtml(MAPS[player.map].name);
@@ -1401,15 +1487,15 @@ function update(dt){
  if(bossActive())potionCooldown=Math.max(0,potionCooldown-dt);
  guardTime=Math.max(0,guardTime-dt);if(guardTime===0){guardBlocks=0;guardBlockTimes.clear();}updateCombat(dt);hurtTime=Math.max(0,hurtTime-dt);updateSword(dt);if(modal||scene!=='playing')return;
  if(invincible>0)invincible-=dt;if(attackTimer>0)attackTimer-=dt;for(const k in cooldowns)cooldowns[k]=Math.max(0,cooldowns[k]-dt);if(player.powerTime>0){player.powerTime=Math.max(0,player.powerTime-dt);if(player.powerTime===0){toast('평범한 펭귄으로 돌아왔어요.');save();}}shake=Math.max(0,shake-dt*20);if(swordUlt?.phase==='charging')shake=Math.max(shake,2+swordUlt.elapsed*.9);
- let dx=(keys.has('ArrowRight')?1:0)-(keys.has('ArrowLeft')?1:0),dy=(keys.has('ArrowDown')?1:0)-(keys.has('ArrowUp')?1:0);if(swordUlt||combatMotion?.fromX!==undefined){dx=0;dy=0;}if(hackerUlt||chickCharge||otterWave?.riding){dx=0;dy=0;}if(dx)facing=dx;const norm=Math.hypot(dx,dy)||1;
+ let dx=(keys.has('ArrowRight')?1:0)-(keys.has('ArrowLeft')?1:0),dy=(keys.has('ArrowDown')?1:0)-(keys.has('ArrowUp')?1:0);if(swordUlt||combatMotion?.fromX!==undefined){dx=0;dy=0;}if(hackerUlt||chickCharge||otterWave?.riding||isTypeB(boss)&&boss.qteActive){dx=0;dy=0;}if(dx)facing=dx;const norm=Math.hypot(dx,dy)||1;
  const stepX=player.x,stepY=player.y,wasGrounded=pz===0&&pvz===0;
- player.x=clamp(player.x+dx/norm*285*movementMultiplier(player)*(chickStealth>0?1.5:1)*moveDt,45,MAPS[player.map].width-45);player.y=clamp(player.y+dy/norm*175*movementMultiplier(player)*(chickStealth>0?1.5:1)*moveDt,580,720);
+ player.x=clamp(player.x+dx/norm*285*movementMultiplier(player)*typeBMoveSlow(boss,player)*(chickStealth>0?1.5:1)*moveDt,45,MAPS[player.map].width-45);player.y=clamp(player.y+dy/norm*175*movementMultiplier(player)*typeBMoveSlow(boss,player)*(chickStealth>0?1.5:1)*moveDt,floorMin(),floorMax());
  updateJump(dt);
  // Count only clamped keyboard movement, before dash, knockback or teleport effects.
  const stepDistance=Math.hypot(player.x-stepX,player.y-stepY);
  walking=wasGrounded&&jumpFrame()<0&&stepDistance>.001&&!swordUlt;
  if(walking)walkPhase=(walkPhase+stepDistance/(isPowered(player)?220:165))%1;
- if(keys.has('KeyA')&&!swordUlt)attack();if(modal||scene!=='playing')return;
+ if(keys.has('KeyA')&&!swordUlt&&!boss?.qteActive)attack();if(modal||scene!=='playing')return;
  const townRegen=['town','gangnam','yeoksamStreet'].includes(player.map)?2:1;
  player.mp=Math.min(maxMp(player),player.mp+dt*(player.map==='gym'?6:2.2)*townRegen);if(!MAPS[player.map].danger&&!bossActive())player.hp=Math.min(maxHp(player),player.hp+dt*(player.map==='gym'?12:6)*townRegen);
  updateRabbit(dt);if(scene!=='playing'||modal)return;
@@ -1474,7 +1560,7 @@ function drawBackground(mapId){
    const start=Math.floor((camera-pad)/tile)*tile-tile;
    for(let x=start;x+off<width+pad;x+=tile)paint(source[0],source[2],x+off,tile);
   }
-  if(top<0){const skyFade=ctx.createLinearGradient(0,top,0,0);skyFade.addColorStop(0,'#092333');skyFade.addColorStop(.78,'#092333');skyFade.addColorStop(1,'#09233300');ctx.fillStyle=skyFade;ctx.fillRect(-pad,top,width+2*pad,-top);}
+  if(top<0){const skyFade=ctx.createLinearGradient(0,top,0,0);skyFade.addColorStop(0,mapId==='proBoss'?'#03070b':'#092333');skyFade.addColorStop(.78,mapId==='proBoss'?'#03070b':'#092333');skyFade.addColorStop(1,mapId==='proBoss'?'#03070b00':'#09233300');ctx.fillStyle=skyFade;ctx.fillRect(-pad,top,width+2*pad,-top);}
   if(map.tint){ctx.fillStyle=map.tint;ctx.fillRect(-pad,top,width+2*pad,bottom-top);}
 
  }
@@ -1487,7 +1573,7 @@ function drawPortal(portal){
  for(let i=0;i<3;i++){ctx.strokeStyle=`rgba(${rgb},${.75-i*.2})`;ctx.lineWidth=4-i;ctx.beginPath();ctx.ellipse(x,y-48,35+i*5+Math.sin(worldTime*2+i)*3,68+i*3,0,0,Math.PI*2);ctx.stroke();}
  const glow=ctx.createRadialGradient(x,y-40,2,x,y-40,60);glow.addColorStop(0,isBossPortal?'#ff456640':isSafePortal?'#64ff7328':'#8fffe428');glow.addColorStop(1,isBossPortal?'#ff456600':isSafePortal?'#64ff7300':'#8fffe400');ctx.fillStyle=glow;ctx.fillRect(x-65,y-120,130,150);
  ctx.shadowBlur=0;ctx.strokeStyle=isBossPortal?'#ff718aaa':isSafePortal?'#83ff8875':'#9dedda75';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y+19,48,12,0,0,Math.PI*2);ctx.stroke();
- label(portal.label,x,y-141,isBossPortal?'#ffb9c4':isSafePortal?'#c1ffc1':'#b9ffe7',16);label(destination.bossEntrance?'시험장 · 준비 중':isBossPortal?`보스방 · Lv.${destination.bossLevel||25}`:portal.level,x,y-112,isBossPortal?'#ff91a3':isSafePortal?'#a6f4ad':'#a9cbcf',12);ctx.restore();
+ label(portal.label,x,y-141,isBossPortal?'#ffb9c4':isSafePortal?'#c1ffc1':'#b9ffe7',16);label(destination.bossEntrance?'B형 · 입장 대기실':isBossPortal?`보스방 · Lv.${destination.bossLevel||25}`:portal.level,x,y-112,isBossPortal?'#ff91a3':isSafePortal?'#a6f4ad':'#a9cbcf',12);ctx.restore();
 }
 function drawNPC(npc){
  if(npc.id==='exam-entry'){drawExamEntrance(npc);return;}
@@ -1726,7 +1812,7 @@ function drawCatPlayer(x,y){
  ctx.restore();drawPlayerName(player.name,x,y-pz-height-15,'#e5f3ff');
 }
 function drawPlayerName(name,x,y,color){
- if(hasTypeATitle(player))label('A형',x,y-30,'#d5d9e1',14);
+ if(hasTypeBTitle(player))label('B형',x,y-30,'#ffe493',16);else if(hasTypeATitle(player))label('A형',x,y-30,'#d5d9e1',14);
  label(name,x,y,color,14);
 }
 function drawPlayer(){
@@ -1918,11 +2004,11 @@ function draw(){
  if(isPlay){ctx.translate(viewShakeX,viewShakeY+viewOffsetY());ctx.scale(cameraZoom,cameraZoom);}
  if(isPlay)drawBackground(player.map);
  if(isPlay){
-  if(!bossActive())MAPS[player.map].portals.forEach(drawPortal);
+  if(!bossActive())MAPS[player.map].portals.filter(p=>!p.requiresNPC).forEach(drawPortal);
   drawBossTelegraphs();drawEnemyWarnings();
   if(['gangnam','yeoksamStreet'].includes(player.map))label(MAPS[player.map].name,1070-camera,345,'#d4f4df',20);
   else if(player.map==='station6')label(MAPS.station6.name,490-camera,252,'#d4f4df',20);
-  else if(player.map!=='town')label(MAPS[player.map].name,820-camera,375,MAPS[player.map].color,20);
+  else if(player.map!=='town'&&player.map!=='proBoss')label(MAPS[player.map].name,820-camera,375,MAPS[player.map].color,20);
   const entities=[
    ...monsters.filter(m=>(!m.dead||m.deathFx>0)&&!m.isBoss).map(m=>({y:m.y,draw:()=>drawMonster(m)})),
    ...drops.map(d=>({y:d.y,draw:()=>drawDrop(d)})),
@@ -1933,7 +2019,7 @@ function draw(){
   // Wave stays behind the surfer so its crest cannot cover the character.
   if(otterWave)entities.push({y:otterWave.y-.1,draw:()=>drawWaterWave(ctx,otterWave,camera,images['otter-wave-v144'])});
   drawCatGround();drawGuardBack();entities.sort((a,b)=>a.y-b.y).forEach(e=>e.draw());drawCatFields();
-  drawCombatIndicators();drawEffects();drawEnemyProjectiles();drawRabbitEffects();drawChickEffects();drawOtterEffects();
+  drawCombatIndicators();drawEffects();drawTypeBAir(ctx,boss,camera,worldTime);drawBTitleSparkles();drawEnemyProjectiles();drawRabbitEffects();drawChickEffects();drawOtterEffects();
   if(MAPS[player.map].danger>=2){
    for(let i=0;i<20;i++){const x=(i*163+worldTime*13)%screenWidth,y=120+(i*97)%520;ctx.fillStyle=`rgba(190,163,243,${.15+Math.sin(worldTime+i)*.1})`;ctx.fillRect(x,y,3,3);}
   }
@@ -1950,6 +2036,7 @@ document.addEventListener('keydown',e=>{
  if(e.target.matches('input,textarea'))return;
  if(scene==='title'&&e.code==='Enter'){e.preventDefault();selectCharacters();return;}
  if(scene!=='playing')return;
+ if(isTypeB(boss)&&boss.qteActive){e.preventDefault();if(!e.repeat){if(e.code==='Escape'){boss.qteActive=false;keys.clear();refreshBHUD();}else handleBArrow(e.code);}return;}
  if(hackerUlt?.phase==='selecting'&&['ArrowLeft','ArrowRight','Enter','Escape'].includes(e.code)){e.preventDefault();if(!e.repeat){if(e.code==='Enter')confirmHack();else if(e.code==='Escape')cancelHackSelection();else cycleHack(e.code==='ArrowLeft'?-1:1);}return;}
  if(gameCodes.has(e.code)||e.code==='Escape')e.preventDefault();
  keys.add(e.code);if(e.repeat)return;
@@ -1957,7 +2044,7 @@ document.addEventListener('keydown',e=>{
 });
 document.addEventListener('keyup',e=>{keys.delete(e.code);if(e.code==='KeyR')releaseSword('keyboard');if(e.code==='KeyE'){releaseCatCharge('keyboard');releaseChickCharge('keyboard');}});window.addEventListener('blur',()=>{walking=false;cancelSword();cancelCatCharge();cancelChickAim();keys.clear();if(player)save();});document.addEventListener('visibilitychange',()=>{walking=false;if(document.hidden){cancelSword();cancelCatCharge();cancelChickAim();}keys.clear();prev=0;if(player)save();});window.addEventListener('pagehide',()=>{walking=false;cancelSword();cancelCatCharge();cancelChickAim();if(player)save();});
 canvas.addEventListener('pointerdown',e=>{canvas.focus();if(scene!=='playing'||modal)return;const r=canvas.getBoundingClientRect(),point=screenToWorld((e.clientX-r.left)/r.width*screenWidth,(e.clientY-r.top)/r.height*810),{x,y}=point;const nearby=findInteraction();if(nearby&&Math.abs(nearby.x-x)<80&&y>nearby.y-Math.max(170,nearby.height??0)&&y<nearby.y+40)interact();});
-document.querySelectorAll('[data-hold]').forEach(b=>{b.addEventListener('pointerdown',e=>{e.preventDefault();if(hackerUlt?.phase==='selecting'){if(['ArrowLeft','ArrowRight'].includes(b.dataset.hold))cycleHack(b.dataset.hold==='ArrowLeft'?-1:1);return;}b.setPointerCapture(e.pointerId);keys.add(b.dataset.hold);});for(const type of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(type,()=>keys.delete(b.dataset.hold));});
+document.querySelectorAll('[data-hold]').forEach(b=>{b.addEventListener('pointerdown',e=>{e.preventDefault();if(isTypeB(boss)&&boss.qteActive){handleBArrow(b.dataset.hold);return;}if(hackerUlt?.phase==='selecting'){if(['ArrowLeft','ArrowRight'].includes(b.dataset.hold))cycleHack(b.dataset.hold==='ArrowLeft'?-1:1);return;}b.setPointerCapture(e.pointerId);keys.add(b.dataset.hold);});for(const type of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(type,()=>keys.delete(b.dataset.hold));});
 document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>({jump,interact,potion:drinkPotion}[b.dataset.action]?.()));
 $('#start-button').onclick=selectCharacters;
 new ResizeObserver(resize).observe($('.game-shell'));resize();requestAnimationFrame(frame);
