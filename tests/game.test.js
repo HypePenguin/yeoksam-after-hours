@@ -2037,7 +2037,7 @@ test('late W repress does not ride, spend MP twice or reset its cooldown',()=>{
  const {h,p}=otterFixture();h.api.cast('w');advance(h,.7);const w=h.api.get().otterWave,mp=p.mp,wait=h.api.get().cooldowns.w;h.api.cast('w');assert.equal(w.riding,false);assert.equal(p.mp,mp);assert.equal(h.api.get().cooldowns.w,wait);
 });
 test('three orbiting bubbles pop independently and survive the shield breaking',()=>{
- const {h,p}=otterFixture();h.api.cast('e');const b=h.api.get().otterBubbles,shield=h.api.get().otterShield;assert.equal(b.orbs.length,3);assert.equal(shield.hp,Math.round(core.maxHp(p)*.3));
+ const {h,p}=otterFixture();h.api.cast('e');const b=h.api.get().otterBubbles,shield=h.api.get().otterShield;assert.equal(b.orbs.length,3);assert.equal(shield.hp,Math.round(core.maxHp(p)*.1));
  b.elapsed=.01;const point=h.api.otterOrbPoint(b,0);b.elapsed=0;const m=placeOtterEnemy(h,0,point.x,point.y);h.api.update(.01);
  assert.equal(b.orbs[0].active,false);assert.equal(b.orbs.filter(o=>o.active).length,2);assert.equal(m.hp,10000-Math.round(core.attackPower(p)*1.8));
  assert.equal(h.api.playerDamage(shield.hp+50),50);assert.equal(h.api.get().otterShield,null);assert.equal(b.orbs.filter(o=>o.active).length,2);
@@ -2050,7 +2050,7 @@ test('all three bubbles can damage separate targets in one frame and shield rema
  h.api.get().monsters.forEach(m=>m.dead=true);assert.equal(h.api.get().otterShield,shield);assert.equal(p.hp,hp);advance(h,4.8);assert.ok(h.api.get().otterShield);advance(h,.3);assert.equal(h.api.get().otterShield,null);assert.equal(h.api.get().otterBubbles,null);
 });
 test('otter shield is added to the HP display and absorbs reduced damage before health',()=>{
- const {h,p}=otterFixture();h.api.cast('e');h.api.refreshHealthHUD();const shield=h.api.get().otterShield.hp;assert.equal(h.el('#hp-text').textContent,`${p.hp} + ${shield} / ${core.maxHp(p)}`);assert.equal(h.api.playerDamage(50),0);assert.equal(h.api.get().otterShield.hp,shield-50);
+ const {h,p}=otterFixture();h.api.cast('e');h.api.refreshHealthHUD();const shield=h.api.get().otterShield.hp;assert.equal(h.el('#hp-text').textContent,`${p.hp} + ${shield} / ${core.maxHp(p)}`);const hit=Math.floor(shield/2);assert.equal(h.api.playerDamage(hit),0);assert.equal(h.api.get().otterShield.hp,shield-hit);assert.equal(h.api.playerDamage(shield-hit+10),10);assert.equal(h.api.get().otterShield,null);
 });
 test('concert damages only visible enemies for ten ticks, heals 10 percent HP per second and removes its 20 percent buffs at five seconds',()=>{
  const {h,p}=otterFixture();p.hp=10;const base=core.attackPower(p),speed=core.movementMultiplier(p);h.api.cast('r');const c=h.api.get().otterConcert;
