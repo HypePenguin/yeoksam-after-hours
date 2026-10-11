@@ -389,6 +389,24 @@ test('inventory toggles with I, pauses movement and binds numbers without consum
  key(h,'Digit1');assert.equal(p.potions,1);assert.equal(p.hp,100);key(h,'Digit1');assert.equal(p.potions,1);
  p.quickSlots[0]=null;key(h,'Digit1');assert.equal(p.potions,1);h.api.worldMap();key(h,'Digit3');assert.equal(p.potions,1);
 });
+test('inventory hides empty stacks and selects another owned item after the last use',()=>{
+ const h=harness(),p=core.createCharacter('빈스택');Object.assign(p,{potions:1,hp:10,mpPotions:1,scrap:2});h.api.start(p);h.api.inventory('potions');
+ let html=h.el('#modal-root').innerHTML;
+ assert.ok(html.includes('data-bag-item="potions"'));assert.ok(html.includes('data-bag-item="scrap"'));
+ assert.ok(!html.includes('data-bag-item="uniform"'));assert.ok(!html.includes('data-bag-item="returnScrolls"'));
+ h.el('#bag-use').onclick();html=h.el('#modal-root').innerHTML;
+ assert.equal(p.potions,0);assert.ok(!html.includes('data-bag-item="potions"'));
+ assert.match(html,/data-bag-item="mpPotions" aria-pressed="true"/);
+ key(h,'Digit2');assert.equal(p.quickSlots[1],'mpPotions');assert.equal(p.quickSlots[0],'potions');
+});
+test('empty inventory has no detail and numeric registration preserves saved shortcuts',()=>{
+ const h=harness(),p=core.createCharacter('빈가방');for(const id of Object.keys(core.ITEMS))p[id]=0;
+ h.api.start(p);h.api.inventory('potions');const html=h.el('#modal-root').innerHTML;
+ assert.match(html,/보유한 아이템이 없습니다/);assert.ok(!html.includes('data-bag-item='));assert.ok(!html.includes('id="bag-use"'));
+ assert.match(html,/data-assign-slot="0"[^>]*disabled/);
+ key(h,'Digit1');assert.equal(p.quickSlots[0],'potions');assert.match(h.el('#toast').textContent,/등록할 아이템이 없습니다/);
+ h.api.registerInventorySlot(0,null);assert.equal(p.quickSlots[0],null);
+});
 test('scroll recall clears dungeon, jump and charge state and immediately saves the destination',()=>{
  for(const fromBag of [false,true]){
   const {h,p}=swordHarness();p.returnScrolls=2;p.quickSlots[1]='returnScrolls';p.hp=37;h.api.startSwordCharge();const mp=p.mp;
@@ -2202,7 +2220,7 @@ test('entry shows a standalone portrait before motion assets finish loading',asy
 test('renamed inventory items share artwork across shop, bag, quick slots and collectible drops',()=>{
  const h=harness(),p=core.createCharacter('기존아이템');Object.assign(p,{money:2000,mpPotions:2,returnScrolls:3,uniform:1,typeATitle:1,scrap:4,cores:5,quickSlots:['potions','mpPotions','returnScrolls']});h.api.start(p);
  h.api.inventory();let html=h.el('#modal-root').innerHTML;
- for(const item of Object.values(core.ITEMS)){assert.ok(html.includes(item.name));assert.ok(html.includes(item.image));}
+ for(const [id,item] of Object.entries(core.ITEMS)){if(p[id]>0){assert.ok(html.includes(item.name));assert.ok(html.includes(item.image));}else assert.ok(!html.includes(`data-bag-item="${id}"`));}
  h.api.closeModal();h.api.shop();html=h.el('#modal-root').innerHTML;
  for(const id of core.shopItemsFor(p)){assert.ok(html.includes(core.ITEMS[id].name));assert.ok(html.includes(core.ITEMS[id].image));}
  h.api.closeModal();const slots=[0,1,2].map(i=>{const b=h.el('test-slot-'+i);b.dataset.itemSlot=String(i);return b;});h.document.querySelectorAll=selector=>selector==='[data-item-slot]'?slots:[];
