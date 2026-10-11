@@ -293,3 +293,5 @@ main{width:100%;max-width:1512px;min-height:100svh;margin:0 auto;padding:24px;di
 @media(max-width:600px){.b-qte{bottom:95px;padding:8px}#b-qte-arrows{gap:1px}#b-qte-arrows span{padding:2px 3px}.b-protocol{top:26%;max-width:85%;padding:8px}}
 
 @media(max-width:650px){.game-screen:has(.boss-hud.type-b) .b-protocol{display:none}.boss-hud.type-b-critical #boss-cue{color:#ff7468;font-weight:800;font-size:12px}}
+
+.boss-intro #b-clear-time .clear-play-time{font-size:clamp(22px,4vw,32px);font-weight:800;color:#ffe493;margin:8px 0}.boss-intro #b-clear-time small{display:block;line-height:1.6;color:#a9c2c5}

@@ -1,11 +1,11 @@
-import {TYPE_B,isTypeB,createTypeB,triggerTypeB,typeBTargetable,stepTypeB,damageTypeB,typeBHit,defeatTypeB,typeBCue,typeBMoveSlow,startTypeBQte,inputTypeBQte} from './type-b.js?v=148';
-import {drawTypeBFloor,drawTypeBBody,drawTypeBAir} from './type-b-effects.js?v=148';
-import {ORB_ATTACK,stepOrbCaster,orbBlastContains,orbFlightPoint,drawOrbWarning,drawEnemyOrb} from './enemy-combat.js?v=148';
-import {otterMouthPoint,drawWaterJet,drawWaterSplash,drawWaterWave,drawWaterOrb,drawWaterShield} from './otter-effects.js?v=148';
-import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawFireFootprint,drawBallotVortex} from './cat-effects.js?v=148';
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,equipTypeBTitle,itemEquipped,hasTypeATitle,hasTypeBTitle,incomingDamage,WORLD_MAP_LAYOUT,WORLD_MAP_HEIGHT,worldMapConnections,catAreaRadii,catAreaContains} from './core.js?v=148';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=148';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=148';
+import {TYPE_B,isTypeB,createTypeB,triggerTypeB,typeBTargetable,stepTypeB,damageTypeB,typeBHit,defeatTypeB,typeBCue,typeBMoveSlow,startTypeBQte,inputTypeBQte} from './type-b.js?v=149';
+import {drawTypeBFloor,drawTypeBBody,drawTypeBAir} from './type-b-effects.js?v=149';
+import {ORB_ATTACK,stepOrbCaster,orbBlastContains,orbFlightPoint,drawOrbWarning,drawEnemyOrb} from './enemy-combat.js?v=149';
+import {otterMouthPoint,drawWaterJet,drawWaterSplash,drawWaterWave,drawWaterOrb,drawWaterShield} from './otter-effects.js?v=149';
+import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawFireFootprint,drawBallotVortex} from './cat-effects.js?v=149';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,equipTypeBTitle,itemEquipped,hasTypeATitle,hasTypeBTitle,incomingDamage,WORLD_MAP_LAYOUT,WORLD_MAP_HEIGHT,worldMapConnections,catAreaRadii,catAreaContains,formatPlayTime} from './core.js?v=149';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=149';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=149';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -54,6 +54,13 @@ async function loadSceneAssets(p){const results=await Promise.all(sceneAssets(p)
 let records=[],storageBroken=false;
 try{const saved=localStorage.getItem(SAVE_KEY);if(saved){const parsed=JSON.parse(saved);if(!parsed||parsed.version!==1||!Array.isArray(parsed.characters))throw new Error('invalid save');records=parsed.characters.map(normalizeCharacter).filter(Boolean);}}catch{storageBroken=true;}
 let scene='title',player=null,selectedId=records[0]?.id??null,modal=null,returnFocus=null,keys=new Set(),monsters=[],drops=[],effects=[],texts=[],camera=0,worldTime=0,screenWidth=1440,prev=0,lastHud=0,saveClock=0,toastTimer=null,transitionId=0,lastSavedLabel='',walking=false,walkPhase=0,soundOn=false,audioContext=null;
+// Count real foreground gameplay, independently of the capped simulation delta.
+let playClockAt=null,playClockPlayer=null,playWindowFocused=typeof document.hasFocus==='function'?document.hasFocus():true;
+function syncPlayTime(now=performance.now()){
+ if(playClockAt!==null&&playClockPlayer)playClockPlayer.activePlaySeconds=(playClockPlayer.activePlaySeconds||0)+Math.max(0,(now-playClockAt)/1000);
+ const active=player&&scene==='playing'&&!modal&&!document.hidden&&playWindowFocused;
+ playClockPlayer=active?player:null;playClockAt=active?now:null;
+}
 let enemyOrbs=[];
 let rabbitOrbs=[],rabbitShield=null;
 let otterWave=null,otterShield=null,otterBubbles=null,otterConcert=null;
@@ -92,10 +99,11 @@ const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>'
 function toast(message){$('#toast').textContent=message;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2700);}
 function beep(freq=350,duration=.07,type='sine',volume=.05){if(!soundOn)return;try{audioContext??=new(window.AudioContext||window.webkitAudioContext)();if(audioContext.state==='suspended')audioContext.resume();const oscillator=audioContext.createOscillator(),gain=audioContext.createGain();oscillator.type=type;oscillator.frequency.setValueAtTime(freq,audioContext.currentTime);oscillator.frequency.exponentialRampToValueAtTime(freq*.6,audioContext.currentTime+duration);gain.gain.setValueAtTime(volume,audioContext.currentTime);gain.gain.exponentialRampToValueAtTime(.001,audioContext.currentTime+duration);oscillator.connect(gain);gain.connect(audioContext.destination);oscillator.start();oscillator.stop(audioContext.currentTime+duration);}catch{}}
 function save(silent=true){
+ syncPlayTime();
  if(player){player.savedAt=new Date().toISOString();const i=records.findIndex(p=>p.id===player.id);if(i>=0)records[i]={...player};else records.push({...player});}
  try{localStorage.setItem(SAVE_KEY,JSON.stringify({version:1,characters:records}));storageBroken=false;lastSavedLabel='방금 저장됨';if(!silent)toast('현재 위치와 진행 상황을 저장했어요.');return true;}catch{storageBroken=true;if(!silent)toast('브라우저 저장 공간에 접근할 수 없어요. 진행 상황이 유지되지 않을 수 있습니다.');return false;}
 }
-function setScene(next){if(next!=='playing'){maguriHack=null;if(player){player.respectTime=0;player.hp=Math.min(player.hp,maxHp(player));}boss=null;potionCooldown=0;}cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;$('.game-shell').classList.remove('boss-fight');resetJump();resetGait();cancelSword();resetCombat();hurtTime=0;scene=next;keys.clear();ui.innerHTML='';$('#touch-controls').classList.toggle('playing',next==='playing');$('.game-shell').classList.toggle('is-playing',next==='playing');resize();}
+function setScene(next){syncPlayTime();if(next!=='playing'){maguriHack=null;if(player){player.respectTime=0;player.hp=Math.min(player.hp,maxHp(player));}boss=null;potionCooldown=0;}cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;$('.game-shell').classList.remove('boss-fight');resetJump();resetGait();cancelSword();resetCombat();hurtTime=0;scene=next;syncPlayTime();keys.clear();ui.innerHTML='';$('#touch-controls').classList.toggle('playing',next==='playing');$('.game-shell').classList.toggle('is-playing',next==='playing');resize();}
 function title(){transitionId++;resetOtter();player=null;closeModal();setScene('title');screens.innerHTML=`<div class="title-screen"><img class="title-art" src="assets/bruteforce-title-v135.webp" alt="밤 도시에서 포즈를 취한 안경 쓴 토끼 마법사, 고양이 시위대, 펭귄 전사, 병아리 해커, 마이크를 든 수달 아이돌" decoding="async" fetchpriority="high"><h1 class="game-title">BruteForce <span>21</span></h1><button class="primary start-button" id="start-button">게임 시작</button></div>`;$('#start-button').onclick=selectCharacters;}
 function selectCharacters(){
  if(player){resetOtter();save();}player=null;closeModal();setScene('characters');
@@ -130,13 +138,14 @@ function deleteCharacterModal(id){
  };
 }
 function showModal(kind,heading,content,focusSelector=null){
- walking=false;cancelSword();cancelCatCharge();cancelChickAim();keys.clear();modal=kind;returnFocus=document.activeElement;
+ syncPlayTime();
+ walking=false;cancelSword();cancelCatCharge();cancelChickAim();keys.clear();modal=kind;syncPlayTime();returnFocus=document.activeElement;
  const npcDialogue=['gm','shop','job','portal','boss-talk'].includes(kind);
  modalRoot.innerHTML=`<div class="modal-backdrop ${npcDialogue?'npc-dialog-backdrop':''}"><section class="modal ${npcDialogue?'npc-dialog':''}" role="dialog" aria-modal="true" aria-labelledby="dialog-title"><div class="modal-header"><h2 id="dialog-title">${heading}</h2><button class="close-button" aria-label="닫기">×</button></div>${npcDialogue?`<div class="npc-dialog-body">${content}</div>`:content}</section></div>`;
  $('.close-button').onclick=closeModal;$('.modal-backdrop').onclick=e=>{if(e.target===e.currentTarget)closeModal();};
  requestAnimationFrame(()=>{const preferred=focusSelector?$(focusSelector):null;(preferred&&!preferred.disabled?preferred:$('.bag-item.selected')||$('.modal input')||$('.modal button'))?.focus();});
 }
-function closeModal(){modal=null;modalRoot.innerHTML='';keys.clear();if(scene==='playing')canvas.focus({preventScroll:true});else if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});returnFocus=null;}
+function closeModal(){syncPlayTime();modal=null;syncPlayTime();modalRoot.innerHTML='';keys.clear();if(scene==='playing')canvas.focus({preventScroll:true});else if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});returnFocus=null;}
 function createModal(){
  showModal('create','새로운 모험가',`<form id="create-form"><div class="class-choices" role="radiogroup" aria-label="캐릭터 종류">${CLASSES.map((kind,i)=>`<label class="class-option"><input type="radio" name="class-id" value="${kind.id}" ${i===0?'checked':''}><img decoding="async" src="${characterPortrait({classId:kind.id})}" alt=""><span><strong>${kind.name}</strong><small>${kind.id==='otter'?'휴프로에게 아이돌 전직':kind.id==='chick'?'메이플아지트에서 해커 전직':kind.id==='rabbit'?'마구리에게 마법사 전직':kind.id==='cat'?'올림픽공원에서 시위대 전직':'헬스장·검도장에서 전직'}</small><small>HP ${maxHp({classId:kind.id,level:1})} · MP ${kind.mp}</small></span></label>`).join('')}</div><label for="character-name">모험가의 이름</label><input id="character-name" placeholder="이름을 지어주세요" maxlength="12" autocomplete="off" required><div class="error" id="name-error" role="alert"></div><p>Lv. 1 · 시작 지원금 500원 · 감자칩 3개</p><button class="primary" type="submit">이 캐릭터로 시작하기</button></form>`);
  $('.modal').classList.add('create-character-modal');
@@ -592,10 +601,11 @@ function updateTypeBFight(dt){
 }
 function winTypeB(){
  if(!defeatTypeB(boss))return;
+ syncPlayTime();player.typeBLastClearSeconds=player.activePlaySeconds;if(player.typeBFirstClearSeconds===null)player.typeBFirstClearSeconds=player.activePlaySeconds;
  resetCombat();cancelSword();cancelCatCharge();catProjectiles=[];catFires=[];catBallot=null;potionCooldown=0;
  player.typeBWins=(player.typeBWins||0)+1;player.kills++;player.typeBTitle=1;player.money+=TYPE_B.money;player.cores+=TYPE_B.cores;
  const reward=xpReward(player,TYPE_B.xp,TYPE_B.level);gainXp(player,TYPE_B.xp,TYPE_B.level);save();refreshHUD();beep(900,.5);
- showModal('boss-victory','B형 격파',`<div class="boss-intro"><h3>섬멸 프로토콜 종료.</h3><p>두 페이즈를 돌파했습니다! 금빛 B형 칭호를 획득했어요.</p><p class="boss-reward">EXP +${reward.toLocaleString()} · ${TYPE_B.money.toLocaleString()}원 · 에너지 코어 ${TYPE_B.cores}개</p><div class="job-choice"><strong>금빛 칭호 · B형</strong><p>공격력 +20% · 이동속도 +10%<br>장착하면 몸 주변에 금빛 반짝임이 나타납니다.<br>A형 칭호와 동시에 장착할 수 없습니다.</p></div><button class="primary menu-wide" id="b-equip-reward">B형 칭호 장착하고 계속하기</button><button class="text-button menu-wide" id="b-leave-reward">나중에 장착하기 · 닫기</button></div>`,'#b-equip-reward');
+ showModal('boss-victory','B형 격파',`<div class="boss-intro"><h3>섬멸 프로토콜 종료.</h3><p>두 페이즈를 돌파했습니다! 금빛 B형 칭호를 획득했어요.</p><div class="job-choice" id="b-clear-time"><strong>${player.playTimeComplete?'캐릭터 생성부터 B형 격파까지':'기록 시작부터 B형 격파까지'}</strong><p class="clear-play-time">${formatPlayTime(player.typeBLastClearSeconds)}</p><small>실제 플레이 시간 · 메뉴, 로딩, 다른 탭과 창에 머문 시간 제외${player.playTimeComplete?'':'<br>기존 캐릭터는 업데이트 이전 플레이 시간이 없어 이후 시간만 기록합니다.'}</small></div><p class="boss-reward">EXP +${reward.toLocaleString()} · ${TYPE_B.money.toLocaleString()}원 · 에너지 코어 ${TYPE_B.cores}개</p><div class="job-choice"><strong>금빛 칭호 · B형</strong><p>공격력 +20% · 이동속도 +10%<br>장착하면 몸 주변에 금빛 반짝임이 나타납니다.<br>A형 칭호와 동시에 장착할 수 없습니다.</p></div><button class="primary menu-wide" id="b-equip-reward">B형 칭호 장착하고 계속하기</button><button class="text-button menu-wide" id="b-leave-reward">나중에 장착하기 · 닫기</button></div>`,'#b-equip-reward');
  $('#b-equip-reward').onclick=()=>{if(!hasTypeBTitle(player))equipTypeBTitle(player);save();closeModal();refreshHUD();};$('#b-leave-reward').onclick=closeModal;
 }
 function drawBTitleSparkles(){
@@ -2028,7 +2038,7 @@ function draw(){
  }
  ctx.restore();
 }
-function frame(time){const dt=prev?Math.min((time-prev)/1000,.04):.016;prev=time;update(dt);draw();requestAnimationFrame(frame);}
+function frame(time){syncPlayTime();const dt=prev?Math.min((time-prev)/1000,.04):.016;prev=time;update(dt);draw();requestAnimationFrame(frame);}
 function resize(){const box=$('.game-shell').getBoundingClientRect();screenWidth=Math.round(box.width/box.height*810);canvas.width=screenWidth;canvas.height=810;ctx.imageSmoothingEnabled=false;if(player&&scene==='playing')updateCamera(1);}
 const gameCodes=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyA','KeyQ','KeyW','KeyE','KeyR','KeyF','Digit1','Digit2','Digit3','KeyI','KeyM','KeyK']);
 document.addEventListener('keydown',e=>{
@@ -2042,7 +2052,7 @@ document.addEventListener('keydown',e=>{
  keys.add(e.code);if(e.repeat)return;
  if(e.code==='Space')jump();else if(e.code==='KeyA')attack();else if(['KeyQ','KeyW','KeyE','KeyR'].includes(e.code))cast(e.code.slice(-1).toLowerCase());else if(e.code==='KeyF')interact();else if(['Digit1','Digit2','Digit3'].includes(e.code))useQuickSlot(Number(e.code.slice(-1))-1);else if(e.code==='KeyI')inventory();else if(e.code==='KeyM')worldMap();else if(e.code==='KeyK')skillBook();else if(e.code==='Escape')menu();
 });
-document.addEventListener('keyup',e=>{keys.delete(e.code);if(e.code==='KeyR')releaseSword('keyboard');if(e.code==='KeyE'){releaseCatCharge('keyboard');releaseChickCharge('keyboard');}});window.addEventListener('blur',()=>{walking=false;cancelSword();cancelCatCharge();cancelChickAim();keys.clear();if(player)save();});document.addEventListener('visibilitychange',()=>{walking=false;if(document.hidden){cancelSword();cancelCatCharge();cancelChickAim();}keys.clear();prev=0;if(player)save();});window.addEventListener('pagehide',()=>{walking=false;cancelSword();cancelCatCharge();cancelChickAim();if(player)save();});
+document.addEventListener('keyup',e=>{keys.delete(e.code);if(e.code==='KeyR')releaseSword('keyboard');if(e.code==='KeyE'){releaseCatCharge('keyboard');releaseChickCharge('keyboard');}});window.addEventListener('focus',()=>{playWindowFocused=true;syncPlayTime();prev=0;});window.addEventListener('blur',()=>{syncPlayTime();playWindowFocused=false;syncPlayTime();walking=false;cancelSword();cancelCatCharge();cancelChickAim();keys.clear();if(player)save();});document.addEventListener('visibilitychange',()=>{syncPlayTime();walking=false;if(document.hidden){cancelSword();cancelCatCharge();cancelChickAim();}keys.clear();prev=0;if(player)save();});window.addEventListener('pagehide',()=>{syncPlayTime();playWindowFocused=false;syncPlayTime();walking=false;cancelSword();cancelCatCharge();cancelChickAim();if(player)save();});
 canvas.addEventListener('pointerdown',e=>{canvas.focus();if(scene!=='playing'||modal)return;const r=canvas.getBoundingClientRect(),point=screenToWorld((e.clientX-r.left)/r.width*screenWidth,(e.clientY-r.top)/r.height*810),{x,y}=point;const nearby=findInteraction();if(nearby&&Math.abs(nearby.x-x)<80&&y>nearby.y-Math.max(170,nearby.height??0)&&y<nearby.y+40)interact();});
 document.querySelectorAll('[data-hold]').forEach(b=>{b.addEventListener('pointerdown',e=>{e.preventDefault();if(isTypeB(boss)&&boss.qteActive){handleBArrow(b.dataset.hold);return;}if(hackerUlt?.phase==='selecting'){if(['ArrowLeft','ArrowRight'].includes(b.dataset.hold))cycleHack(b.dataset.hold==='ArrowLeft'?-1:1);return;}b.setPointerCapture(e.pointerId);keys.add(b.dataset.hold);});for(const type of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(type,()=>keys.delete(b.dataset.hold));});
 document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>({jump,interact,potion:drinkPotion}[b.dataset.action]?.()));

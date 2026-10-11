@@ -287,3 +287,10 @@ test('XP is reduced once using the level before a kill, and saved XP stays uncha
  const saved=normalizeCharacter(p);assert.equal(saved.xp,100);
  assert.equal(xpReward(p,100),100,'non-monster XP has no level penalty');
 });
+
+test('playtime survives saves without fabricating missing historical time',()=>{
+ const fresh=createCharacter('시간');assert.equal(fresh.activePlaySeconds,0);assert.equal(fresh.playTimeComplete,true);assert.equal(fresh.typeBFirstClearSeconds,null);
+ Object.assign(fresh,{activePlaySeconds:3723.5,typeBFirstClearSeconds:3600.25,typeBLastClearSeconds:3723.5});const restored=normalizeCharacter(JSON.parse(JSON.stringify(fresh)));assert.equal(restored.activePlaySeconds,3723.5);assert.equal(restored.playTimeComplete,true);assert.equal(restored.typeBFirstClearSeconds,3600.25);assert.equal(restored.typeBLastClearSeconds,3723.5);
+ const old={...fresh};delete old.activePlaySeconds;delete old.playTimeComplete;const legacy=normalizeCharacter(old);assert.equal(legacy.activePlaySeconds,0);assert.equal(legacy.playTimeComplete,false);assert.equal(legacy.typeBFirstClearSeconds,null);
+ const invalid=normalizeCharacter({...fresh,activePlaySeconds:Infinity,typeBLastClearSeconds:-5});assert.equal(invalid.activePlaySeconds,0);assert.equal(invalid.typeBLastClearSeconds,null);
+});

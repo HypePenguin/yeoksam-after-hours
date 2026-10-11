@@ -273,7 +273,7 @@ export function createCharacter(name,classId='wanderer'){
  const clean=String(name).trim();
  if(!/^[\p{L}\p{N}_ ]{1,12}$/u.test(clean))throw new Error('이름은 한글·영문·숫자 1~12자로 입력해 주세요.');
  const stats=CLASSES.find(c=>c.id===classId);if(!stats)throw new Error('선택할 수 없는 캐릭터입니다.');
- return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:maxHp({classId,level:1}),mp:stats.mp,money:500,potions:3,largePotions:0,mpPotions:classId==='rabbit'?1:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,yeoksamStreetScrolls:0,quickSlots:['potions',classId==='rabbit'?'mpPotions':null,null],uniform:0,uniformEquipped:false,typeATitle:0,typeATitleEquipped:false,typeBTitle:0,typeBTitleEquipped:false,typeBWins:0,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,visited:['town'],respectTime:0,concertTime:0,powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
+ return {id:uid(),name:clean,classId,job:null,level:1,xp:0,hp:maxHp({classId,level:1}),mp:stats.mp,money:500,potions:3,largePotions:0,mpPotions:classId==='rabbit'?1:0,mpPotionCooldown:0,returnScrolls:0,gangnamScrolls:0,yeoksamStreetScrolls:0,quickSlots:['potions',classId==='rabbit'?'mpPotions':null,null],uniform:0,uniformEquipped:false,typeATitle:0,typeATitleEquipped:false,typeBTitle:0,typeBTitleEquipped:false,typeBWins:0,bossWins:0,typeAWins:0,scrap:0,cores:0,kills:0,map:'town',x:530,y:648,savedAt:null,activePlaySeconds:0,playTimeComplete:true,typeBFirstClearSeconds:null,typeBLastClearSeconds:null,visited:['town'],respectTime:0,concertTime:0,powerTime:0,cooldowns:{q:0,w:0,e:0,r:0}};
 }
 export function normalizeCharacter(raw){
  if(!raw||typeof raw.id!=='string'||typeof raw.name!=='string')return null;
@@ -292,6 +292,10 @@ export function normalizeCharacter(raw){
  p.mpPotionCooldown=MAPS[p.map]?.boss&&Number.isFinite(raw.mpPotionCooldown)?clamp(raw.mpPotionCooldown,0,10):0;
  p.hp=Number.isFinite(raw.hp)?clamp(raw.hp,0,maxHp(p)):maxHp(p);p.mp=Number.isFinite(raw.mp)?clamp(raw.mp,0,maxMp(p)):maxMp(p);
  p.savedAt=typeof raw.savedAt==='string'?raw.savedAt:null;
+ // Older saves have no historical clock; never infer playtime from wall-clock dates.
+ p.activePlaySeconds=Number.isFinite(raw.activePlaySeconds)?clamp(raw.activePlaySeconds,0,Number.MAX_SAFE_INTEGER):0;
+ p.playTimeComplete=Number.isFinite(raw.activePlaySeconds)&&raw.playTimeComplete===true;
+ for(const key of ['typeBFirstClearSeconds','typeBLastClearSeconds'])p[key]=Number.isFinite(raw[key])&&raw[key]>=0&&raw[key]<=p.activePlaySeconds?raw[key]:null;
  p.visited=[...new Set(['town',...(Array.isArray(raw.visited)?raw.visited.filter(id=>MAPS[id]):[]),p.map])];
  // Re-enter in normal form; retain cooldowns so reopening cannot recharge the ultimate.
  for(const s of SKILLS)p.cooldowns[s.key]=Number.isFinite(raw.cooldowns?.[s.key])?clamp(raw.cooldowns[s.key],0,effectiveSkill(p,s.key).cooldown):0;
@@ -345,3 +349,5 @@ export function patrolMonster(m,mapId,dt){
  const target=clamp(m.patrolY??m.y,580,720),dy=target-m.y;
  m.y=clamp(m.y+Math.sign(dy)*Math.min(Math.abs(dy),m.speed*.22*dt),580,720);
 }
+
+export function formatPlayTime(seconds){const total=Math.floor(Number.isFinite(seconds)?Math.max(0,seconds):0);return `${Math.floor(total/3600)}시간 ${Math.floor(total/60)%60}분 ${total%60}초`;}
