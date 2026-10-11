@@ -103,12 +103,17 @@ export const MAPS = {
  arsenal:{id:'arsenal',name:'병기 조립라인',subtitle:'고레벨 던전 · Lv. 34–36',en:'WEAPONS ASSEMBLY',description:'전투 로봇이 생산되는 심층 공장. 조립 로봇을 돌파하고 적색 동력로로 이동하세요.',width:4000,danger:10,minLevel:34,maxLevel:36,color:'#bea6f7',background:'endgame-dungeons',backgroundTile:1,monster:'병기 조립 로봇',monsterCount:11,robotTint:'hue-rotate(120deg) saturate(1.7)',portals:[]},
  reactor:{id:'reactor',name:'적색 동력로',subtitle:'고레벨 던전 · Lv. 37–40',en:'CRIMSON REACTOR',description:'Lv. 40까지 사냥할 수 있는 최심부. 오른쪽 빨간 포탈은 Lv. 40 A형이 있는 수료조건으로 연결됩니다.',width:4200,danger:11,minLevel:37,maxLevel:40,color:'#ff8e9d',background:'endgame-dungeons',backgroundTile:2,monster:'동력로 수호 로봇',monsterCount:12,robotTint:'hue-rotate(185deg) saturate(2.2)',portals:[]},
  hangar:{id:'hangar',name:'수료조건',subtitle:'보스 · Lv. 40 A형',en:'GRADUATION REQUIREMENT',description:'대형 전투 로봇 A형. F로 가동합니다. HP 40%에 5초 안전지대 시험, 20%에 광폭화합니다. 파란 영역으로 이동하거나 무적기로 즉사를 피하세요. 오른쪽 포탈은 A형 칭호를 장착한 상태에서만 역삼역주변거리로 이동할 수 있어요. 전투 중에는 이용할 수 없습니다.',width:1800,danger:0,boss:true,respawn:{map:'hangar',x:300,y:648},bossName:'A형',bossLevel:40,minLevel:40,maxLevel:40,color:'#ff7088',background:'endgame-dungeons',backgroundTile:3,portals:[]},
- yeoksamStreet:{id:'yeoksamStreet',name:'역삼역주변거리',subtitle:'마을 · 안전 구역',en:'YEOKSAM NEIGHBORHOOD',description:'수료조건 너머의 조용한 역삼 거리. 마구리에게 물약을 구입하고 쉬어 갈 수 있어요. 왼쪽 포탈은 수료조건으로 돌아갑니다.',width:2200,danger:0,minLevel:1,maxLevel:1,color:'#9ce1a5',background:'city',portals:[]}
+ yeoksamStreet:{id:'yeoksamStreet',name:'역삼역주변거리',subtitle:'마을 · 안전 구역',en:'YEOKSAM NEIGHBORHOOD',description:'수료조건 너머의 조용한 역삼 거리. 마구리에게 물약을 구입하고 쉬어 갈 수 있어요. 왼쪽 포탈은 수료조건, 오른쪽 포탈은 Lv.41–60의 프로전형 사냥길로 이어집니다.',width:2200,danger:0,minLevel:1,maxLevel:1,color:'#9ce1a5',background:'city',portals:[]},
+ dataStreet:{id:'dataStreet',name:'역삼 데이터 골목',subtitle:'사냥터 · Lv. 41–45',en:'YEOKSAM DATA STREET',description:'A형 너머의 첫 사냥길. 타격 경비 로봇과 구체 투척 로봇이 함께 순찰합니다. 구체의 바닥 표시를 피하세요.',width:3800,danger:12,minLevel:41,maxLevel:45,color:'#7cdcf2',background:'post-a-dungeons-v146',backgroundTile:0,mixedCombat:true,monsterCount:12,respawn:{map:'yeoksamStreet',x:850,y:648},portals:[]},
+ security:{id:'security',name:'테헤란 보안 구역',subtitle:'사냥터 · Lv. 46–50',en:'TEHERAN SECURITY ZONE',description:'보안 장벽 안에서 근접 경비대와 원거리 투척대가 협공합니다. 오른쪽으로 심층 연산 시설이 이어집니다.',width:4000,danger:13,minLevel:46,maxLevel:50,color:'#c2a8ff',background:'post-a-dungeons-v146',backgroundTile:1,mixedCombat:true,monsterCount:12,respawn:{map:'yeoksamStreet',x:850,y:648},portals:[]},
+ compute:{id:'compute',name:'심층 연산 시설',subtitle:'사냥터 · Lv. 51–55',en:'DEEP COMPUTATION FACILITY',description:'녹색 연산 코어 사이를 지키는 두 종류의 로봇. 접근하는 타격형과 착탄 지점을 노리는 투척형을 상대하세요.',width:4200,danger:14,minLevel:51,maxLevel:55,color:'#87edc7',background:'post-a-dungeons-v146',backgroundTile:2,mixedCombat:true,monsterCount:14,respawn:{map:'yeoksamStreet',x:850,y:648},portals:[]},
+ proving:{id:'proving',name:'프로 시험 훈련장',subtitle:'사냥터 · Lv. 56–60',en:'PRO TRIAL TRAINING GROUNDS',description:'Lv.60까지 성장할 수 있는 마지막 사냥터. 오른쪽 빨간 포탈은 프로전형 대기실로 이어집니다.',width:4400,danger:15,minLevel:56,maxLevel:60,color:'#ffb58e',background:'post-a-dungeons-v146',backgroundTile:3,mixedCombat:true,monsterCount:14,respawn:{map:'yeoksamStreet',x:850,y:648},portals:[]},
+ proExam:{id:'proExam',name:'프로전형',subtitle:'시험장 대기실 · 준비 중',en:'PRO EXAM · WAITING ROOM',description:'시험장 입구에 F로 말을 걸어 입장 안내를 확인하세요. 실제 보스 시험장은 아직 준비 중입니다.',width:1800,danger:0,minLevel:60,maxLevel:60,bossEntrance:true,color:'#ff879e',background:'post-a-dungeons-v146',backgroundTile:3,portals:[]}
 
 };
 // Every connection is bidirectional and arrivals stay outside the return portal's interaction radius.
 function connect(a,ax,b,bx){
- const add=(from,x,to,tx)=>MAPS[from].portals.push({x,y:646,to,spawnX:tx+(tx<MAPS[to].width/2?190:-190),spawnY:648,label:MAPS[to].name,level:MAPS[to].boss?`보스 · 권장 Lv. ${MAPS[to].minLevel}–${MAPS[to].maxLevel}`:MAPS[to].danger?`권장 Lv. ${MAPS[to].minLevel}–${MAPS[to].maxLevel}`:'안전 구역'});
+ const add=(from,x,to,tx)=>MAPS[from].portals.push({x,y:646,to,spawnX:tx+(tx<MAPS[to].width/2?190:-190),spawnY:648,label:MAPS[to].name,level:MAPS[to].bossEntrance?'시험장 대기실 · 준비 중':MAPS[to].boss?`보스 · 권장 Lv. ${MAPS[to].minLevel}–${MAPS[to].maxLevel}`:MAPS[to].danger?`권장 Lv. ${MAPS[to].minLevel}–${MAPS[to].maxLevel}`:'안전 구역'});
  add(a,ax,b,bx);add(b,bx,a,ax);
 }
 connect('town',2430,'alley',100);
@@ -134,9 +139,15 @@ connect('accelerator',3630,'arsenal',100);
 connect('arsenal',3830,'reactor',100);
 connect('reactor',4030,'hangar',100);
 connect('hangar',1640,'yeoksamStreet',100);
+connect('yeoksamStreet',2030,'dataStreet',100);
+connect('dataStreet',3630,'security',100);
+connect('security',3830,'compute',100);
+connect('compute',4030,'proving',100);
+connect('proving',4230,'proExam',100);
 
 // Route lists describe actual adjacent portals; the map never implies a shortcut.
 export const MAP_ROUTES = [
+ {id:'pro-route',tab:'advanced',title:'프로전형 사냥길',hint:'A형 이후 · Lv.41–60 · 시험장 준비 중',maps:['yeoksamStreet','dataStreet','security','compute','proving','proExam']},
  {id:'maple-route',tab:'town',title:'해커 · 아이돌 전직',hint:'Lv.10 · 메이플아지트의 휴프로',maps:['town','maple']},
  {id:'backstreet',tab:'hunt',title:'골목 사냥길',hint:'Lv. 1–9 · 공사장을 지나 승강장으로',maps:['town','alley','depths','subway']},
  {id:'parkway',tab:'hunt',title:'공원 사냥길',hint:'Lv. 3–9 · 승강장으로 가는 짧은 길',maps:['town','park','subway']},
@@ -149,8 +160,9 @@ export const MAP_ROUTES = [
  {id:'dojo-route',tab:'town',title:'검사 전직',hint:'Lv. 10 · 몬스터가 있는 사거리를 통과',maps:['town','crossroads','station6','dojo']},
  {id:'olympic-route',tab:'town',title:'고양이 · 시위대 전직',hint:'Lv. 10 · 1번 출구에서 올림픽공원으로',maps:['town','olympic']}
 ];
-export const mapTabFor=id=>['rooftop','relay','canal','foundry','nexus','pocha','accelerator','arsenal','reactor','hangar'].includes(id)?'advanced':['town','crossroads','station6','gym','dojo','gangnam','olympic','yeoksamStreet','maple'].includes(id)?'town':'hunt';
+export const mapTabFor=id=>['rooftop','relay','canal','foundry','nexus','pocha','accelerator','arsenal','reactor','hangar','dataStreet','security','compute','proving','proExam'].includes(id)?'advanced':['town','crossroads','station6','gym','dojo','gangnam','olympic','yeoksamStreet','maple'].includes(id)?'town':'hunt';
 // A schematic world layout; paths are derived from real portals, never from visual proximity.
+export const WORLD_MAP_HEIGHT = 740;
 export const WORLD_MAP_LAYOUT = {
  gym:{x:140,y:72,label:'피치플레이'},town:{x:350,y:72,label:'역삼역 1번 출구'},crossroads:{x:560,y:72,label:'역삼역사거리'},station6:{x:770,y:72,label:'역삼역 6번 출구'},dojo:{x:980,y:72,label:'강남성균검도관'},
  depths:{x:140,y:235,label:'불 꺼진 공사장'},alley:{x:350,y:235,label:'테헤란 뒷골목'},park:{x:560,y:235,label:'달빛 근린공원'},
@@ -158,6 +170,7 @@ export const WORLD_MAP_LAYOUT = {
  nexus:{x:560,y:441,label:'중앙 제어실'},foundry:{x:770,y:441,label:'자동화 주조소'},gangnam:{x:980,y:441,label:'강남역'},
  accelerator:{x:350,y:441,label:'가속 실험구역'},arsenal:{x:140,y:441,label:'병기 조립라인'},reactor:{x:140,y:528,label:'적색 동력로'},hangar:{x:350,y:528,label:'수료조건'},yeoksamStreet:{x:560,y:528,label:'역삼역주변거리'},
  pocha:{x:980,y:528,label:'한사발포차'},
+ dataStreet:{x:770,y:528,label:'역삼 데이터 골목'},security:{x:770,y:650,label:'테헤란 보안 구역'},compute:{x:560,y:650,label:'심층 연산 시설'},proving:{x:350,y:650,label:'프로 시험 훈련장'},proExam:{x:140,y:650,label:'프로전형'},
  maple:{x:90,y:140,label:'메이플아지트'},
  olympic:{x:250,y:140,label:'올림픽공원'}
 };
@@ -308,7 +321,13 @@ export function makeMonster(mapId,index){
  const map=MAPS[mapId],intervals=Math.max(1,monsterCount(mapId)-1),step=(map.width-600-(map.monsterCount?600:250))/intervals,x=600+index*step;
  const level=map.minLevel+Math.floor(index*(map.maxLevel-map.minLevel)/intervals),strong=map.danger>=2;
  const hp=strong?60+level*15:28+level*12;
- return {id:uid(),x,y:620+(index%3)*37,home:x,level,hp,maxHp:hp,attack:strong?9+level*3:5+level*3,speed:strong?55+level*5:34+level*7,dead:false,respawnIn:0,hit:0,dir:index%2?1:-1,patrolY:580+(index*53)%141,phase:index*1.7};
+ const monster={id:uid(),x,y:620+(index%3)*37,home:x,level,hp,maxHp:hp,attack:strong?9+level*3:5+level*3,speed:strong?55+level*5:34+level*7,dead:false,respawnIn:0,hit:0,dir:index%2?1:-1,patrolY:580+(index*53)%141,phase:index*1.7};
+ if(map.mixedCombat){
+  const ranged=index%2===1;
+  Object.assign(monster,{combatType:ranged?'ranged':'melee',name:ranged?'구체 투척 로봇':'타격 경비 로봇',asset:`post-a-${ranged?'ranged':'melee'}-v146`,hp:120+level*(ranged?19:23),speed:ranged?155:205,attack:Math.round(monster.attack*(ranged?.9:1)),xp:75+level*9,attackCooldown:.8+(index%4)*.55,cast:null,walkPhase:0});
+  monster.maxHp=monster.hp;
+ }
+ return monster;
 }
 
 // Spawn coordinates are used for respawning only, never as a patrol leash.

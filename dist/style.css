@@ -109,8 +109,8 @@ main{width:100%;max-width:1512px;min-height:100svh;margin:0 auto;padding:24px;di
 .atlas-toolbar>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}.atlas-toolbar strong{font-size:15px;color:#ffe0a1;}
 .atlas-toolbar button{flex-shrink:0;border:1px solid #77958a80;border-radius:5px;background:#203e45;color:#e9e7d9;padding:7px 11px;font-size:13px;}
 .atlas-location-dot{width:9px;height:9px;display:inline-block;background:#ffdb7a;border-radius:50%;box-shadow:0 0 9px #ffdb7a77;}
-.atlas-scroll{overflow:auto;border:1px solid #9aac9366;border-radius:10px;background:#192f39;scrollbar-width:thin;scrollbar-color:#739288 #142a34;}
-.atlas-board{position:relative;width:100%;min-width:880px;aspect-ratio:1120/610;isolation:isolate;}
+.atlas-scroll{max-height:min(620px,calc(100dvh - 245px));overflow:auto;border:1px solid #9aac9366;border-radius:10px;background:#192f39;scrollbar-width:thin;scrollbar-color:#739288 #142a34;}
+.atlas-board{position:relative;width:100%;min-width:880px;aspect-ratio:1120/740;isolation:isolate;}
 .atlas-background{position:absolute;inset:0;background:linear-gradient(#112b3029,#0c183250),url('assets/world-map.webp') center/100% 100%;z-index:-1;}
 .atlas-roads{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;}
 .atlas-road-border{fill:none;stroke:#19252ec4;stroke-width:11;stroke-linecap:round;vector-effect:non-scaling-stroke;}
@@ -138,7 +138,7 @@ main{width:100%;max-width:1512px;min-height:100svh;margin:0 auto;padding:24px;di
 @media(max-width:650px){
  .modal-backdrop:has(.world-map-modal){padding:8px;}.world-map-modal{padding:12px;}.world-map-modal>.modal-header{top:-12px;padding:12px;margin:-12px -12px 8px;}
  .atlas-toolbar{font-size:12px;gap:8px;align-items:start;}.atlas-toolbar>div{gap:5px;}.atlas-toolbar strong{width:100%;font-size:14px;}.atlas-location-dot{width:7px;height:7px;}.atlas-toolbar button{font-size:12px;}
- .atlas-board{min-width:920px;}.atlas-selection{grid-template-columns:1fr;padding:12px;gap:12px;}.atlas-destination>strong{font-size:16px;}.atlas-legend{gap:7px 12px;}.atlas-legend small{width:100%;margin-left:0;}.atlas-legend small:after{content:' 좌우로 밀어 전체 지도를 보세요.';}
+ .atlas-board{min-width:920px;}.atlas-selection{grid-template-columns:1fr;padding:12px;gap:12px;}.atlas-destination>strong{font-size:16px;}.atlas-legend{gap:7px 12px;}.atlas-legend small{width:100%;margin-left:0;}.atlas-legend small:after{content:' 상하좌우로 밀어 전체 지도를 보세요.';}
 }
 .modal-backdrop:has(.world-map-modal){position:fixed;inset:0;padding:16px;z-index:50;}
 .world-map-modal>.modal-header{position:sticky;top:-18px;z-index:5;background:#142f3b;}

@@ -7,6 +7,7 @@ import * as bossCore from '../dist/boss.js';
 import * as typeACore from '../dist/type-a.js';
 import * as catEffects from '../dist/cat-effects.js';
 import * as otterEffects from '../dist/otter-effects.js';
+import * as enemyCombat from '../dist/enemy-combat.js';
 
 // Runs the actual game loop against lightweight DOM/timer adapters. No live browser state.
 function harness({manualImages=false}={}){
@@ -32,9 +33,9 @@ function harness({manualImages=false}={}){
  },{get:(obj,key)=>key in obj?obj[key]:()=>{}});
  function el(selector){if(elements.has(selector))return elements.get(selector);const obj={parentElement:{},style:{},dataset:{},classList:{add(){},remove(){},toggle(){}},textContent:'',innerHTML:'',hidden:false,isConnected:true,disabled:false,onclick:null,listeners:new Map(),setPointerCapture(){},focus(){},setAttribute(k,v){this[k]=v;},getAttribute(k){return this[k]??null;},getBoundingClientRect(){return {width:1448,height:818};},addEventListener(n,f){this.listeners.set(n,f);},querySelector:child=>el(`${selector} ${child}`),querySelectorAll:()=>[],getContext:()=>drawing};elements.set(selector,obj);return obj;}
  const document={querySelector:el,querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),hidden:false,activeElement:el('#game')};
- const context=vm.createContext({...core,...bossCore,...typeACore,...catEffects,...otterEffects,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;requestedImages.push(this);this.complete=!manualImages;this.naturalWidth=v.includes('otter-')?1215:1500;this.naturalHeight=v.includes('otter-')?1295:1000;if(!manualImages)this.onload?.();}},Promise,Math,Date:class extends Date{static now(){return clock.now;}},Number,String,Set});
+ const context=vm.createContext({...core,...bossCore,...typeACore,...catEffects,...otterEffects,...enemyCombat,console,document,window:{addEventListener:(n,f)=>{if(!windowEvents.has(n))windowEvents.set(n,[]);windowEvents.get(n).push(f);}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>{if(persistence.fail)throw new Error('storage unavailable');storage.set(k,v);}},setTimeout:f=>{timeouts.push(f);return timeouts.length;},clearTimeout(){},requestAnimationFrame(){},ResizeObserver:class{observe(){}},Image:class{set src(v){this.asset=v;requestedImages.push(this);this.complete=!manualImages;this.naturalWidth=v.includes('otter-')?1215:1500;this.naturalHeight=v.includes('otter-')?1295:1000;if(!manualImages)this.onload?.();}},Promise,Math,Date:class extends Date{static now(){return clock.now;}},Number,String,Set});
  const source=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'');
- vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},deleteCharacterModal,createModal,characterPortrait,sceneAssets,mapAssets,loadSceneAssets,loadImage,images,imageLoads,buildHUD,refreshHUD,refreshItemSlots,drawDrop,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,drawGuardBack,refreshHealthHUD,recordSwordBlock,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,maguriHack,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,guardBlocks,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
+ vm.runInContext(source+`\nglobalThis.gameTest={start(p){player=p;records=[p];scene='playing';resetWorld();},characters(list,id){player=null;records=list;selectedId=id;selectCharacters();},mapNPCs,examEntranceTalk,updateEnemyOrbs,drawEnemyWarnings,deleteCharacterModal,createModal,characterPortrait,sceneAssets,mapAssets,loadSceneAssets,loadImage,images,imageLoads,buildHUD,refreshHUD,refreshItemSlots,drawDrop,skillSymbolMarkup,startBossFight,bossTalk,abandonBoss,winBoss,drawBossAura,render:draw,startSwordCharge,releaseSword,cancelSword,bindSkillButton,jobModal,interact,setView(width){screenWidth=width;resetWorld();},setShake(amount){shake=amount;},update,attack,cast,jump,hitMonster,save,enterWorld,travel,drinkPotion,selectCharacters,worldMap,selectMapDestination,closeModal,die,inventory,shop,resetCombat,playerDamage,combatPose,combatDisplayX,drawMonster,drawEffects,drawGuardBack,refreshHealthHUD,recordSwordBlock,otterFrame,otterOrbPoint,castOtter,catAreaHit,enemyTarget,bossPerception,COMBAT_SHEETS,useQuickSlot,useInventoryItem,registerInventorySlot,updateCamera,screenToWorld,startCatCharge,releaseCatCharge,startChickCharge,releaseChickCharge,chickArea,chickFrame,confirmHack,cycleHack,cancelChickAim,get:()=>({enemyOrbs,otterWave,otterShield,otterBubbles,otterConcert,chickCodes,chickStealth,chickCharge,hackerUlt,maguriHack,rabbitShield,rabbitOrbs,catCharge,catProjectiles,catFires,catBallot,mapSelection,selectedId,storageBroken,boss,potionCooldown,player,records,monsters,drops,pz,pvz,jumpPrep,jumpLanding,scene,cooldowns,invincible,hurtTime,camera,modal,attackTimer,swordUlt,guardTime,guardBlocks,combatMotion,recovery,effects,walking,walkPhase,cameraZoom,shake,viewShakeX,viewShakeY,screenWidth}),keys,findInteraction};`,context);
  return {api:context.gameTest,clock,persistence,requestedImages,finishImages(except){for(const img of requestedImages)if(!img.complete&&img.asset!==except){img.complete=true;img.onload?.();}},draws,labels,strokes,fills,arcs,elements,events,windowEvents,storage,timeouts,document,el,async flush(){while(timeouts.length)timeouts.shift()();await Promise.resolve();await Promise.resolve();}};
 }
 function advance(h,seconds){for(let t=0;t<seconds;t+=1/60)h.api.update(1/60);}
@@ -882,7 +883,7 @@ test('M opens one map without detail tabs while retaining every location and con
  const html=h.el('#modal-root').innerHTML;
  assert.doesNotMatch(html,/role="tablist"|상세 안내|map-view-details|atlas-open-details|map-recommend/);
  const graph=html.slice(html.indexOf('<div class="atlas-board">'),html.indexOf('<div class="atlas-legend">'));
- assert.equal([...graph.matchAll(/data-map="/g)].length,23);assert.equal([...graph.matchAll(/data-map-edge="/g)].length,23);assert.equal([...graph.matchAll(/aria-current="location"/g)].length,1);
+ assert.equal([...graph.matchAll(/data-map="/g)].length,Object.keys(core.MAPS).length);assert.equal([...graph.matchAll(/data-map-edge="/g)].length,core.worldMapConnections().length);assert.equal([...graph.matchAll(/aria-current="location"/g)].length,1);
  h.api.selectMapDestination('pocha');h.api.closeModal();h.api.worldMap();assert.equal(h.api.get().mapSelection,p.map);
 });
 test('map selects a destination without moving the current location and can locate the player again',()=>{
@@ -1108,10 +1109,10 @@ test('every hunting monster recoils visibly, fades once on death and restores a 
  for(const map of Object.values(core.MAPS).filter(m=>core.monsterCount(m.id)>0)){
   const h=harness(),p=core.createCharacter('로봇피격');Object.assign(p,{level:30,map:map.id,x:1000,y:650,hp:680,mp:350});h.api.start(p);const m=h.api.get().monsters[0];Object.assign(m,{x:1100,home:1100,y:650,speed:0,hp:10000,maxHp:10000});
   h.api.hitMonster(m,1);assert.equal(m.hit,.28);assert.equal(m.hitDir,1);assert.equal(m.hp,9999);assert.equal(h.api.get().effects.length,0,'untrained hits keep the robot recoil without elemental effects');
-  h.api.update(.08);h.draws.length=0;h.api.drawMonster(m);const recoil=h.draws.find(d=>d.asset==='assets/robot.webp');assert.ok(Math.abs(recoil.matrix[1])>0,`${map.id} has visible recoil rotation`);
-  h.api.update(.25);assert.equal(m.hit,0);h.draws.length=0;h.api.drawMonster(m);closeTo(h.draws.find(d=>d.asset==='assets/robot.webp').matrix[1],0);
+  h.api.update(.08);h.draws.length=0;h.api.drawMonster(m);const recoil=h.draws.find(d=>d.asset===`assets/${m.asset||'robot'}.webp`);assert.ok(Math.abs(recoil.matrix[1])>0,`${map.id} has visible recoil rotation`);
+  h.api.update(.25);assert.equal(m.hit,0);h.draws.length=0;h.api.drawMonster(m);closeTo(h.draws.find(d=>d.asset===`assets/${m.asset||'robot'}.webp`).matrix[1],0);
   m.hp=1;h.api.hitMonster(m,1);assert.equal(m.dead,true);assert.equal(m.deathFx,.28);const kills=p.kills,xp=p.xp,drops=h.api.get().drops.length;h.api.hitMonster(m,999);assert.equal(p.kills,kills);assert.equal(p.xp,xp);assert.equal(h.api.get().drops.length,drops);
-  h.api.update(.14);h.draws.length=0;h.api.drawMonster(m);const fading=h.draws.find(d=>d.asset==='assets/robot.webp');assert.ok(fading.alpha>0&&fading.alpha<1);h.api.update(.15);h.draws.length=0;h.api.drawMonster(m);assert.equal(h.draws.length,0);
+  h.api.update(.14);h.draws.length=0;h.api.drawMonster(m);const fading=h.draws.find(d=>d.asset===`assets/${m.asset||'robot'}.webp`);assert.ok(fading.alpha>0&&fading.alpha<1);h.api.update(.15);h.draws.length=0;h.api.drawMonster(m);assert.equal(h.draws.length,0);
   p.x=45;m.respawnIn=.01;h.api.update(.02);assert.equal(m.dead,false);assert.equal(m.hp,m.maxHp);assert.equal(m.hit,0);assert.equal(m.deathFx,0);
  }
  const {h,p}=bossHarness();h.api.startBossFight();const b=h.api.get().boss;h.api.hitMonster(b,1);assert.equal(b.hit,.16);assert.equal(b.hitDir,undefined);assert.equal(b.deathFx,undefined);assert.equal(b.hp,b.maxHp-1);
@@ -1773,7 +1774,7 @@ test('E keeps stealth while charging, moves its rectangle, pays once, freezes an
  const m=h.api.get().monsters[0],a=h.api.chickArea();Object.assign(m,{x:a.x,y:a.y,home:a.x});const start=m.x,before=p.mp;
  assert.equal(h.api.releaseChickCharge('test'),true);assert.equal(before-p.mp,24);assert.equal(h.api.releaseChickCharge('test'),false);assert.equal(h.api.get().cooldowns.e,14);
  assert.equal(10000-m.hp,Math.round(core.attackPower(p)*4.5*1.2));assert.equal(m.stunTime,2);assert.equal(h.api.get().chickStealth,0);advance(h,1);assert.equal(m.x,start);
- render(h);assert.ok(h.draws.some(d=>d.asset==='assets/robot.webp'&&d.filter.includes('grayscale')));advance(h,2.1);assert.equal(m.stunTime,0);
+ render(h);assert.ok(h.draws.some(d=>d.asset===`assets/${m.asset||'robot'}.webp`&&d.filter.includes('grayscale')));advance(h,2.1);assert.equal(m.stunTime,0);
 });
 test('E auto fires after 1.5 seconds, blocks other attacks, and cancels safely on blur',()=>{
  const {h,p}=chickFixture();h.api.startChickCharge('keyboard');const mp=p.mp;h.api.cast('q');h.api.attack();assert.equal(p.mp,mp);assert.equal(h.api.get().attackTimer,0);
@@ -2513,4 +2514,52 @@ test('W ground water and foam cover the same enlarged Y lane as its hit detectio
  const {h,p}=otterFixture();h.api.cast('w');const wave=h.api.get().otterWave;assert.equal(wave.skill.halfLane,120);h.fills.length=0;render(h);
  assert.ok(h.fills.some(f=>f.path.some(shape=>shape.kind==='ellipse'&&shape.ry===wave.skill.halfLane&&shape.y===wave.y)));
  const foam=h.strokes.filter(s=>s.color==='#c7faffad');assert.ok(foam.some(s=>s.path[0].y===wave.y-wave.skill.halfLane));assert.ok(foam.some(s=>s.path[0].y===wave.y+wave.skill.halfLane));
+});
+
+function postAHarness(classId='wanderer',job='swordsman'){
+ const h=harness(),p=core.createCharacter('프로 사냥',classId);Object.assign(p,{level:50,job,map:'dataStreet',x:1200,y:650});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);
+ for(const m of h.api.get().monsters){m.dead=true;m.respawnIn=999;}
+ advance(h,2.1);
+ const m=h.api.get().monsters[1];Object.assign(m,{dead:false,x:900,y:650,speed:0,attackCooldown:0,cast:null});
+ return {h,p,m};
+}
+test('ranged warning precedes damage, fixed landing point can be dodged, and a landed orb only hits once',()=>{
+ for(const dodge of [false,true]){
+  const {h,p,m}=postAHarness();const hp=p.hp;
+  advance(h,.1);assert.ok(m.cast);assert.equal(p.hp,hp);
+  render(h);assert.ok(h.strokes.some(s=>s.path.some(a=>a.kind==='ellipse'&&a.rx===90&&a.ry===60)));
+  advance(h,.6);const orb=h.api.get().enemyOrbs[0];assert.ok(orb);assert.equal(p.hp,hp);
+  if(dodge)p.x+=120;
+  advance(h,.87);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/post-a-ranged-v146.webp'));assert.equal(p.hp,hp-(dodge?0:m.attack));assert.equal(h.api.get().enemyOrbs.length,0);
+  const after=p.hp;advance(h,.5);assert.equal(p.hp,after);
+ }
+});
+test('orb magic breaks stealth, guard blocks it, shields absorb it, and landed area can damage the taunting ballot',()=>{
+ for(const mode of ['stealth','guard','shield','ballot']){
+  const {h,p,m}=postAHarness(mode==='stealth'?'chick':mode==='shield'?'otter':mode==='ballot'?'cat':'wanderer',mode==='stealth'?'hacker':mode==='shield'?'idol':mode==='ballot'?'protester':'swordsman');
+  m.dead=true;
+  if(mode==='stealth')h.api.cast('w');else if(mode==='ballot')h.api.cast('r');else h.api.cast('e');
+  advance(h,.8);const hp=p.hp,box=h.api.get().catBallot;
+  h.api.get().enemyOrbs.push({source:m,fromX:900,fromY:580,x:box?.x??p.x,y:box?.y??p.y,rx:90,ry:60,elapsed:0,duration:.01,damage:m.attack});h.api.updateEnemyOrbs(.02);
+  if(mode==='stealth'){assert.equal(h.api.get().chickStealth,0);assert.ok(p.hp<hp);}
+  if(mode==='guard'){assert.equal(p.hp,hp);assert.equal(h.api.get().guardBlocks,1);}
+  if(mode==='shield'){assert.equal(h.api.get().otterShield,null);assert.equal(hp-p.hp,m.attack-Math.round(core.maxHp(p)*.1));}
+  if(mode==='ballot')assert.equal(box.hp,1500-m.attack);
+ }
+});
+test('ranged windup is cancelled by hacking stun and projectile state is cleared on scene changes',async()=>{
+ const {h,p,m}=postAHarness();advance(h,.1);assert.ok(m.cast);m.stunTime=2;advance(h,.01);assert.equal(m.cast,null);
+ m.stunTime=0;advance(h,.7);assert.ok(h.api.get().enemyOrbs.length);
+ const pending=h.api.travel(core.MAPS.dataStreet.portals.find(p=>p.to==='yeoksamStreet'));await h.flush();await pending;
+ assert.equal(p.map,'yeoksamStreet');assert.equal(h.api.get().enemyOrbs.length,0);assert.equal(h.api.get().monsters.length,0);
+});
+test('all five new destinations load their artwork and the exam entrance is a dialogue without a real boss room',async()=>{
+ const h=harness(),p=core.createCharacter('입구');Object.assign(p,{level:60,map:'proving',x:1000});h.api.start(p);
+ assert.deepEqual(Array.from(h.api.mapAssets('proving')),['post-a-dungeons-v146','post-a-melee-v146','post-a-ranged-v146']);
+ const pending=h.api.travel(core.MAPS.proving.portals.find(p=>p.to==='proExam'));await h.flush();await pending;
+ assert.equal(p.map,'proExam');assert.equal(h.api.get().boss,null);assert.equal(h.api.get().monsters.length,0);p.x=900;p.y=648;
+ assert.equal(h.api.findInteraction().name,'시험장 입구');h.api.interact();assert.equal(h.api.get().modal,'exam-entry');
+ assert.match(h.el('#modal-root').innerHTML,/아직 준비 중/);assert.match(h.el('#modal-root').innerHTML,/disabled/);assert.equal(h.api.get().boss,null);
+ h.el('#exam-return').onclick();assert.equal(h.api.get().modal,null);assert.equal(p.map,'proExam');
+ h.api.worldMap();const html=h.el('#modal-root').innerHTML;assert.match(html,/data-map="proExam"/);assert.match(html,/프로 시험 훈련장/);assert.match(html,/viewBox="0 0 1120 740"/);
 });
