@@ -1,8 +1,8 @@
-import {otterMouthPoint,drawWaterJet,drawWaterSplash,drawWaterWave,drawWaterOrb,drawWaterShield} from './otter-effects.js?v=139';
-import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawFireFootprint,drawBallotVortex} from './cat-effects.js?v=139';
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections,catAreaRadii,catAreaContains} from './core.js?v=139';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=139';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=139';
+import {otterMouthPoint,drawWaterJet,drawWaterSplash,drawWaterWave,drawWaterOrb,drawWaterShield} from './otter-effects.js?v=140';
+import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawFireFootprint,drawBallotVortex} from './cat-effects.js?v=140';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,itemEquipped,hasTypeATitle,incomingDamage,WORLD_MAP_LAYOUT,worldMapConnections,catAreaRadii,catAreaContains} from './core.js?v=140';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=140';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=140';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -30,7 +30,7 @@ function loadImage(name){
  imageLoads.set(name,promise);img.src=`assets/${name}.webp`;return promise;
 }
 function characterAssets(p){
- let assets=p.classId==='otter'?[otterAsset(p),'otter-wave-v139']:p.classId==='rabbit'?[rabbitAsset(p)]:p.classId==='chick'?['chick-motion','chick-actions',...(p.job==='hacker'?['chick-typing']:[])]:p.classId==='cat'?[...['cat','cat-motion','cat-skills'].map(name=>catAsset(name,p)),...(p.job==='protester'?['cat-fire-v136','cat-fire-ground-v137']:[])]:
+ let assets=p.classId==='otter'?[otterAsset(p),'otter-wave-v140']:p.classId==='rabbit'?[rabbitAsset(p)]:p.classId==='chick'?['chick-motion','chick-actions',...(p.job==='hacker'?['chick-typing']:[])]:p.classId==='cat'?[...['cat','cat-motion','cat-skills'].map(name=>catAsset(name,p)),...(p.job==='protester'?['cat-fire-v136','cat-fire-ground-v137']:[])]:
   ['penguin','penguin-hurt','penguin-walk','penguin-jump',...(p.job==='swordsman'?['combat-swordsman','sword-guard-walk','swordsman-skill-e-draw']:['combat-brawler']),...(p.job==='bodybuilder'?['builder-recovery-walk','penguin-power','penguin-power-poses','penguin-power-walk','penguin-power-jump','combat-power','power-recovery-walk']:[])];
  if(hasUniform(p))assets=[...assets,...assets.filter(name=>UNIFORM_ASSETS.has(name)).map(name=>'uniform-'+name)];
  if(p.job&&p.classId==='wanderer')assets.push('job-equipment');
@@ -918,7 +918,7 @@ function otterHeart(x,y,size,alpha=1){
 }
 function drawOtterEffects(){
  for(const e of effects){if(e.type==='otterJet')drawWaterJet(ctx,e,camera);else if(e.type==='otterSplash')drawWaterSplash(ctx,e,camera);}
- if(otterWave)drawWaterWave(ctx,otterWave,camera,images['otter-wave-v139']);
+ if(otterWave)drawWaterWave(ctx,otterWave,camera,images['otter-wave-v140']);
  if(otterShield)drawWaterShield(ctx,player.x-camera,player.y-64-pz,worldTime);
  if(otterBubbles){const b=otterBubbles;for(const orb of b.orbs)if(orb.active){const p=otterOrbPoint(b,orb.index);drawWaterOrb(ctx,p.x-camera,p.y-55-pz,20,b.elapsed,Math.min(1,b.remaining));}}
  if(otterConcert){
