@@ -39,7 +39,19 @@ export function drawWaterWave(ctx,w,camera,image){
  // Keep the original side-on crest and flat footing. The newer art supplies
  // flowing colour inside this silhouette rather than dictating a diagonal shape.
  const crest=()=>{ctx.beginPath();ctx.moveTo(-80,4);ctx.bezierCurveTo(-55,-15,-23,-7,-2,-49);ctx.bezierCurveTo(25,-108,74,-78,50,-44);ctx.bezierCurveTo(50,-70,19,-66,16,-35);ctx.bezierCurveTo(13,-10,56,-15,77,1);ctx.closePath();};
- const ground=ctx.createRadialGradient(0,0,8,0,0,lane);ground.addColorStop(0,'#a0f1ff20');ground.addColorStop(1,'#b6f5ff00');ctx.fillStyle=ground;ctx.beginPath();ctx.ellipse(0,3,85,lane,0,0,TAU);ctx.fill();
+ // The surface footprint uses the actual hit lane, not the crest's height.
+ const ground=ctx.createLinearGradient(-85,0,85,0);ground.addColorStop(0,'#c6faff00');ground.addColorStop(.5,'#77e4ff20');ground.addColorStop(1,'#75ddf568');ctx.fillStyle=ground;ctx.beginPath();ctx.ellipse(0,0,85,lane,0,0,TAU);ctx.fill();
+ ctx.save();ctx.clip();ctx.lineCap='round';
+ for(let i=0;i<9;i++){const y=(i-4)*lane*.22,spread=Math.sqrt(1-(y/lane)**2),flow=Math.sin(time*9+i)*3;ctx.strokeStyle=i%2?'#e1fbff9c':'#97eafa70';ctx.lineWidth=i%3===0?2.5:1.5;ctx.beginPath();ctx.moveTo(-64*spread,y);ctx.bezierCurveTo(-36*spread,y-4+flow,20*spread,y+5-flow,55*spread,y);ctx.stroke();}
+ ctx.restore();
+ // Foam at both Y boundaries makes the wider attack area readable.
+ ctx.lineCap='round';ctx.strokeStyle='#c7faffad';ctx.lineWidth=2;
+ for(const edge of [-1,1]){ctx.beginPath();ctx.moveTo(-12,edge*lane);ctx.bezierCurveTo(5,edge*(lane-5),17,edge*(lane-2),23,edge*lane);ctx.stroke();}
+ // Small breaking wavelets fill the wider lane without turning it into a wall.
+ for(const offset of [-.7,.7]){const y=offset*lane,flow=Math.sin(time*8+offset)*2;
+  ctx.beginPath();ctx.moveTo(5,y+5);ctx.bezierCurveTo(20,y-3,25,y-30,47,y-26+flow);ctx.bezierCurveTo(64,y-24,65,y-9,52,y-7);ctx.quadraticCurveTo(55,y-24,42,y-19);ctx.bezierCurveTo(29,y-15,39,y+2,65,y+6);ctx.closePath();ctx.fillStyle='#88e5f54a';ctx.fill();ctx.strokeStyle='#c7faffad';ctx.lineWidth=2;ctx.stroke();
+ }
+ for(let i=0;i<9;i++){const y=(i-4)*lane/4,spread=Math.sqrt(Math.max(0,1-(y/lane)**2)),t=(time*2+noise(i+340))%1;ctx.globalAlpha=(1-t)*.65;ctx.fillStyle='#e9ffff';ctx.beginPath();ctx.ellipse(64*spread+t*7,y,2+t*2,1.5+t,0,0,TAU);ctx.fill();}ctx.globalAlpha=1;
  const g=ctx.createLinearGradient(0,-90,0,8);g.addColorStop(0,'#e0fcff');g.addColorStop(.4,'#6adcf5');g.addColorStop(.75,'#29bce3');g.addColorStop(1,'#1795c080');ctx.fillStyle=g;crest();ctx.fill();
  ctx.save();crest();ctx.clip();
  if(image?.complete&&image.naturalWidth){ctx.globalAlpha=.65;const flow=Math.sin(time*7)*3;ctx.drawImage(image,0,image.naturalHeight*.145,image.naturalWidth,image.naturalHeight*.74,-85+flow,-103,166,115);ctx.globalAlpha=1;}
@@ -51,8 +63,6 @@ export function drawWaterWave(ctx,w,camera,image){
  // A luminous breaking lip and small spray improve detail without a tall wall.
  ctx.beginPath();ctx.moveTo(-69,-1);ctx.bezierCurveTo(-40,-13,-18,-14,-2,-49);ctx.bezierCurveTo(25,-108,74,-78,50,-44);ctx.strokeStyle='#bff7ff';ctx.lineWidth=7;ctx.stroke();ctx.strokeStyle='#e9ffff';ctx.lineWidth=3;ctx.stroke();
  for(let i=0;i<7;i++){const t=(time*1.8+noise(i+270))%1,x=28+t*39,y=-54-Math.sin(t*Math.PI)*34+(noise(i+250)-.5)*16;ctx.globalAlpha=(1-t)*.7;ctx.fillStyle=i%3?'#eaffff':'#91e8f9';ctx.beginPath();ctx.ellipse(x,y,1.5+noise(i+25)*1.5,2+noise(i+45)*2,.3,0,TAU);ctx.fill();}
- ctx.globalAlpha=.65;ctx.strokeStyle='#d0fbff';ctx.lineWidth=1.5;
- for(let i=0;i<3;i++){const y=(i-1)*lane*.65;ctx.beginPath();ctx.moveTo(-65,y);ctx.quadraticCurveTo(-30,y+Math.sin(time*9+i)*4,6,y);ctx.stroke();}
  ctx.restore();
 }
 export function drawWaterOrb(ctx,x,y,r,elapsed,alpha=1){

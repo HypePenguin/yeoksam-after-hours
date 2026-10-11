@@ -2123,12 +2123,12 @@ test('otter punch includes the complete overflowing fist effect in both outfits 
 });
 
 test('otter wave hits the expanded vertical boundary in both directions and stops outside it',()=>{
- for(const job of [null,'idol'])for(const dir of [1,-1])for(const dy of [96,-96,97,-97]){
-  const {h,p}=otterFixture('alley',job);p.y=dy>0?620:680;
+ for(const job of [null,'idol'])for(const dir of [1,-1])for(const dy of [120,-120,121,-121]){
+  const {h,p}=otterFixture('alley',job);p.y=dy>0?580:720;
   h.api.keys.add(dir===1?'ArrowRight':'ArrowLeft');h.api.update(.01);h.api.keys.clear();
   const target=placeOtterEnemy(h,0,p.x+dir*200,p.y+dy);
   h.api.cast('w');const damage=h.api.get().otterWave.damage;advance(h,.4);
-  assert.equal(target.hp,10000-(Math.abs(dy)<=96?damage:0));
+  assert.equal(target.hp,10000-(Math.abs(dy)<=120?damage:0));
  }
 });
 
@@ -2507,4 +2507,10 @@ test('side-on W wave remains compact and renders behind the surfer in either dir
   assert.ok(wave&&surfer);assert.ok(h.draws.indexOf(wave)<h.draws.indexOf(surfer));assert.equal(wave.height,115);assert.equal(wave.width,166);assert.equal(Math.sign(wave.matrix[0]),dir);assert.equal(Math.sign(surfer.matrix[0]),dir);
   assert.ok(surfer.strokeCount>h.strokes.findIndex(s=>s.color==='#e9ffff'),'breaking lip must be painted before the character');assert.equal(h.api.otterFrame(),11);assert.equal(h.api.get().otterWave.y,p.y);
  }
+});
+
+test('W ground water and foam cover the same enlarged Y lane as its hit detection',()=>{
+ const {h,p}=otterFixture();h.api.cast('w');const wave=h.api.get().otterWave;assert.equal(wave.skill.halfLane,120);h.fills.length=0;render(h);
+ assert.ok(h.fills.some(f=>f.path.some(shape=>shape.kind==='ellipse'&&shape.ry===wave.skill.halfLane&&shape.y===wave.y)));
+ const foam=h.strokes.filter(s=>s.color==='#c7faffad');assert.ok(foam.some(s=>s.path[0].y===wave.y-wave.skill.halfLane));assert.ok(foam.some(s=>s.path[0].y===wave.y+wave.skill.halfLane));
 });
