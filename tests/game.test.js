@@ -2585,9 +2585,9 @@ test('all five new destinations load their artwork and the exam entrance is a di
 });
 
 test('B entry is only through the exam NPC, stays hidden, then automatically starts at its trigger',async()=>{
- const h=harness(),p=core.createCharacter('B도전');Object.assign(p,{level:70,map:'proExam',x:900});h.api.start(p);h.api.interact();assert.equal(h.api.get().modal,'exam-entry');const pending=h.el('#exam-enter').onclick();await h.flush();await pending;
+ const h=harness(),p=core.createCharacter('B도전');Object.assign(p,{level:70,map:'proExam',x:900});p.hp=core.maxHp(p);h.api.start(p);h.api.interact();assert.equal(h.api.get().modal,'exam-entry');const pending=h.el('#exam-enter').onclick();await h.flush();await pending;
  assert.equal(p.map,'proBoss');assert.equal(h.api.get().boss.phase,'hidden');assert.equal(h.api.get().monsters.length,0);assert.equal(h.api.findInteraction(),null);p.x=720;h.api.update(.01);assert.equal(h.api.get().boss.phase,'arrival-warning');assert.equal(h.api.get().monsters.length,1);assert.equal(h.api.findInteraction(),null);
- render(h);assert.ok(!h.draws.some(d=>d.asset==='assets/b-type-boss-v148.webp'));assert.ok(h.labels.some(l=>l.text.includes('낙하 위험')));
+ render(h);assert.ok(!h.draws.some(d=>d.asset==='assets/b-type-boss-v148.webp'));assert.ok(!h.labels.some(l=>l.text.includes('낙하 위험')));assert.equal(h.el('#boss-cue').textContent,'');
  advance(h,2.3);render(h);assert.ok(h.draws.some(d=>d.asset==='assets/b-type-boss-v148.webp'));assert.equal(h.api.get().boss.level,70);
  assert.ok(h.requestedImages.some(img=>img.asset==='assets/item-b-badge.svg'));assert.ok(!h.requestedImages.some(img=>img.asset==='assets/item-b-badge.webp'));
 });
@@ -2622,4 +2622,17 @@ test('B victory displays active time, saves first and latest clear times, and ex
   const saved=JSON.parse(h.storage.get(core.SAVE_KEY)).characters[0];assert.equal(saved.typeBFirstClearSeconds,3723);
   h.api.closeModal();p.activePlaySeconds=4000;h.api.start(p);h.api.update(.01);const repeat=h.api.get().boss;Object.assign(repeat,{stage:2,phase:'approach',hp:1,maxHp:60000,awakenUsed:true});h.api.hitMonster(repeat,1000);advance(h,1.6);assert.equal(p.typeBFirstClearSeconds,3723);assert.equal(p.typeBLastClearSeconds,4000);
  }
+});
+
+test('B global landing ignores defense, guard and shield, while jumps and invulnerability avoid it',()=>{
+ const prepare=(classId='wanderer',job='bodybuilder')=>{const h=harness(),p=core.createCharacter('착지',classId);Object.assign(p,{level:70,job,map:'proBoss',x:719,y:400});p.hp=core.maxHp(p);p.mp=core.maxMp(p);h.api.start(p);advance(h,2.2);const b=h.api.get().boss;Object.assign(b,{active:true,phase:'arrival-drop',elapsed:0,z:850});return {h,p,b};};
+ for(const [classId,job,key] of [['wanderer','bodybuilder','e'],['wanderer','swordsman','e'],['rabbit','mage','e']]){const {h,p}=prepare(classId,job);h.api.cast(key);const hp=p.hp;h.api.update(.65);assert.equal(p.hp,hp-500);}
+ {const {h,p,b}=prepare();const hp=p.hp;b.elapsed=.2;h.api.jump();advance(h,.46);assert.equal(p.hp,hp);}
+ {const {h,p}=prepare('chick','hacker');advance(h,.3);h.api.cast('w');const hp=p.hp;advance(h,.37);assert.equal(p.hp,hp);}
+});
+test('B pizza has no advance safe-zone paint, direction disappears after opening and scrap uses its new atlas',()=>{
+ const h=harness(),p=core.createCharacter('연출');Object.assign(p,{level:70,map:'proBoss',x:720});h.api.start(p);h.api.update(.01);const b=h.api.get().boss;
+ typeBCore.beginTypeBPizza(b,1,()=>.1);Object.assign(b,{phase:'pizza-charge',elapsed:.8});render(h);const colors=h.fills.map(f=>f.color);assert.ok(!colors.includes('#52c8ff59'));assert.ok(!h.labels.some(l=>l.text==='안전'));const openingStrokes=h.strokes.filter(s=>s.color==='#ffe2b8').length;assert.ok(openingStrokes>0);
+ b.pizzaPulse=1;h.strokes.length=0;render(h);assert.equal(h.strokes.filter(s=>s.color==='#ffe2b8').length,0);
+ b.phase='recover';b.debris=[{x:900,y:550,remaining:.12,duration:.9,rx:90,ry:60,variant:2,spin:0}];render(h);assert.ok(h.draws.some(d=>d.asset==='assets/b-type-debris-v150.webp'));
 });

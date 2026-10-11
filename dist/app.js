@@ -1,11 +1,11 @@
-import {TYPE_B,isTypeB,createTypeB,triggerTypeB,typeBTargetable,stepTypeB,damageTypeB,typeBHit,defeatTypeB,typeBCue,typeBMoveSlow,startTypeBQte,inputTypeBQte} from './type-b.js?v=149';
-import {drawTypeBFloor,drawTypeBBody,drawTypeBAir} from './type-b-effects.js?v=149';
-import {ORB_ATTACK,stepOrbCaster,orbBlastContains,orbFlightPoint,drawOrbWarning,drawEnemyOrb} from './enemy-combat.js?v=149';
-import {otterMouthPoint,drawWaterJet,drawWaterSplash,drawWaterWave,drawWaterOrb,drawWaterShield} from './otter-effects.js?v=149';
-import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawFireFootprint,drawBallotVortex} from './cat-effects.js?v=149';
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,equipTypeBTitle,itemEquipped,hasTypeATitle,hasTypeBTitle,incomingDamage,WORLD_MAP_LAYOUT,WORLD_MAP_HEIGHT,worldMapConnections,catAreaRadii,catAreaContains,formatPlayTime} from './core.js?v=149';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=149';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=149';
+import {TYPE_B,isTypeB,createTypeB,triggerTypeB,typeBTargetable,stepTypeB,damageTypeB,typeBHit,defeatTypeB,typeBCue,typeBMoveSlow,startTypeBQte,inputTypeBQte} from './type-b.js?v=150';
+import {drawTypeBFloor,drawTypeBBody,drawTypeBAir,drawTypeBScreen} from './type-b-effects.js?v=150';
+import {ORB_ATTACK,stepOrbCaster,orbBlastContains,orbFlightPoint,drawOrbWarning,drawEnemyOrb} from './enemy-combat.js?v=150';
+import {otterMouthPoint,drawWaterJet,drawWaterSplash,drawWaterWave,drawWaterOrb,drawWaterShield} from './otter-effects.js?v=150';
+import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawFireFootprint,drawBallotVortex} from './cat-effects.js?v=150';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,equipTypeBTitle,itemEquipped,hasTypeATitle,hasTypeBTitle,incomingDamage,WORLD_MAP_LAYOUT,WORLD_MAP_HEIGHT,worldMapConnections,catAreaRadii,catAreaContains,formatPlayTime} from './core.js?v=150';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=150';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=150';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -42,7 +42,7 @@ function characterAssets(p){
 function mapAssets(mapId){
  const map=MAPS[mapId],assets=[map.background||(Number.isInteger(map.backgroundTile)?'districts':'city'),...mapNPCs(mapId).filter(npc=>npc.id!=='exam-entry').map(npc=>npc.asset||'player')];
  if(monsterCount(mapId)>0)assets.push(...(map.mixedCombat?['post-a-melee-v146','post-a-ranged-v146']:['robot']));
- if(mapId==='proBoss')assets.push('b-type-boss-v148','b-type-walk-v148');
+ if(mapId==='proBoss')assets.push('b-type-boss-v148','b-type-walk-v148','b-type-debris-v150');
  if(mapId==='pocha')assets.push('soldier-boss','soldier-counter','soldier-walk');
  if(mapId==='hangar')assets.push('type-a');
  return assets;
@@ -207,6 +207,11 @@ function refreshBossHUD(){
  const hud=$('#boss-hud');if(!hud)return;hud.classList.toggle('type-b',isTypeB(boss));hud.classList.toggle('type-b-critical',isTypeB(boss)&&['protocol','awakening','awakened'].includes(boss.phase));hud.hidden=!bossActive();$('.game-shell').classList.toggle('boss-fight',bossActive());
  const warning=$('#type-a-warning');warning.hidden=!bossActive()||!isTypeA(boss)||!['safety','enrage'].includes(boss.phase);if(!warning.hidden)warning.textContent=boss.phase==='safety'?`안전지대를 찾으세요! ${Math.max(0,TYPE_A.safety.duration-boss.elapsed).toFixed(1)}초 · 파란 영역 / 무적기로 회피`:'A형 광폭화 · 회전 칼날과 자기장 주의';
  if(!bossActive())return;
+ if(isTypeB(boss)){
+  const previous=Number(hud.dataset.bHp),changed=hud.dataset.bPhase!==boss.phase,reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  if(!reduced&&((Number.isFinite(previous)&&previous>boss.hp)||changed&&['protocol','awakening','pizza-release'].includes(boss.phase)))hud.animate?.([{scale:'1.025',filter:'brightness(1.3)'},{scale:'1',filter:'brightness(1)'}],{duration:260,easing:'cubic-bezier(.2,.8,.2,1)'});
+  hud.dataset.bHp=String(boss.hp);hud.dataset.bPhase=boss.phase;hud.classList.toggle('b-phase-two',boss.stage===2);
+ }
  $('#boss-name').textContent=`Lv.${bossInfo().level} ${bossInfo().name}${isTypeB(boss)?` · ${boss.stage}페이즈${boss.failedAwakening?' · 각성':''}`:boss.enraged?' · 광폭화':''}`;
  $('#boss-hp-text').textContent=`${Math.ceil(boss.hp).toLocaleString()} / ${boss.maxHp.toLocaleString()}`;
  $('#boss-hp-fill').style.width=`${boss.hp/boss.maxHp*100}%`;$('#boss-cue').textContent=isTypeB(boss)?typeBCue(boss):isTypeA(boss)?typeACue(boss):soldierCue(boss);hud.classList.toggle('counter-active',boss.phase==='counter');
@@ -280,7 +285,7 @@ function jobModal(job){
 }
 
 function examEntranceTalk(){
- showModal('exam-entry','시험장 입구',`<div class="boss-intro"><span class="boss-eyebrow">프로전형 · Lv.70 B형</span><h3>안쪽 기계실은 출입 통제 구역입니다.</h3><p>안쪽으로 걸어가면 B형이 낙하하며 전투가 시작됩니다. 바닥의 위험 표시와 피자 패턴의 파란 안전지대를 확인하세요.</p><p>기체를 정지시켜도 섬멸 프로토콜로 재가동합니다. 각성 경보가 울리면 10초 안에 가까이 가서 F를 누르고 화살표 10개를 맞추세요.</p><p class="boss-reward">최종 격파 보상 · 금빛 B형 칭호<br>공격력 +20% · 이동속도 +10% · 반짝이는 기운</p>${player.level<70?'<p>Lv.70 보스입니다. 현재 레벨보다 강할 수 있어요.</p>':''}<button class="primary" id="exam-enter">기계실 입장하기</button><button class="secondary" id="exam-return">안내 닫기</button></div>`,'#exam-enter');
+ showModal('exam-entry','시험장 입구',`<div class="boss-intro"><span class="boss-eyebrow">프로전형 · Lv.70 B형</span><h3>안쪽 기계실은 출입 통제 구역입니다.</h3><p>안쪽으로 걸어가면 B형이 낙하하며 전투가 시작됩니다. 등장 시 붉은 바닥 경고가 세 번 깜박입니다. 점프 또는 무적기로 충격을 피하세요. 피자 패턴은 처음의 회전 방향을 기억해 네 번의 에너지 방출을 피하세요.</p><p>기체를 정지시켜도 섬멸 프로토콜로 재가동합니다. 각성 경보가 울리면 10초 안에 가까이 가서 F를 누르고 화살표 10개를 맞추세요.</p><p class="boss-reward">최종 격파 보상 · 금빛 B형 칭호<br>공격력 +20% · 이동속도 +10% · 반짝이는 기운</p>${player.level<70?'<p>Lv.70 보스입니다. 현재 레벨보다 강할 수 있어요.</p>':''}<button class="primary" id="exam-enter">기계실 입장하기</button><button class="secondary" id="exam-return">안내 닫기</button></div>`,'#exam-enter');
  $('#exam-enter').onclick=()=>travel(MAPS.proExam.portals.find(p=>p.to==='proBoss'));
  $('#exam-return').onclick=closeModal;
 }
@@ -568,7 +573,7 @@ function handleBArrow(code){
 }
 function updateTypeBFight(dt){
  if(!boss||!isTypeB(boss))return;
- if(triggerTypeB(boss,player)){monsters=[boss];interactionTarget=null;potionCooldown=0;toast('낙하 위험! 바닥의 표시에서 벗어나세요.');refreshHUD();}
+ if(triggerTypeB(boss,player)){monsters=[boss];interactionTarget=null;potionCooldown=0;refreshHUD();}
  if(!boss.active)return;
  const events=stepTypeB(boss,dt,{...bossPerception(),stunned:chickStunned(boss)});
  if(boss.quakeRemaining>0)shake=Math.max(shake,2.2);
@@ -578,10 +583,10 @@ function updateTypeBFight(dt){
   if(e.type==='awaken-failed'){keys.clear();shake=12;beep(100,.7,'sawtooth',.03);refreshHUD();continue;}
   if(e.type==='muzzle'){effects.push({type:'spark',x:e.x,y:e.y,life:.1,max:.1,color:'#ffd6a1',size:38});beep(130,.03,'square',.006);continue;}
   if(e.type==='oil-spray'){beep(280,.2);continue;}
-  if(['landing','stomp','pizza-land','quake-start'].includes(e.type)){shake=Math.max(shake,e.type==='quake-start'?10:7);effects.push({type:'ring',x:boss.x,y:boss.y,life:.4,max:.4,color:'#ffb981',size:e.type==='landing'?220:180});beep(100,.15,'triangle',.02);}
+  if(['landing','stomp','pizza-land','quake-start'].includes(e.type)){shake=Math.max(shake,e.type==='landing'?26:e.type==='quake-start'?10:7);effects.push({type:'ring',x:boss.x,y:boss.y,life:.4,max:.4,color:'#ffb981',size:e.type==='landing'?220:180});beep(100,.15,'triangle',.02);}
   if(e.type==='slash'){effects.push({type:'slash',x:e.x+e.dir*80,y:e.y-100,dir:e.dir,life:.32,max:.32,color:'#ff9c67',size:e.range});beep(190,.1);}
-  if(e.type==='pizza'){shake=Math.max(shake,6);beep(160,.16,'sawtooth',.012);}
-  if(e.type==='debris')effects.push({type:'ring',x:e.x,y:e.y,life:.24,max:.24,color:'#ffb179',size:e.rx});
+  if(e.type==='pizza'){shake=Math.max(shake,15);beep(90,.22,'triangle',.035);}
+  if(e.type==='debris'){shake=Math.max(shake,4);beep(115,.06,'triangle',.006);}
   const box=liveBallot();
   if(box&&typeBHit(e,{...box,z:0})){
    damageBallot(e.damage,boss);
@@ -592,8 +597,8 @@ function updateTypeBFight(dt){
   if(e.type==='bullet')e.shot.spent=true;
   if(e.type==='dash')boss.dashHit=true;
   if(invincible>0)continue;
-  if(guardTime>0){recordSwordBlock(e.shot||boss,.12);continue;}
-  const damage=playerDamage(e.damage,boss,['laser','pizza'].includes(e.type)?'magic':'physical');
+  if(guardTime>0&&!e.fixedDamage){recordSwordBlock(e.shot||boss,.12);continue;}
+  const damage=e.fixedDamage?e.damage:playerDamage(e.damage,boss,['laser','pizza'].includes(e.type)?'magic':'physical');
   player.hp=Math.max(0,player.hp-damage);hurtTime=.32;invincible=.12;shake=Math.max(shake,5);
   textAt(`−${damage}`,player.x,player.y-115,'#ff9b91');beep(120,.06,'square',.01);
   if(player.hp<=0){die();return;}
@@ -2029,14 +2034,14 @@ function draw(){
   // Wave stays behind the surfer so its crest cannot cover the character.
   if(otterWave)entities.push({y:otterWave.y-.1,draw:()=>drawWaterWave(ctx,otterWave,camera,images['otter-wave-v144'])});
   drawCatGround();drawGuardBack();entities.sort((a,b)=>a.y-b.y).forEach(e=>e.draw());drawCatFields();
-  drawCombatIndicators();drawEffects();drawTypeBAir(ctx,boss,camera,worldTime);drawBTitleSparkles();drawEnemyProjectiles();drawRabbitEffects();drawChickEffects();drawOtterEffects();
+  drawCombatIndicators();drawEffects();drawTypeBAir(ctx,boss,camera,worldTime,images);drawBTitleSparkles();drawEnemyProjectiles();drawRabbitEffects();drawChickEffects();drawOtterEffects();
   if(MAPS[player.map].danger>=2){
    for(let i=0;i<20;i++){const x=(i*163+worldTime*13)%screenWidth,y=120+(i*97)%520;ctx.fillStyle=`rgba(190,163,243,${.15+Math.sin(worldTime+i)*.1})`;ctx.fillRect(x,y,3,3);}
   }
  }else if(scene==='title'){
   for(let i=0;i<12;i++){const x=(i*137+worldTime*7)%screenWidth,y=100+(i*73)%500;ctx.fillStyle=`rgba(255,226,147,${.13+Math.sin(worldTime*1.3+i)*.1})`;ctx.fillRect(x,y,2,2);}
  }
- ctx.restore();
+ ctx.restore();if(scene==='playing')drawTypeBScreen(ctx,boss,screenWidth,810,worldTime);
 }
 function frame(time){syncPlayTime();const dt=prev?Math.min((time-prev)/1000,.04):.016;prev=time;update(dt);draw();requestAnimationFrame(frame);}
 function resize(){const box=$('.game-shell').getBoundingClientRect();screenWidth=Math.round(box.width/box.height*810);canvas.width=screenWidth;canvas.height=810;ctx.imageSmoothingEnabled=false;if(player&&scene==='playing')updateCamera(1);}

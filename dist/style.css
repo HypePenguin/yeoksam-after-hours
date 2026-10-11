@@ -295,3 +295,11 @@ main{width:100%;max-width:1512px;min-height:100svh;margin:0 auto;padding:24px;di
 @media(max-width:650px){.game-screen:has(.boss-hud.type-b) .b-protocol{display:none}.boss-hud.type-b-critical #boss-cue{color:#ff7468;font-weight:800;font-size:12px}}
 
 .boss-intro #b-clear-time .clear-play-time{font-size:clamp(22px,4vw,32px);font-weight:800;color:#ffe493;margin:8px 0}.boss-intro #b-clear-time small{display:block;line-height:1.6;color:#a9c2c5}
+
+/* Type B: mechanical glass, restrained bloom and event-driven impact scaling. */
+.boss-hud.type-b{background:linear-gradient(125deg,#111820f5,#241015ef);border-color:#e67a55;box-shadow:0 7px 24px #0008,inset 0 1px 0 #fff1,0 0 18px #ff5b2223;animation:b-hud-enter .45s cubic-bezier(.16,1,.3,1);transform-origin:50% 0}
+.boss-hud.type-b .boss-hp-track{box-shadow:inset 0 1px 3px #000,0 0 8px #ff513122}.boss-hud.type-b .boss-hp-track i{background:linear-gradient(90deg,#a82523,#f47238 48%,#ffe0a0);box-shadow:0 0 10px #ff4e32;transition:width .16s cubic-bezier(.2,.8,.2,1)}
+.boss-hud.type-b.b-phase-two{border-color:#ff4d47;box-shadow:0 7px 24px #0008,0 0 22px #ff241f35}.boss-hud.type-b-critical{animation:b-hud-alarm 1.4s ease-in-out infinite}
+.b-protocol:not([hidden]){animation:b-protocol-enter .45s cubic-bezier(.16,1,.3,1),b-protocol-glow 1.2s ease-in-out infinite}.b-qte:not([hidden]){animation:b-hud-enter .22s ease-out}#b-qte-arrows .current{animation:b-arrow-ready .6s ease-in-out infinite}
+@keyframes b-hud-enter{from{opacity:0;scale:.92}to{opacity:1;scale:1}}@keyframes b-hud-alarm{50%{filter:brightness(1.13);box-shadow:0 7px 24px #0008,0 0 24px #ff362b55}}@keyframes b-protocol-enter{from{opacity:0;scale:1.18;filter:blur(3px)}to{opacity:1;scale:1;filter:blur(0)}}@keyframes b-protocol-glow{50%{text-shadow:0 0 24px #ff4636}}@keyframes b-arrow-ready{50%{scale:1.08;filter:brightness(1.2)}}
+@media(prefers-reduced-motion:reduce){.boss-hud.type-b,.boss-hud.type-b-critical,.b-protocol:not([hidden]),.b-qte:not([hidden]),#b-qte-arrows .current{animation:none}}

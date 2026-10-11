@@ -73,3 +73,23 @@ test('hacker crowd control stops ordinary boss attacks without freezing rubble o
  const b=live();b.phase='slash-charge';b.quakeRemaining=2;b.quakeClock=.6;const events=B.stepTypeB(b,.8,{...p,stunned:true});assert.equal(b.phase,'slash-charge');assert.equal(b.elapsed,0);assert.ok(b.quakeRemaining<2);events.push(...B.stepTypeB(b,.2,{...p,stunned:true}));assert.ok(events.some(e=>e.type==='debris'));
  B.beginTypeBPizza(b);B.stepTypeB(b,.7,{...p,stunned:true});assert.equal(b.phase,'pizza-charge');
 });
+
+test('arrival flashes exactly three times and hits the entire playable floor for fixed 500 unless airborne',()=>{
+ const b=B.createTypeB();B.triggerTypeB(b,{x:720,y:650});
+ const flashes=[];for(const elapsed of [.1,.35,.6,.85,1.1,1.35]){b.elapsed=elapsed;flashes.push(B.typeBArrivalFlash(b));}assert.deepEqual(flashes,[.55,.06,.55,.06,.55,.06]);assert.equal(B.typeBCue(b),'');
+ b.phase='arrival-drop';b.elapsed=0;b.attackMultiplier=2;const e=run(b,.66).find(e=>e.type==='landing');assert.equal(e.damage,500);assert.equal(e.fixedDamage,true);
+ for(const x of [45,1200,2355])for(const y of [360,555,750]){assert.equal(B.typeBHit(e,{x,y,z:0}),true);assert.equal(B.typeBHit(e,{x,y,z:1}),false);}assert.equal(B.typeBHit(e,{x:1200,y:800,z:0}),false);
+});
+test('pizza announces direction once and all following releases keep the same beat and direction across three cycles',()=>{
+ const b=live();B.beginTypeBPizza(b,3,()=>.9);run(b,.66);assert.equal(B.typeBPizzaOpening(b),true);const releases=[];let elapsed=0,openingFrames=0;
+ while(b.phase.startsWith('pizza')&&elapsed<30){elapsed+=.01;if(b.phase==='pizza-charge'&&B.typeBPizzaOpening(b))openingFrames++;for(const e of B.stepTypeB(b,.01,p,()=>.1))if(e.type==='pizza')releases.push({time:elapsed,sector:e.sector});}
+ assert.equal(releases.length,12);assert.deepEqual(releases.map(e=>e.sector),[0,3,2,1,0,3,2,1,0,3,2,1]);assert.ok(openingFrames>=239&&openingFrames<=242);
+ for(let i=1;i<releases.length;i++)assert.ok(Math.abs(releases[i].time-releases[i-1].time-(B.TYPE_B.pizza.charge+B.TYPE_B.pizza.flash))<.025);
+ assert.ok(!B.typeBCue({...b,phase:'pizza-charge'}).includes('방향'));
+});
+test('projected gunfire and laser start at the muzzle and collide along the visible airborne ray',()=>{
+ for(const dir of [-1,1]){
+  const b=live();b.dir=dir;b.target={x:b.x+dir*600,y:b.y+70};const muzzle=B.typeBMuzzle(b);b.phase='laser-charge';const laser=run(b,1.12).filter(e=>e.type==='laser');laser.push(...B.stepTypeB(b,.01,p));const e=laser.find(e=>e.type==='laser');assert.deepEqual(e.from,muzzle);assert.equal(B.typeBHit(e,{...b.target,z:0}),true);assert.equal(B.typeBHit(e,{x:b.target.x,y:b.target.y+180,z:0}),false);
+  b.phase='gun';b.elapsed=0;b.strikes=0;b.projectiles=[];B.stepTypeB(b,.01,p);const shot=b.projectiles[0];assert.equal(shot.x,muzzle.x);assert.equal(shot.y,muzzle.y);const events=run(b,.6,b.target).filter(e=>e.type==='bullet');assert.ok(events.some(e=>B.typeBHit(e,{...b.target,z:0})));assert.ok(!events.some(e=>B.typeBHit(e,{x:b.target.x,y:b.target.y+140,z:0})));
+ }
+});
