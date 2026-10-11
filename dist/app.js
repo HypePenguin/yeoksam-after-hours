@@ -1,11 +1,11 @@
-import {TYPE_B,isTypeB,createTypeB,triggerTypeB,typeBTargetable,stepTypeB,damageTypeB,typeBHit,defeatTypeB,typeBCue,typeBMoveSlow,startTypeBQte,inputTypeBQte} from './type-b.js?v=150';
-import {drawTypeBFloor,drawTypeBBody,drawTypeBAir,drawTypeBScreen} from './type-b-effects.js?v=150';
-import {ORB_ATTACK,stepOrbCaster,orbBlastContains,orbFlightPoint,drawOrbWarning,drawEnemyOrb} from './enemy-combat.js?v=150';
-import {otterMouthPoint,drawWaterJet,drawWaterSplash,drawWaterWave,drawWaterOrb,drawWaterShield} from './otter-effects.js?v=150';
-import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawFireFootprint,drawBallotVortex} from './cat-effects.js?v=150';
-import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,equipTypeBTitle,itemEquipped,hasTypeATitle,hasTypeBTitle,incomingDamage,WORLD_MAP_LAYOUT,WORLD_MAP_HEIGHT,worldMapConnections,catAreaRadii,catAreaContains,formatPlayTime} from './core.js?v=150';
-import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=150';
-import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=150';
+import {TYPE_B,isTypeB,createTypeB,triggerTypeB,typeBTargetable,stepTypeB,damageTypeB,typeBHit,defeatTypeB,typeBCue,typeBMoveSlow,startTypeBQte,inputTypeBQte} from './type-b.js?v=151';
+import {drawTypeBFloor,drawTypeBBody,drawTypeBAir,drawTypeBScreen} from './type-b-effects.js?v=151';
+import {ORB_ATTACK,stepOrbCaster,orbBlastContains,orbFlightPoint,drawOrbWarning,drawEnemyOrb} from './enemy-combat.js?v=151';
+import {otterMouthPoint,drawWaterJet,drawWaterSplash,drawWaterWave,drawWaterOrb,drawWaterShield} from './otter-effects.js?v=151';
+import {bottlePoint,drawMolotov,drawMolotovExplosion,drawFireField,drawFireFootprint,drawBallotVortex} from './cat-effects.js?v=151';
+import {SAVE_KEY,CLASSES,SKILLS,MAPS,clamp,xpNeeded,maxHp,maxMp,attackPower,createCharacter,normalizeCharacter,gainXp,xpReward,respawn,buyPotion,usePotion,canUseSkill,makeMonster,patrolMonster,POWER_DURATION,isPowered,basicAttackPower,effectiveSkill,JOBS,jobName,skillsFor,skillUnlocked,advanceJob,ITEMS,itemPrice,shopItemsFor,buyItem,useItem,assignQuickSlot,equipmentName,monsterCount,findMapRoute,movementMultiplier,jumpHeightMultiplier,equipUniform,equipTypeATitle,equipTypeBTitle,itemEquipped,hasTypeATitle,hasTypeBTitle,incomingDamage,WORLD_MAP_LAYOUT,WORLD_MAP_HEIGHT,worldMapConnections,catAreaRadii,catAreaContains,formatPlayTime} from './core.js?v=151';
+import {SOLDIER,createSoldier,beginSoldier,stepSoldier,soldierHit,defeatSoldier,targetableBoss,soldierCue,counterDamage} from './boss.js?v=151';
+import {TYPE_A,isTypeA,createTypeA,beginTypeA,stepTypeA,typeATargetable,damageTypeA,typeAHit,defeatTypeA,typeACue} from './type-a.js?v=151';
 const $=s=>document.querySelector(s);
 const canvas=$('#game'),ctx=canvas.getContext('2d'),screens=$('#screens'),ui=$('#game-ui'),modalRoot=$('#modal-root');
 const images={},imageLoads=new Map();
@@ -42,7 +42,7 @@ function characterAssets(p){
 function mapAssets(mapId){
  const map=MAPS[mapId],assets=[map.background||(Number.isInteger(map.backgroundTile)?'districts':'city'),...mapNPCs(mapId).filter(npc=>npc.id!=='exam-entry').map(npc=>npc.asset||'player')];
  if(monsterCount(mapId)>0)assets.push(...(map.mixedCombat?['post-a-melee-v146','post-a-ranged-v146']:['robot']));
- if(mapId==='proBoss')assets.push('b-type-boss-v148','b-type-walk-v148','b-type-debris-v150');
+ if(mapId==='proBoss')assets.push('b-type-boss-v148','b-type-walk-v148','b-type-debris-v150','b-type-oil-v151');
  if(mapId==='pocha')assets.push('soldier-boss','soldier-counter','soldier-walk');
  if(mapId==='hangar')assets.push('type-a');
  return assets;

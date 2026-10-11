@@ -8,7 +8,7 @@ function run(b,seconds,player=p,r=random){const out=[];for(let t=0;t<seconds;t+=
 function until(b,predicate,max=30,r=random){const out=[];for(let t=0;t<max&&!predicate(b);t+=.01)out.push(...B.stepTypeB(b,.01,p,r));assert.ok(predicate(b),'state deadline');return out;}
 function pizzaFinished(b){return !b.phase.startsWith('pizza');}
 test('B appears only past the entrance trigger, warns, falls and hits on landing',()=>{
- const b=B.createTypeB();assert.equal(B.triggerTypeB(b,{x:719,y:650}),false);assert.equal(B.typeBTargetable(b),false);assert.equal(B.triggerTypeB(b,{x:720,y:650}),true);
+ const b=B.createTypeB();assert.equal(b.hp,192000);assert.equal(b.maxHp,192000);assert.equal(B.TYPE_B.phase2Hp,48000);assert.equal(B.triggerTypeB(b,{x:719,y:650}),false);assert.equal(B.typeBTargetable(b),false);assert.equal(B.triggerTypeB(b,{x:720,y:650}),true);
  assert.equal(b.phase,'arrival-warning');assert.equal(B.damageTypeB(b,999999),0);run(b,1.51);assert.equal(b.phase,'arrival-drop');const events=run(b,.66);assert.equal(events.filter(e=>e.type==='landing').length,1);assert.equal(b.z,0);assert.equal(B.typeBHit(events.find(e=>e.type==='landing'),{x:b.x,y:b.y,z:0}),true);
 });
 test('slash, bullets, stomp, charge and laser use their forward and swept geometry',()=>{
@@ -29,17 +29,25 @@ test('scrap storm runs ten seconds independently while other attacks keep runnin
 test('liquid reaches the floor before slowing and expires separately after ten seconds',()=>{
  const b=live();b.phase='oil-charge';run(b,.81);assert.equal(b.oil.length,8);assert.equal(B.typeBMoveSlow(b,p),1);run(b,.56);assert.equal(B.typeBMoveSlow(b,p),.6);assert.equal(B.typeBMoveSlow(b,{x:45,y:360}),1);b.phase='awakening';b.elapsed=0;run(b,9.5);assert.equal(b.oil.length,0);
 });
+test('liquid spray follows its lowered nozzle sweep and arcs to each unchanged floor patch without firing bullets',()=>{
+ for(const dir of [-1,1]){
+  const b=live();b.dir=dir;b.phase='oil-charge';const nozzle=B.typeBOilMuzzle(b);run(b,.81);assert.equal(b.projectiles.length,0);
+  for(const s of b.oil){assert.deepEqual(B.typeBOilFlight(s,0),nozzle);assert.deepEqual(B.typeBOilFlight(s,1),{x:s.x,y:s.y});assert.ok(B.typeBOilFlight(s,.5).y<(nozzle.y+s.y)/2);assert.equal(s.rx,112);assert.equal(s.ry,65);}
+  const frames=[];for(const elapsed of [0,.19,.39]){b.elapsed=elapsed;frames.push(B.typeBOilFrame(b));const m=B.typeBOilMuzzle(b);assert.equal(Math.sign(m.x-b.x),dir);assert.ok(m.y>b.y-200&&m.y<b.y-150);}
+  assert.deepEqual(frames,[1,2,3]);
+ }
+});
 test('50 percent gives four directional releases; 20 percent gives three full cycles, each starts at twelve',()=>{
  for(const r of [()=>.1,()=>.9]){
-  const b=live();assert.equal(B.damageTypeB(b,999999,r),120000);assert.equal(b.hp,120000);assert.equal(b.phase,'pizza-jump');assert.equal(b.safeSector,0);
+  const b=live();assert.equal(B.damageTypeB(b,999999,r),B.TYPE_B.hp*.5);assert.equal(b.hp,B.TYPE_B.hp*.5);assert.equal(b.phase,'pizza-jump');assert.equal(b.safeSector,0);
   let events=until(b,pizzaFinished,30,r).filter(e=>e.type==='pizza');assert.deepEqual(events.map(e=>e.sector),r()<.5?[0,1,2,3]:[0,3,2,1]);assert.ok(!b.dead);
-  B.damageTypeB(b,999999,r);assert.equal(b.hp,48000);events=until(b,pizzaFinished,30,r).filter(e=>e.type==='pizza');assert.equal(events.length,12);assert.deepEqual(events.filter((_,i)=>i%4===0).map(e=>e.sector),[0,0,0]);
+  B.damageTypeB(b,999999,r);assert.equal(b.hp,B.TYPE_B.hp*.2);events=until(b,pizzaFinished,30,r).filter(e=>e.type==='pizza');assert.equal(events.length,12);assert.deepEqual(events.filter((_,i)=>i%4===0).map(e=>e.sector),[0,0,0]);
   for(let i=0;i<4;i++){const angle=i*Math.PI/2,point={x:1200+Math.sin(angle)*200,y:555-Math.cos(angle)*100,z:0};assert.equal(B.inPizzaSafeZone(point,i),true);assert.equal(B.typeBHit({type:'pizza',sector:i,center:B.TYPE_B.center,height:Infinity},point),false);assert.equal(B.inPizzaSafeZone(point,(i+1)%4),false);}
   assert.equal(B.inPizzaSafeZone({x:1200,y:555},0),false);
  }
 });
 test('mandatory 20 percent sequence queues if threshold is crossed during the first pizza',()=>{
- const b=live();B.damageTypeB(b,120000);run(b,.7);B.damageTypeB(b,999999);assert.equal(b.pendingPizza,3);const events=until(b,pizzaFinished).filter(e=>e.type==='pizza');assert.equal(events.length,16);
+ const b=live();B.damageTypeB(b,B.TYPE_B.hp*.5);run(b,.7);B.damageTypeB(b,999999);assert.equal(b.pendingPizza,3);const events=until(b,pizzaFinished).filter(e=>e.type==='pizza');assert.equal(events.length,16);
 });
 function secondPhase(){const b=live();b.pizza50=b.pizza20=true;B.damageTypeB(b,999999);assert.equal(b.phase,'reboot');assert.equal(B.defeatTypeB(b),false);run(b,4.01);assert.equal(b.stage,2);assert.equal(b.hp,B.TYPE_B.hp/4);assert.equal(b.phase,'protocol');run(b,4.9);assert.equal(b.phase,'protocol');run(b,.12);assert.equal(b.phase,'approach');return b;}
 test('first depletion reboots at quarter health with five-second red protocol and faster recovery',()=>{
@@ -50,13 +58,13 @@ test('phase two random pizza is a single cycle and cannot be selected consecutiv
  const b=secondPhase();b.lastPattern='laser';B.stepTypeB(b,.4,p,()=>.999);assert.equal(b.phase,'pizza-jump');assert.equal(b.pizzaRemaining,1);until(b,pizzaFinished);until(b,b=>b.phase==='approach');B.stepTypeB(b,.4,p,()=>.999);assert.notEqual(b.phase,'pizza-jump');
 });
 test('awakening is invulnerable and has one global ten-second deadline, including approach and mistakes',()=>{
- const b=secondPhase();B.damageTypeB(b,999999,random);assert.equal(b.hp,30000);assert.equal(b.phase,'awakening');assert.equal(B.damageTypeB(b,999),0);
+ const b=secondPhase();B.damageTypeB(b,999999,random);assert.equal(b.hp,B.TYPE_B.phase2Hp*.5);assert.equal(b.phase,'awakening');assert.equal(B.damageTypeB(b,999),0);
  assert.equal(B.startTypeBQte(b,{x:b.x+500,y:b.y}),false);run(b,2);assert.equal(B.startTypeBQte(b,{x:b.x,y:b.y}),true);
  assert.equal(B.inputTypeBQte(b,b.qteSequence[0]),'correct');assert.equal(B.inputTypeBQte(b,'ArrowDown'),'wrong');assert.equal(b.qteProgress,0);assert.ok(b.elapsed>=2);
  for(const key of b.qteSequence)B.inputTypeBQte(b,key);assert.equal(b.phase,'shutdown');assert.equal(b.awakenBlocked,true);run(b,1.4);B.damageTypeB(b,1);assert.notEqual(b.phase,'awakening');
 });
 test('failed awakening fully heals, doubles future damage once, final death rewards only once',()=>{
- const b=secondPhase();B.damageTypeB(b,999999);run(b,10.01);assert.equal(b.hp,60000);assert.equal(b.attackMultiplier,2);assert.equal(b.qteActive,false);b.phase='slash-charge';b.elapsed=0;b.dir=1;const e=run(b,.73).find(e=>e.type==='slash');assert.equal(e.damage,B.TYPE_B.slash.damage*2);
+ const b=secondPhase();B.damageTypeB(b,999999);run(b,10.01);assert.equal(b.hp,B.TYPE_B.phase2Hp);assert.equal(b.attackMultiplier,2);assert.equal(b.qteActive,false);b.phase='slash-charge';b.elapsed=0;b.dir=1;const e=run(b,.73).find(e=>e.type==='slash');assert.equal(e.damage,B.TYPE_B.slash.damage*2);
  b.phase='approach';B.damageTypeB(b,50000);assert.notEqual(b.phase,'awakening');B.damageTypeB(b,999999);assert.equal(b.phase,'defeating');assert.equal(B.defeatTypeB(b),false);const events=run(b,1.51);assert.equal(events.filter(e=>e.type==='victory').length,1);assert.equal(B.defeatTypeB(b),true);assert.equal(B.defeatTypeB(b),false);
 });
 test('gold B title persists, replaces A title and adds exactly twenty percent attack and ten percent speed',()=>{

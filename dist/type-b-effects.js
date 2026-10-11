@@ -1,4 +1,4 @@
-import {TYPE_B,isTypeB,typeBPizzaCharge,typeBPizzaOpening,typeBArrivalFlash,typeBMuzzle,typeBFireRay} from './type-b.js?v=150';
+import {TYPE_B,isTypeB,typeBPizzaCharge,typeBPizzaOpening,typeBArrivalFlash,typeBMuzzle,typeBFireRay,typeBOilFrame,typeBOilMuzzle,typeBOilFlight} from './type-b.js?v=151';
 const TAU=Math.PI*2;
 function ellipse(ctx,x,y,rx,ry,fill,stroke){ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,TAU);if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();}}
 function cone(ctx,x,y,dir,range,angle,color){ctx.save();ctx.translate(x,y);ctx.scale(dir,.5);ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,range,-angle,angle);ctx.closePath();ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#ff8768';ctx.lineWidth=2;ctx.stroke();ctx.restore();}
@@ -26,7 +26,7 @@ export function drawTypeBFloor(ctx,b,camera,time){
 export function typeBFrame(b){
  if(['reboot','defeating','defeated'].includes(b.phase))return 7;
  if(b.walking)return b.phase==='dash'?6:1;
- return {slash:2,'slash-charge':0,gun:3,'gun-charge':0,'stomp-charge':4,'quake-charge':4,stomp:5,quake:5,'arrival-drop':5,'pizza-jump':4,'laser-charge':3,laser:3,'oil-charge':3,oil:3,awakening:4,shutdown:7}[b.phase]??0;
+ return {slash:2,'slash-charge':0,gun:3,'gun-charge':0,'stomp-charge':4,'quake-charge':4,stomp:5,quake:5,'arrival-drop':5,'pizza-jump':4,'laser-charge':3,laser:3,awakening:4,shutdown:7}[b.phase]??0;
 }
 export function drawTypeBBody(ctx,b,camera,images,time){
  if(!isTypeB(b)||b.phase==='hidden'||b.phase==='arrival-warning')return;
@@ -40,8 +40,10 @@ export function drawTypeBBody(ctx,b,camera,images,time){
  const pulse=(b.impacts||[]).filter(e=>['landing','pizza'].includes(e.type)).reduce((v,e)=>Math.max(v,(e.life/e.max)**3),0);ctx.scale(1+pulse*.035,1-pulse*.025);
  if(charge)ctx.scale(1+Math.sin(b.elapsed*9)*.005,1+Math.sin(b.elapsed*9)*.003);
  ctx.imageSmoothingEnabled=true;ctx.filter=red?'sepia(.45) saturate(2.8) hue-rotate(320deg)':b.hit>0?'brightness(1.6) contrast(1.1)':'brightness(1.08) contrast(1.1) saturate(1.15)';
+ const oil=images['b-type-oil-v151'],useOil=['oil-charge','oil'].includes(b.phase)&&oil?.complete&&oil.naturalWidth;
  const walk=images['b-type-walk-v148'],useWalk=b.walking&&walk?.complete&&walk.naturalWidth;
- if(useWalk){const frame=Math.floor(b.walkPhase*4)%4;ctx.drawImage(walk,frame*768,0,768,480,-384*scale,-442.5*scale,768*scale,480*scale);}
+ if(useOil){ctx.drawImage(oil,typeBOilFrame(b)*768,0,768,480,-384*scale,-442.5*scale,768*scale,480*scale);}
+ else if(useWalk){const frame=Math.floor(b.walkPhase*4)%4;ctx.drawImage(walk,frame*768,0,768,480,-384*scale,-442.5*scale,768*scale,480*scale);}
  else{const f=typeBFrame(b);ctx.drawImage(img,(f%4)*768,Math.floor(f/4)*480,768,480,-384*scale,-442.5*scale,768*scale,480*scale);}
  ctx.filter='none';
  if(['laser-charge','laser','awakening','protocol','pizza-charge'].includes(b.phase)){
@@ -88,7 +90,14 @@ export function drawTypeBAir(ctx,b,camera,time,images={}){
   ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.globalCompositeOperation='lighter';ctx.globalAlpha=Math.max(0,strength);const g=ctx.createLinearGradient(0,-half,0,half);g.addColorStop(0,'#ff342100');g.addColorStop(.22,'#ff4d3270');g.addColorStop(.42,'#ffbc6adf');g.addColorStop(.5,'#fffdefff');g.addColorStop(.58,'#ffbc6adf');g.addColorStop(.78,'#ff4d3270');g.addColorStop(1,'#ff342100');ctx.fillStyle=g;ctx.shadowColor='#ff6929';ctx.shadowBlur=24;ctx.fillRect(0,-half,len,half*2);
   ctx.strokeStyle='#fff4c7';ctx.lineWidth=2;for(let k=0;k<5;k++){const start=(time*1200+k*370)%len;ctx.beginPath();ctx.moveTo(start,-half*.65+Math.sin(time*16+k)*4);ctx.lineTo(Math.min(len,start+120),-half*.65+Math.sin(time*16+k)*4);ctx.stroke();}ellipse(ctx,0,0,38,28,'#fff0bce6');ctx.restore();
  }
- for(const s of b.oil){const age=s.duration-s.remaining;if(age>=.55)continue;const t=age/.55,x=s.fromX+(s.x-s.fromX)*t-camera,y=s.fromY+(s.y-s.fromY)*t-Math.sin(t*Math.PI)*90;ellipse(ctx,x,y,15,11,'#b886df','#efe4ff');}
+ if(b.phase==='oil-charge'){
+  const m=typeBOilMuzzle(b),pressure=Math.min(1,b.elapsed/TYPE_B.oil.windup);ctx.save();ctx.globalAlpha=pressure*.7;ctx.shadowColor='#c3adff';ctx.shadowBlur=10;ellipse(ctx,m.x-camera,m.y,10,5,'#e0d0ff');ctx.restore();
+ }
+ for(const s of b.oil){const age=s.duration-s.remaining;if(age<0||age>=s.flight)continue;const t=age/s.flight,origin=b.phase==='oil'?typeBOilMuzzle(b):{x:s.fromX,y:s.fromY},start=Math.max(0,t-.28);
+  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.globalAlpha=Math.min(1,t*8,(1-t)*8);ctx.shadowColor='#b5a1e8';ctx.shadowBlur=9;
+  for(const [color,width] of [['#624987aa',15],['#ad93d8',7],['#e5dbff',2]]){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();for(let i=0;i<=10;i++){const q=typeBOilFlight(s,start+(t-start)*i/10,origin);i?ctx.lineTo(q.x-camera,q.y):ctx.moveTo(q.x-camera,q.y);}ctx.stroke();}
+  const head=typeBOilFlight(s,t,origin),prev=typeBOilFlight(s,Math.max(0,t-.025),origin);ctx.translate(head.x-camera,head.y);ctx.rotate(Math.atan2(head.y-prev.y,head.x-prev.x));ellipse(ctx,0,0,13,4,'#ddd1f5');ctx.restore();
+ }
  ctx.restore();
 }
 export function drawTypeBScreen(ctx,b,width,height,time){

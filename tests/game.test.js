@@ -2636,3 +2636,8 @@ test('B pizza has no advance safe-zone paint, direction disappears after opening
  b.pizzaPulse=1;h.strokes.length=0;render(h);assert.equal(h.strokes.filter(s=>s.color==='#ffe2b8').length,0);
  b.phase='recover';b.debris=[{x:900,y:550,remaining:.12,duration:.9,rx:90,ry:60,variant:2,spin:0}];render(h);assert.ok(h.draws.some(d=>d.asset==='assets/b-type-debris-v150.webp'));
 });
+test('B liquid spray uses its own grounded four-pose atlas and narrow liquid trails rather than the gunfire pose',()=>{
+ const h=harness(),p=core.createCharacter('살포');Object.assign(p,{level:70,map:'proBoss',x:720});h.api.start(p);h.api.update(.01);const b=h.api.get().boss;Object.assign(b,{x:1100,y:555,z:0,dir:1,phase:'oil-charge',elapsed:.5});
+ const poses=[];for(const [phase,elapsed] of [['oil-charge',.5],['oil',.03],['oil',.19],['oil',.39]]){Object.assign(b,{phase,elapsed});render(h);const s=h.draws.find(d=>d.asset==='assets/b-type-oil-v151.webp');assert.ok(s);poses.push(s.source[0]);assert.equal(s.source[2],768);assert.equal(s.source[3],480);assert.ok(!h.draws.some(d=>d.asset==='assets/b-type-boss-v148.webp'));assert.ok(Math.abs(s.y+s.height-b.y)<55);}
+ assert.deepEqual(poses,[0,768,1536,2304]);b.phase='oil-charge';b.elapsed=.79;h.api.updateTypeBFight(.02);h.api.updateTypeBFight(.2);h.strokes.length=0;render(h);assert.ok(h.strokes.some(s=>s.color==='#ad93d8'&&s.path.filter(q=>q.kind==='line').length===10));assert.equal(b.projectiles.length,0);
+});

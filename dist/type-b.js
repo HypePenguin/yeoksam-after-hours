@@ -1,5 +1,5 @@
 // B-type encounter clocks, hazards and inputs are transient and reset on every entry.
-export const TYPE_B={name:'B형',level:70,hp:240000,phase2Hp:60000,height:488,width:2400,triggerX:720,xp:60000,money:15000,cores:40,
+export const TYPE_B={name:'B형',level:70,hp:192000,phase2Hp:48000,height:488,width:2400,triggerX:720,xp:60000,money:15000,cores:40,
  floor:{minX:45,maxX:2355,minY:360,maxY:750},center:{x:1200,y:555},
  arrival:{warning:1.5,drop:.65,flashes:3,damage:500,jumpHeight:1},
  slash:{windup:.72,range:400,halfLane:105,damage:420},gun:{windup:.7,count:12,interval:.1,speed:1400,damage:105},
@@ -18,6 +18,10 @@ export function inPizzaSafeZone(p,sector,center=TYPE_B.center){
  const a=pizzaAngle(p,center)-sector*Math.PI/2,wrapped=Math.atan2(Math.sin(a),Math.cos(a));return Math.abs(wrapped)<=Math.PI/4;
 }
 export const typeBMoveSlow=(b,p)=>b?.oil?.some(s=>s.duration-s.remaining>=.55&&typeBContains(p,s))?TYPE_B.oil.slow:1;
+export const typeBOilFrame=b=>b.phase==='oil'?Math.min(3,1+Math.floor(Math.max(0,b.elapsed)/.55*3)):0;
+// Authored nozzle anchors follow the downward arm sweep, in rendered world pixels.
+export function typeBOilMuzzle(b){const [x,y]=[[308.46,-179.17],[324.75,-179.17],[323.73,-172.04],[339,-172.04]][typeBOilFrame(b)];return {x:b.x+b.dir*x,y:b.y-b.z+y};}
+export function typeBOilFlight(s,t,origin={x:s.fromX,y:s.fromY}){t=clamp(t,0,1);return {x:origin.x+(s.x-origin.x)*t,y:origin.y+(s.y-origin.y)*t-Math.sin(t*Math.PI)*80};}
 export function createTypeB(){return {kind:'type-b',id:'type-b',isBoss:true,level:70,x:1160,y:555,z:0,dir:-1,hp:TYPE_B.hp,maxHp:TYPE_B.hp,active:false,dead:false,rewardGranted:false,phase:'hidden',stage:1,elapsed:0,strikes:0,walking:false,walkPhase:0,hit:0,impacts:[],projectiles:[],debris:[],oil:[],quakeRemaining:0,quakeClock:0,pizza50:false,pizza20:false,pendingPizza:0,pizzaRemaining:0,lastPattern:null,awakenUsed:false,qteActive:false,qteSequence:[],qteProgress:0,attackMultiplier:1,failedAwakening:false};}
 export function triggerTypeB(b,p){if(b.phase!=='hidden'||p.x<TYPE_B.triggerX)return false;b.active=true;b.target={x:clamp(p.x+240,850,1700),y:clamp(p.y,470,650)};b.x=b.target.x;b.y=b.target.y;change(b,'arrival-warning');return true;}
 export function beginTypeBPizza(b,cycles=1,random=Math.random){
@@ -135,7 +139,7 @@ export function stepTypeB(b,dt,p,random=Math.random){
  }else if(b.phase==='oil-charge'&&b.elapsed>=TYPE_B.oil.windup){
   // Each patch has its own lifetime; the targeted one guarantees the threat remains relevant.
   const points=[{x:p.x,y:p.y},...Array.from({length:7},(_,i)=>{const a=i*Math.PI*2/7;return {x:b.x+Math.cos(a)*420,y:b.y+Math.sin(a)*160};})];
-  b.oil.push(...points.map(q=>({x:clamp(q.x,150,2250),y:clamp(q.y,390,715),rx:TYPE_B.oil.rx,ry:TYPE_B.oil.ry,remaining:TYPE_B.oil.duration,duration:TYPE_B.oil.duration,flight:.55,fromX:b.x,fromY:b.y-150})));change(b,'oil');events.push({type:'oil-spray'});
+  const nozzle=typeBOilMuzzle(b);b.oil.push(...points.map(q=>({x:clamp(q.x,150,2250),y:clamp(q.y,390,715),rx:TYPE_B.oil.rx,ry:TYPE_B.oil.ry,remaining:TYPE_B.oil.duration,duration:TYPE_B.oil.duration,flight:.55,fromX:nozzle.x,fromY:nozzle.y})));change(b,'oil');events.push({type:'oil-spray'});
  }else if(b.phase==='oil'&&b.elapsed>=.55)change(b,'recover');
  else if(b.phase==='recover'&&b.elapsed>=(b.stage===2?.28:TYPE_B.recover))change(b,'approach');
  return events;

@@ -11,7 +11,7 @@ test('new hunting path progresses through level 40 and ends at the level 40 boss
  assert.equal(MAPS.hangar.bossLevel,40);assert.equal(monsterCount('hangar'),0);
 });
 test('blade windup is harmless; forward arc and jump height define the hit',()=>{
- const b=active();b.phase='blade-charge';assert.equal(tick(b,.59).length,0);const e=tick(b,.03).find(e=>e.type==='blade');assert.ok(e);
+ const b=active();assert.equal(b.hp,57600);assert.equal(b.maxHp,57600);b.phase='blade-charge';assert.equal(tick(b,.59).length,0);const e=tick(b,.03).find(e=>e.type==='blade');assert.ok(e);
  assert.equal(typeAHit(e,{x:b.x+b.dir*200,y:b.y,z:0}),true);assert.equal(typeAHit(e,{x:b.x-b.dir*150,y:b.y,z:0}),false);assert.equal(typeAHit(e,{x:b.x+b.dir*200,y:b.y,z:90}),false);
 });
 test('machinegun emits eight forward bullets and swept collision does not tunnel',()=>{

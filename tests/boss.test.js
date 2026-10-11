@@ -32,7 +32,7 @@ test('sword collision respects facing, lane and jump height while palm and flurr
  assert.equal(soldierHit({...sword,height:135},{x:600,y:650,z:108}),true);
 });
 test('level 25 boss reaches the enlarged melee boundaries in both directions',()=>{
- const b=createSoldier();assert.equal(b.level,25);assert.equal(b.hp,30000);beginSoldier(b);
+ const b=createSoldier();assert.equal(b.level,25);assert.equal(b.hp,24000);beginSoldier(b);
  for(const dir of [-1,1])for(const [phase,range,halfLane,height] of [['slash',205,52,52],['flurry',240,60,135]]){
   Object.assign(b,{x:800,y:650,dir,phase,elapsed:0,strikes:0});
   const attack=stepSoldier(b,.01,p).find(e=>e.type==='melee');assert.ok(attack);
